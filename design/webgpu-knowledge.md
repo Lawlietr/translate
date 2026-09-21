@@ -21,6 +21,26 @@ Distilled from the what-do-you-see project (same host), where every one of these
 - `cachedModelState` = per-model list of required cache keys, all present (size check optional). Partial cache reported as "not downloaded"; re-download skips already-cached files (Cache API `match` first).
 - transformers.js `from_pretrained` has **no AbortSignal** — that's why the download is done manually via fetch instead of letting `from_pretrained` prefetch.
 
+### #3 port plan (decided 2026-09-21: PORT, do not rewrite)
+
+`src/lib/model-cache.ts` = port of what-do-you-see's `src/lib/model-cache.ts` (262 lines → ~200). The catalog (#1) supplies the data-driven inputs with byte-verified `filePatterns`, so the proven implementation shapes above transfer 1:1:
+
+| function | treatment |
+|---|---|
+| `remoteFileUrl` | 1:1 — key format IS the transformers.js `env.cacheKey` convention; `path` naturally carries subdirectories (translategemma's `onnx/…` works unchanged) |
+| `listModelFiles` (tree API + regex filter) | 1:1 |
+| `downloadModelFiles` (streamed reader, skip-if-cached, `put` with content-length, 10 GB/s speed clamp, per-file abort check) | 1:1 — this function IS the rule above in code |
+| `cachedModelState` | 1:1 **minus the fallback branch** (cache-name heuristics) — dead code, both of our models have `filePatterns` |
+| `clearWebGpuModelCache` / `formatBytes` / `formatDuration` | 1:1 (drop the IDB `clearModelCache()` call — trim 2) |
+
+Trims vs the sister project:
+
+1. **Drop `loadPrefetchedModel` / the `prefetchModel` loading phase** — the sister loads with `AutoModelForImageTextToText` + `AutoProcessor` (vision loader); translate needs `AutoModelForCausalLM` + `AutoTokenizer`, no processor. The download→`from_pretrained` loading phase belongs to #4 anyway (rule: `from_pretrained` only on a verified-complete cache).
+2. **Do NOT port the sister's `download-manager.ts` (IndexedDB path) at all** — it serves their non-transformers.js storage route; translate is Cache-API-only (no `idb` dependency).
+3. Define `DownloadProgress` in translate's own types (sister keeps it in `types.ts`).
+
+Result: one file `src/lib/model-cache.ts`, ~200 lines, zero new dependencies.
+
 ## 3. Inference pitfalls
 
 - **Secure context:** WebGPU needs `https://` or `localhost`. Local/LAN testing: serve Next on plain http + self-signed HTTPS reverse proxy on the LAN IP (see scripts/https-test-server.mjs pattern in what-do-you-see). `fuser -k <port>/tcp` to stop ports — `pkill -f <pattern>` matches its own command line and kills the caller.
