@@ -1,4 +1,5 @@
 import { DEFAULT_WEBGPU_MODEL, WEBGPU_MODELS } from "./model-catalog";
+import { normalizeModelPreset, type ModelPreset } from "./prompt-profiles";
 
 export type Backend = "webgpu" | "llama-server";
 
@@ -8,6 +9,7 @@ export interface LlamaServerConfig {
   baseUrl: string;
   model: string;
   apiKey: string;
+  modelPreset: ModelPreset;
 }
 
 export interface AppSettings {
@@ -29,6 +31,7 @@ export function defaultSettings(): AppSettings {
       baseUrl: "http://localhost:8080",
       model: "",
       apiKey: "",
+      modelPreset: "auto",
     },
     language: "zh-TW",
     defaultSourceLang: "zh-TW",
@@ -48,6 +51,18 @@ function normalizeModelId(value: unknown): string {
   return WEBGPU_MODELS.some((m) => m.id === value) ? (value as string) : DEFAULT_WEBGPU_MODEL;
 }
 
+function normalizeLlamaServerConfig(
+  value: unknown
+): Partial<LlamaServerConfig> {
+  if (!value || typeof value !== "object") return {};
+  const parsed = value as Partial<LlamaServerConfig>;
+  const normalized: Partial<LlamaServerConfig> = { ...parsed };
+  if ("modelPreset" in parsed) {
+    normalized.modelPreset = normalizeModelPreset(parsed.modelPreset);
+  }
+  return normalized;
+}
+
 export function loadSettings(): AppSettings {
   if (typeof window === "undefined") return defaultSettings();
   try {
@@ -63,7 +78,7 @@ export function loadSettings(): AppSettings {
       language: normalizeLanguage(parsed.language),
       llamaServerConfig: {
         ...defaults.llamaServerConfig,
-        ...(parsed.llamaServerConfig ?? {}),
+        ...normalizeLlamaServerConfig(parsed.llamaServerConfig),
       },
     };
     return merged;

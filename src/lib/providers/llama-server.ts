@@ -5,7 +5,7 @@ import type {
   TranslationRequest,
   TranslationResponse,
 } from "./types";
-import { languageName } from "../languages";
+import { buildMessages, resolveProfile } from "../prompt-profiles";
 
 const DEFAULT_BASE_URL = "http://localhost:8080";
 const CONNECT_TIMEOUT_MS = 10_000;
@@ -79,10 +79,10 @@ async function chatCompletion(
   baseUrl: string,
   model: string,
   request: TranslationRequest,
+  preset: ProviderConfig["modelPreset"],
   apiKey: string | undefined,
   signal?: AbortSignal
 ): Promise<string> {
-  const targetName = languageName(request.targetLang);
   const response = await fetchWithTimeout(
     `${normalizeBaseUrl(baseUrl)}/chat/completions`,
     {
@@ -90,15 +90,7 @@ async function chatCompletion(
       headers: { "Content-Type": "application/json", ...authHeaders(apiKey) },
       body: JSON.stringify({
         model,
-        messages: [
-          {
-            role: "system",
-            content:
-              `You are a translation engine. Translate the user's message into ${targetName}. ` +
-              "Reply with the translation only — no preamble, no commentary.",
-          },
-          { role: "user", content: request.text },
-        ],
+        messages: buildMessages(resolveProfile(model, preset), request),
         max_tokens: estimateMaxTokens(request.text),
         temperature: 0,
         chat_template_kwargs: { enable_thinking: false },
@@ -155,6 +147,15 @@ const CONFIG_SCHEMA: ProviderConfigField[] = [
     required: false,
     placeholder: "only if llama-server was started with --api-key",
   },
+  {
+    key: "modelPreset",
+    label: "Prompt preset",
+    type: "select",
+    required: false,
+    options: ["auto", "hy-mt2", "translategemma", "generic"],
+    helperText:
+      "how to format requests for the loaded model — auto-detect from the model id, override for renamed/repacked files",
+  },
 ];
 
 export const llamaServerProvider: AIProvider = {
@@ -180,7 +181,14 @@ export const llamaServerProvider: AIProvider = {
       }
       model = models[0];
     }
-    const content = await chatCompletion(baseUrl, model, request, config.apiKey, signal);
+    const content = await chatCompletion(
+      baseUrl,
+      model,
+      request,
+      config.modelPreset,
+      config.apiKey,
+      signal
+    );
     return { text: content, latencyMs: Date.now() - started };
   },
 
