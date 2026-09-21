@@ -2,7 +2,9 @@
 
 ## Project Overview
 
-A local, privacy-first translation web app — a **"Google Translate" clone that runs entirely in the user's browser** on WebGPU. Type text → a small multilingual LLM (ONNX, via `@huggingface/transformers`) translates it locally → result shown in the output box.
+A local, privacy-first translation web app — a **"Google Translate" clone that runs entirely in the user's browser** on WebGPU.
+
+**License: AGPL-3.0 (single license, owner decision 2026-09-21).** All app code + wrapper exe under AGPL (see `LICENSE`). Third-party components keep their own licenses (Next.js/MUI/transformers.js/etc. are MIT/Apache — compatible). The WebView2 Runtime is a preinstalled system component, never redistributed. **Models (Gemma/Hy-MT2) are user-downloaded from HF under their own terms — never bundle them in the exe or Docker image.** Type text → a small multilingual LLM (ONNX, via `@huggingface/transformers`) translates it locally → result shown in the output box.
 
 **Key difference from cloud translation:** all inference runs on the user's own GPU (WebGPU). No text leaves the browser, no server-side processing, no tracking.
 

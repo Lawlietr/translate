@@ -17,7 +17,6 @@
 | 11 | Docker multi-stage (node build + wasm check → nginx) + compose + buildx linux/amd64,arm64; self-signed TLS auto-generation on first boot required — design/local-deployment.md | P2 |
 | 12 | Local non-Docker Linux serving: docs + optional `scripts/serve-local.sh` — design/local-deployment.md | P2 |
 | 13 | Forgejo workflows: docker image build on runner `192.168.1.12` (multi-arch) publishing to Codeberg registry ONLY (local Forgejo never stores artifacts) + GitHub Actions mirror when repo lands; exe workflow once D5 build host decided — design/ci-build.md | P2 |
-| 14 | Finalize license (owner evaluating GPLv3/AGPLv3 dual) → `LICENSE` + SPDX identifiers — discussion 2026-09-21 | P2 |
 
 ## Completed
 
@@ -28,3 +27,4 @@
 | Decision: default model = `LunarOilRig/Hy-MT2-1.8B-ONNX-q4f16-mirror` (1,383,140,565 B); justinchuby original rejected (onnxruntime-genai layout, no root model files) — rationale in design/model-catalog.md |
 | Local-deployment decisions D1–D4 settled (C# .NET 8 / embedded / self-signed required / builds on Forgejo runner 192.168.1.12, never local) + D5 (exe build host) opened — design/local-deployment.md, design/ci-build.md |
 | codeberg remote added (`Lawlietr/translate`) + pushed; remotes documented in design/deployment.md |
+| License finalized: **AGPL-3.0 single license** — `LICENSE` added (full GNU text); scope + third-party/WebView2/model boundaries noted in AGENTS.md |
