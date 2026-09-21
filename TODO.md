@@ -13,6 +13,9 @@
 | 7 | i18n zh-TW + en (port pattern from what-do-you-see) | P2 |
 | 8 | HTTPS LAN test server (`scripts/https-test-server.mjs` pattern) for browser verification | P2 |
 | 9 | Deploy script `scripts/deploy-pages.mjs` (secrets via env, `--branch main`, test/prod split) + Cloudflare projects/domains (TBD) — design/deployment.md | P2 |
+| 10 | Windows 11 WebView2 wrapper .exe: first-run `config.json` in exe dir (bind_ip/port), in-process static server, WebView on `http://127.0.0.1:<port>` — design/local-deployment.md (D1 language, D2 file placement pending) | P1 |
+| 11 | Docker multi-stage (node build + wasm check → nginx) + compose + buildx linux/amd64,arm64 + TLS modes — design/local-deployment.md (D3, D4 pending) | P2 |
+| 12 | Local non-Docker Linux serving: docs + optional `scripts/serve-local.sh` — design/local-deployment.md | P2 |
 
 ## Completed
 

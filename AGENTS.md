@@ -103,6 +103,8 @@ node scripts/https-test-server.mjs   # https://<lan-ip>:3443 -> http://127.0.0.1
 
 ## Deployment
 
+Local targets (blueprint 2026-09-21): **Windows 11 WebView2 .exe wrapper** (config.json in exe dir → bind IP/port, WebView loads `127.0.0.1` for WebGPU), **Docker/compose** (linux/amd64 + arm64, multi-stage node→nginx), **local non-Docker Linux** (serve `/out`; localhost is a secure context) — `design/local-deployment.md`, decision points D1–D4 pending.
+
 Cloudflare Pages, static export. See `design/deployment.md` for the deploy script pattern, secrets policy (no credentials in repo; `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` from environment), and the two-project test/prod policy:
 
 - **Default runs deploy to the TEST project only.** Production gets `--prod` only on explicit owner request.
