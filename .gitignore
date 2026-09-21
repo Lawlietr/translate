@@ -1,0 +1,16 @@
+/node_modules
+/.pnp
+.pnp.*
+
+/coverage
+
+/.next/
+/out/
+.api-export-stash/
+
+/build
+
+*.pem
+.DS_Store
+npm-debug.log*
+.env*.local

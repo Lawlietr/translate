@@ -5,7 +5,6 @@
 | # | Task | Priority |
 |---|------|----------|
 | 1 | Write `src/lib/model-catalog.ts` with the verified entries from design/model-catalog.md (both models verified 2026-09-21) | P0 |
-| 2 | Scaffold: Next.js 16 + TS + Tailwind v4 + MUI v9 + EXACT-pinned `@huggingface/transformers@4.2.0`; dual build (self-hosted / `build:export` with wasm <25 MiB check); git init + remotes (TBD) | P0 |
 | 3 | Model download pipeline (HF tree → filtered abortable streamed fetch → Cache API `transformers-cache`, keys incl. subpaths; `cachedModelState` gate; user-initiated only) — design/webgpu-knowledge.md §2 | P0 |
 | 4 | Translation pipeline: `AutoTokenizer` + `AutoModelForCausalLM`, chat-template instruction (English), greedy, capped + source-sized `max_new_tokens`, AbortController cancel, `powerPreference` patch — design/webgpu-knowledge.md §3. Build order: minimal harness page first (model pick, download, translate I/O, status) to prove the stack in a real browser; full UI (#5) only after | P0 |
 | 5 | Core UI per design/ui-ux.md (input/output, language pickers, swap, states, status footer; dark-default + theme toggle, GitHub icon placeholder) | P1 |
@@ -22,8 +21,7 @@
 
 | Task |
 |------|
-| Project docs created: AGENTS.md, TODO.md, design/ (webgpu-knowledge, model-catalog, deployment, ui-ux) — WebGPU knowledge transferred from what-do-you-see |
-| Decision: translategemma pinned to q4 variant (3,111,911,678 B) — file lists + bytes verified via HF tree API, rationale in design/model-catalog.md |
+| Scaffold: Next.js 16.3.4 + TS + Tailwind v4 + MUI 9.4.0 + EXACT `@huggingface/transformers@4.2.0` (ort-web 1.26.0-dev); dual build verified (self-hosted + `build:export` → 23K out/); lint clean; wasm <25 MiB check applies once inference code imports ort-wasm (no wasm chunks yet) |
 | Decision: default model = `LunarOilRig/Hy-MT2-1.8B-ONNX-q4f16-mirror` (1,383,140,565 B); justinchuby original rejected (onnxruntime-genai layout, no root model files) — rationale in design/model-catalog.md |
 | Local-deployment decisions D1–D4 settled (C# .NET 8 / embedded / self-signed required / builds on Forgejo runner 192.168.1.12, never local) + D5 (exe build host) opened — design/local-deployment.md, design/ci-build.md |
 | codeberg remote added (`Lawlietr/translate`) + pushed; remotes documented in design/deployment.md |
