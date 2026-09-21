@@ -17,7 +17,7 @@ A local, privacy-first translation web app — a **"Google Translate" clone that
 | Framework | Next.js 16 (App Router) — see `node_modules/next/dist/docs/` before writing code |
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 (CSS-first, no config file) + Material UI v9 |
-| AI (Browser) | `@huggingface/transformers` + WebGPU (ONNX format) |
+| AI (Browser) | `@huggingface/transformers` + WebGPU (ONNX format); optional user's `llama-server` (OpenAI-compatible, client-side fetch) — `design/inference-providers.md` |
 | Model Storage | Cache API (`transformers-cache`) for ONNX files |
 | Settings | localStorage |
 
@@ -44,8 +44,8 @@ Both are text-only causal-LM translation models: `AutoTokenizer` + `AutoModelFor
 6. **Never detect model classes by `constructor.name`** — the production bundle is minified (class names become `ut`, `A`, …) and the branch silently never fires. Detect by model-id string / repo prefix.
 7. **Cap `max_new_tokens`.** Weak/translation LLMs in-browser grind the full budget when EOS comes late. 2048–3072 is the ceiling; a 4B model at 3072 tokens can take minutes on modest GPUs.
 8. **Keep model-facing prompts/instructions in English; never mix UI language into the instruction text.** Small models (≤2B) can lock into an output-language loop (verified twice with LFM2.5 450M: zh instruction line → infinite repetition; English instruction + trailing output-language line → works). WebGPU fp16 failure modes are NOT reproducible on CPU — A/B-test prompt changes in the real browser, or not at all.
-9. **No server-side routes in the public build.** Static export for Cloudflare Pages; self-hosted full build is a separate script that moves API routes out of the tree during `next build` when needed.
-10. **Privacy:** zero external requests except (a) user-initiated model downloads from `huggingface.co`, (b) nothing else. No analytics, no cookies, no telemetry. Keys/settings in localStorage only.
+9. **No server-side routes in any build.** The app is text-only and calls the user's llama-server directly from the browser (client-side fetch, `design/inference-providers.md`) — unlike what-do-you-see, which proxies images through `/api/analyze`. Static export for Cloudflare Pages; self-hosted full build is a separate script that moves API routes out of the tree during `next build` when needed (none exist today).
+10. **Privacy:** zero external requests except (a) user-initiated model downloads from `huggingface.co`, (b) inference calls to a llama-server endpoint the user themselves configured in Settings (opt-in; never sent anywhere else; the endpoint string stays in localStorage). No analytics, no cookies, no telemetry. Keys/settings in localStorage only.
 11. **Never install toolchains, compile, or package on the dev machine.** All artifacts (Docker images, Windows exe) build remotely: Forgejo runner `root@192.168.1.12` now, GitHub Actions when the GitHub repo lands — `design/ci-build.md`.
 
 ## Development Conventions

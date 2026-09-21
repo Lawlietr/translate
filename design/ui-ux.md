@@ -41,7 +41,9 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 
 ## Settings dialog
 
-- WebGPU tab: current model card, "Manage models" (download dialog: per-model size, per-file progress, speed, cancel — see design/webgpu-knowledge.md §2), model selection from downloaded models
+- **Inference tab:** backend selector (WebGPU [default] / llama-server — `ProviderSelector` pattern) + the active backend's config block:
+  - WebGPU block: current model card, "Manage models" (download dialog: per-model size, per-file progress, speed, cancel — see design/webgpu-knowledge.md §2), model switch (downloaded → instant), clear cache, WebGPU support warnings (1:1 port of what-do-you-see `WebGPUSettings.tsx`)
+  - llama-server block: baseUrl (`/v1` auto), model (blank = auto-detect from `GET /v1/models`), optional apiKey; **connection test button** → success lists detected models, failure shows reason incl. the `--no-cors` hint (see design/inference-providers.md)
 - General tab: UI language (zh-TW / en), default source/target languages
 
 ## i18n
@@ -51,4 +53,4 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 
 ## Out of scope (v1)
 
-- Speech input/output, document translation, auto-detect, glossaries, translation history, multiple concurrent requests
+- Speech input/output, document translation, auto-detect, glossaries, translation history, multiple concurrent requests, cloud API providers (OpenAI/Claude/…) — only WebGPU + user's local llama-server (design/inference-providers.md)

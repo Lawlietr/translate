@@ -5,10 +5,11 @@
 | # | Task | Priority |
 |---|------|----------|
 | 1 | Write `src/lib/model-catalog.ts` with the verified entries from design/model-catalog.md (both models verified 2026-09-21) | P0 |
+| 14 | Provider layer (do BEFORE #4): port what-do-you-see `src/lib/providers/` trimmed to 2 backends — `AIProvider` + registry, llama-server (client-side fetch, `/v1` auto, model auto-detect, 10s/10min timeouts, thinking fallback, testConnection) + webgpu wrapper + `settings-manager.ts` — design/inference-providers.md | P0 |
 | 3 | Model download pipeline (HF tree → filtered abortable streamed fetch → Cache API `transformers-cache`, keys incl. subpaths; `cachedModelState` gate; user-initiated only) — design/webgpu-knowledge.md §2 | P0 |
-| 4 | Translation pipeline: `AutoTokenizer` + `AutoModelForCausalLM`, chat-template instruction (English), greedy, capped + source-sized `max_new_tokens`, AbortController cancel, `powerPreference` patch — design/webgpu-knowledge.md §3. Build order: minimal harness page first (model pick, download, translate I/O, status) to prove the stack in a real browser; full UI (#5) only after | P0 |
+| 4 | Translation pipeline: `AutoTokenizer` + `AutoModelForCausalLM`, chat-template instruction (English), greedy, capped + source-sized `max_new_tokens`, AbortController cancel, `powerPreference` patch — design/webgpu-knowledge.md §3; routed through the provider registry (#14) so the llama-server backend works from the start. Build order: minimal harness page first (model pick, download, translate I/O, status) to prove the stack in a real browser; full UI (#5) only after | P0 |
 | 5 | Core UI per design/ui-ux.md (input/output, language pickers, swap, states, status footer; dark-default + theme toggle, GitHub icon placeholder) | P1 |
-| 6 | Settings: model selection + Manage models dialog, UI language, defaults — persist to localStorage | P1 |
+| 6 | Settings per design/ui-ux.md: Inference tab (backend selector + WebGPU model block + llama-server config with connection test) + General tab (UI language, defaults) — persist to localStorage (`settings-manager.ts` from #14) | P1 |
 | 7 | i18n zh-TW (default) + en: 1:1 port of what-do-you-see in-house pattern, header dropdown, instant switch — design/i18n.md | P2 |
 | 8 | HTTPS LAN test server (`scripts/https-test-server.mjs` pattern) for browser verification | P2 |
 | 9 | Deploy script `scripts/deploy-pages.mjs` (secrets via env, `--branch main`, test/prod split) + Cloudflare projects/domains (TBD) — design/deployment.md | P2 |
