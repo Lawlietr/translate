@@ -44,6 +44,7 @@ Both are text-only causal-LM translation models: `AutoTokenizer` + `AutoModelFor
 8. **Keep model-facing prompts/instructions in English; never mix UI language into the instruction text.** Small models (≤2B) can lock into an output-language loop (verified twice with LFM2.5 450M: zh instruction line → infinite repetition; English instruction + trailing output-language line → works). WebGPU fp16 failure modes are NOT reproducible on CPU — A/B-test prompt changes in the real browser, or not at all.
 9. **No server-side routes in the public build.** Static export for Cloudflare Pages; self-hosted full build is a separate script that moves API routes out of the tree during `next build` when needed.
 10. **Privacy:** zero external requests except (a) user-initiated model downloads from `huggingface.co`, (b) nothing else. No analytics, no cookies, no telemetry. Keys/settings in localStorage only.
+11. **Never install toolchains, compile, or package on the dev machine.** All artifacts (Docker images, Windows exe) build remotely: Forgejo runner `root@192.168.1.12` now, GitHub Actions when the GitHub repo lands — `design/ci-build.md`.
 
 ## Development Conventions
 
@@ -103,7 +104,7 @@ node scripts/https-test-server.mjs   # https://<lan-ip>:3443 -> http://127.0.0.1
 
 ## Deployment
 
-Local targets (blueprint 2026-09-21): **Windows 11 WebView2 .exe wrapper** (config.json in exe dir → bind IP/port, WebView loads `127.0.0.1` for WebGPU), **Docker/compose** (linux/amd64 + arm64, multi-stage node→nginx), **local non-Docker Linux** (serve `/out`; localhost is a secure context) — `design/local-deployment.md`, decision points D1–D4 pending.
+Local targets (decisions D1–D5 settled 2026-09-21): **Windows 11 WebView2 .exe wrapper** (C# .NET 8, config.json in exe dir → bind IP/port, statics embedded, WebView loads `127.0.0.1` for WebGPU), **Docker/compose** (linux/amd64 + arm64, multi-stage node→nginx, self-signed TLS mode required), **local non-Docker Linux** (serve `/out`; localhost is a secure context) — `design/local-deployment.md`. All artifact builds run on the Forgejo runner `root@192.168.1.12` (GitHub Actions later), **never on the dev machine** — `design/ci-build.md`.
 
 Cloudflare Pages, static export. See `design/deployment.md` for the deploy script pattern, secrets policy (no credentials in repo; `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` from environment), and the two-project test/prod policy:
 

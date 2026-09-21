@@ -36,4 +36,5 @@ And `package.json` pins `@huggingface/transformers` to an exact version (no `^`)
 
 ## Git
 
-- Remotes: TBD (owner to provide Forgejo/GitHub URLs). Carried-over policy: every commit pushed to all configured remotes, whichever branch (routine work on `DEV`).
+- Remotes: `origin` = `ssh://fg/lawliet/translate.git` (Forgejo 192.168.1.124:222, SSH alias `fg`); `codeberg` = `ssh://git@codeberg.org/Lawlietr/translate.git`. GitHub repo TBD — when it lands, it also gets Actions workflows (design/ci-build.md). Carried-over policy: every commit pushed to ALL configured remotes, whichever branch (routine work on `DEV`).
+- Builds: Forgejo runner `root@192.168.1.12` (token in that machine's `~/.zshrc`, never in this repo) — docker images now; Windows exe needs a Windows build host (D5, design/ci-build.md). Never build/package on the dev machine (AGENTS rule 11).

@@ -19,8 +19,8 @@ Every target below must respect this split.
   2. Serve the static files on `bind_ip:port` (in-process static server).
   3. Open the WebView2 window pointed at `http://127.0.0.1:<port>` — **loopback, never the LAN IP** (secure context is what unlocks WebGPU in the WebView).
 - `bind_ip` exists so *other* LAN devices can also reach the same server (their WebGPU status follows the TLS rule above).
-- Static file placement: **embedded in the exe** (single distributable artifact) — decision point D2.
-- Implementation language — **decision point D1 (owner): default C# .NET 8 WinForms + `Microsoft.Web.WebView2` NuGet** (single-file publish, mainstream, trivial static-server via `HttpListener`). Alternative: Go + `go-webview2` (smaller exe, no runtime).
+- Static file placement: **embedded in the exe** (single distributable artifact, D2 decided 2026-09-21).
+- Implementation: **C# .NET 8 WinForms + `Microsoft.Web.WebView2` NuGet**, single-file publish (D1 decided 2026-09-21). Build-host constraint: WindowsDesktop does not cross-compile from Linux → exe builds need a Windows build host, see design/ci-build.md.
 - Caveats to document in the UI/README: first bind to `0.0.0.0` triggers the Windows Firewall prompt (expected); LAN clients without TLS get a "WebGPU unavailable" notice, not a crash.
 - Acceptance criteria:
   - Double-click exe on a clean Win11 machine → app window opens, `config.json` created with defaults
@@ -35,11 +35,11 @@ Every target below must respect this split.
   - Stage 2 `nginx:alpine`: copy `/out` → `/usr/share/nginx/html`, health endpoint `/`
   - Both base images are multi-arch → `docker buildx build --platform linux/amd64,linux/arm64 -t <registry>/translate:latest .`
 - `docker-compose.yml`: port mapping (host 8080 → 80), healthcheck, `restart: unless-stopped`, optional TLS cert volume mounted to nginx.
-- TLS modes — **decision point D3 (owner): default plain HTTP + optional modes**:
+- TLS modes — **D3 decided 2026-09-21: default plain HTTP + optional modes**:
   1. Plain HTTP (loopback users fine; LAN users get the "WebGPU unavailable" notice)
-  2. Mounted certs (self-signed or own CA) via volume/env
+  2. **Self-signed certs — REQUIRED mode** (owner: WebGPU effectively forces TLS for LAN use, so self-signed is not just nice-to-have): a `docker-entrypoint.d` hook generates a self-signed cert on first boot when no certs are mounted (CN=hostname), overridable by mounting real certs at `/etc/nginx/certs`
   3. Caddy variant with automatic Let's Encrypt (only for a real domain)
-- Optional: push images to the internal Forgejo container registry (192.168.1.124:222) if the registry feature is enabled — decision point D4.
+- **D4 decided 2026-09-21:** no internal registry for now — images are **built on the Forgejo runner `root@192.168.1.12`** (never on the dev machine) via Forgejo workflows; GitHub Actions when the GitHub repo lands. See design/ci-build.md.
 - Acceptance criteria: `docker compose up` on an amd64 host and an arm64 host both serve the app; WebGPU works via localhost; LAN WebGPU works in TLS mode 2.
 
 ## Target 3 — Local non-Docker Linux
@@ -49,11 +49,12 @@ Every target below must respect this split.
 - Optional convenience: `scripts/serve-local.sh` (pick server/port, open browser) — keep minimal, part of this task.
 - Acceptance criteria: documented command sequence works on a clean Debian/Ubuntu machine; WebGPU translation works at `http://localhost:<port>`.
 
-## Decision points (owner)
+## Decisions (owner, 2026-09-21)
 
-| # | Question | Default (proposed) |
-|---|----------|--------------------|
-| D1 | WebView2 wrapper language | C# .NET 8 |
+| # | Question | Decision |
+|---|----------|----------|
+| D1 | WebView2 wrapper language | C# .NET 8 WinForms |
 | D2 | Static files in wrapper | embedded in exe |
-| D3 | Docker default TLS | plain HTTP + optional TLS modes |
-| D4 | Internal registry | only if Forgejo registry is enabled |
+| D3 | Docker default TLS | plain HTTP + optional TLS modes; **self-signed mode required** (first-boot auto-generation), own-cert mount override |
+| D4 | Build location | Forgejo runner `root@192.168.1.12` now; GitHub Actions later; **never on the dev machine** (design/ci-build.md) |
+| D5 (new) | Windows exe build host | TBD — Windows host required (WinForms can't cross-compile); self-hosted Windows runner preferred, Go re-eval as fallback (design/ci-build.md) |

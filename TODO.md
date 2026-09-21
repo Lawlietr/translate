@@ -13,9 +13,10 @@
 | 7 | i18n zh-TW + en (port pattern from what-do-you-see) | P2 |
 | 8 | HTTPS LAN test server (`scripts/https-test-server.mjs` pattern) for browser verification | P2 |
 | 9 | Deploy script `scripts/deploy-pages.mjs` (secrets via env, `--branch main`, test/prod split) + Cloudflare projects/domains (TBD) — design/deployment.md | P2 |
-| 10 | Windows 11 WebView2 wrapper .exe: first-run `config.json` in exe dir (bind_ip/port), in-process static server, WebView on `http://127.0.0.1:<port>` — design/local-deployment.md (D1 language, D2 file placement pending) | P1 |
-| 11 | Docker multi-stage (node build + wasm check → nginx) + compose + buildx linux/amd64,arm64 + TLS modes — design/local-deployment.md (D3, D4 pending) | P2 |
+| 10 | Windows 11 WebView2 wrapper .exe (C# .NET 8, statics embedded): first-run `config.json` in exe dir (bind_ip/port), in-process static server, WebView on `http://127.0.0.1:<port>` — design/local-deployment.md; build host TBD (D5) | P1 |
+| 11 | Docker multi-stage (node build + wasm check → nginx) + compose + buildx linux/amd64,arm64; self-signed TLS auto-generation on first boot required — design/local-deployment.md | P2 |
 | 12 | Local non-Docker Linux serving: docs + optional `scripts/serve-local.sh` — design/local-deployment.md | P2 |
+| 13 | Forgejo workflows: docker image build on runner `192.168.1.12` (multi-arch) + GitHub Actions mirror when repo lands; exe workflow once D5 build host decided — design/ci-build.md | P2 |
 
 ## Completed
 
@@ -24,3 +25,5 @@
 | Project docs created: AGENTS.md, TODO.md, design/ (webgpu-knowledge, model-catalog, deployment, ui-ux) — WebGPU knowledge transferred from what-do-you-see |
 | Decision: translategemma pinned to q4 variant (3,111,911,678 B) — file lists + bytes verified via HF tree API, rationale in design/model-catalog.md |
 | Decision: default model = `LunarOilRig/Hy-MT2-1.8B-ONNX-q4f16-mirror` (1,383,140,565 B); justinchuby original rejected (onnxruntime-genai layout, no root model files) — rationale in design/model-catalog.md |
+| Local-deployment decisions D1–D4 settled (C# .NET 8 / embedded / self-signed required / builds on Forgejo runner 192.168.1.12, never local) + D5 (exe build host) opened — design/local-deployment.md, design/ci-build.md |
+| codeberg remote added (`Lawlietr/translate`) + pushed; remotes documented in design/deployment.md |
