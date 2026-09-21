@@ -7,10 +7,10 @@
 | 1 | Write `src/lib/model-catalog.ts` with the verified entries from design/model-catalog.md (both models verified 2026-09-21) | P0 |
 | 2 | Scaffold: Next.js 16 + TS + Tailwind v4 + MUI v9 + EXACT-pinned `@huggingface/transformers@4.2.0`; dual build (self-hosted / `build:export` with wasm <25 MiB check); git init + remotes (TBD) | P0 |
 | 3 | Model download pipeline (HF tree → filtered abortable streamed fetch → Cache API `transformers-cache`, keys incl. subpaths; `cachedModelState` gate; user-initiated only) — design/webgpu-knowledge.md §2 | P0 |
-| 4 | Translation pipeline: `AutoTokenizer` + `AutoModelForCausalLM`, chat-template instruction (English), greedy, capped + source-sized `max_new_tokens`, AbortController cancel, `powerPreference` patch — design/webgpu-knowledge.md §3 | P0 |
+| 4 | Translation pipeline: `AutoTokenizer` + `AutoModelForCausalLM`, chat-template instruction (English), greedy, capped + source-sized `max_new_tokens`, AbortController cancel, `powerPreference` patch — design/webgpu-knowledge.md §3. Build order: minimal harness page first (model pick, download, translate I/O, status) to prove the stack in a real browser; full UI (#5) only after | P0 |
 | 5 | Core UI per design/ui-ux.md (input/output, language pickers, swap, states, status footer) | P1 |
 | 6 | Settings: model selection + Manage models dialog, UI language, defaults — persist to localStorage | P1 |
-| 7 | i18n zh-TW + en (port pattern from what-do-you-see) | P2 |
+| 7 | i18n zh-TW (default) + en: 1:1 port of what-do-you-see in-house pattern, header dropdown, instant switch — design/i18n.md | P2 |
 | 8 | HTTPS LAN test server (`scripts/https-test-server.mjs` pattern) for browser verification | P2 |
 | 9 | Deploy script `scripts/deploy-pages.mjs` (secrets via env, `--branch main`, test/prod split) + Cloudflare projects/domains (TBD) — design/deployment.md | P2 |
 | 10 | Windows 11 WebView2 wrapper .exe (C# .NET 8, statics embedded): first-run `config.json` in exe dir (bind_ip/port), in-process static server, WebView on `http://127.0.0.1:<port>` — design/local-deployment.md; build host TBD (D5) | P1 |
