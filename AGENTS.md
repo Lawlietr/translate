@@ -27,8 +27,8 @@ Catalogued in `src/lib/model-catalog.ts`. **Sizes must be verified from the HF t
 
 | Mode | Model ID | Notes |
 |------|----------|-------|
-| Default (tentative) | `justinchuby/Hy-MT2-1.8B-ONNX` | smaller, faster on modest GPUs |
-| Optional | `onnx-community/translategemma-text-4b-it-ONNX` | stronger translator; **files live in an `onnx/` SUBDIRECTORY of the repo** — file paths, HF tree queries, and cache keys all include that subpath |
+| Default (tentative) | `LunarOilRig/Hy-MT2-1.8B-ONNX-q4f16-mirror` | Hy-MT2 1.8B, q4f16 single `onnx/model_q4f16.onnx`, ~1.29 GiB, fastest on modest GPUs; NOT the justinchuby repo (onnxruntime-genai layout, unloadable by transformers.js) — design/model-catalog.md |
+| Optional | `onnx-community/translategemma-text-4b-it-ONNX` (**q4 variant only, tentative** — design/model-catalog.md) | stronger translator, ~2.90 GiB; **files live in an `onnx/` SUBDIRECTORY** (paths/tree queries/cache keys include the subpath). The repo holds fp16/q4/q4f16 + safetensors (48 GB); unpinned `from_pretrained` resolves **fp16 ≈ 7.6 GiB** — pin `dtype: 'q4'` and exact `model_q4*` filePatterns. Fallback: `m1cc0z/translategemma-4b-it-onnx-q4-webgpu` (WebGPU repack, ~3.3 GiB) |
 
 Both are text-only causal-LM translation models: `AutoTokenizer` + `AutoModelForCausalLM` (NOT `AutoModelForImageTextToText`, no image processor). Translation is driven through each model's own chat template + a short instruction ("translate … to …"), greedy decoding, with a capped `max_new_tokens`.
 
