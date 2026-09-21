@@ -14,9 +14,10 @@
 | 7 | i18n zh-TW (default) + en: 1:1 port of what-do-you-see in-house pattern, header dropdown, instant switch — design/i18n.md | P2 |
 | 8 | HTTPS LAN test server (`scripts/https-test-server.mjs` pattern) for browser verification | P2 |
 | 9 | Deploy script `scripts/deploy-pages.mjs` (secrets via env, `--branch main`, test/prod split) + Cloudflare projects/domains (TBD) — design/deployment.md | P2 |
-| 10 | Windows 11 WebView2 wrapper .exe (C# .NET 8, statics embedded): first-run `config.json` in exe dir (bind_ip/port), in-process static server, WebView on `http://127.0.0.1:<port>` — design/local-deployment.md; build host TBD (D5) | P1 |
-| 11 | Docker multi-stage (node build + wasm check → nginx) + compose + buildx linux/amd64,arm64; self-signed TLS auto-generation on first boot required — design/local-deployment.md | P2 |
-| 12 | Local non-Docker Linux serving: docs + optional `scripts/serve-local.sh` — design/local-deployment.md | P2 |
+| 10 | Windows 11 WebView2 wrapper .exe (C# .NET 8 **launcher**, embedded node + Next.js standalone → WebUI + API shim, D6): first-run `config.json` in exe dir (bind_ip/port + shim keys), launches embedded node child process, WebView on `http://127.0.0.1:<port>` — design/local-deployment.md; build host TBD (D5) | P1 |
+| 11 | Docker multi-stage (node **full/standalone** build + wasm check → node runtime, nginx optional TLS, D6) + compose (env shim config + optional llama.cpp service) + buildx linux/amd64,arm64; self-signed TLS auto-generation on first boot required — design/local-deployment.md | P2 |
+| 12 | Local non-Docker Linux serving (full build + `npm start`, Caddy/nginx optional TLS, D6): docs + optional `scripts/serve-local.sh` — design/local-deployment.md | P2 |
+| 19 | OpenAI-compatible API shim for **all node targets** (Docker / local Linux / .exe — D6; CF stays static-only): `/api/v1/chat/completions` + `/v1/models`, server-side prompt-profile reuse (#16/#17), server config `LLAMA_BASE_URL`/`MODEL_PRESET`/`SYSTEM_PROMPT`/`API_TOKEN` (env/.env/config.json per target), optional llama.cpp compose service — design/local-deployment.md §API shim | P2 |
 | 13 | Forgejo workflows: docker image build on runner `192.168.1.12` (multi-arch) publishing to Codeberg registry ONLY (local Forgejo never stores artifacts) + GitHub Actions mirror when repo lands; exe workflow once D5 build host decided — design/ci-build.md | P2 |
 
 ## Completed

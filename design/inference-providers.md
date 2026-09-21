@@ -189,7 +189,7 @@ default). No migration keys needed at first launch.
 
 ## Build impact
 
-- No new API routes; `build:export` output stays fully static
+- Provider layer itself: no API routes (browser direct fetch). The **server-side OpenAI shim** exists only in the node-target full builds (Docker / local Linux / .exe, D6 — design/local-deployment.md §API shim) and reuses the §Prompts profile logic; `build:export` (CF) output stays fully static
 - No new dependencies (fetch + existing stack)
 - ort-wasm < 25 MiB gate unchanged (introduced when #4 imports transformers.js)
 
