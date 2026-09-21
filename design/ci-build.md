@@ -5,7 +5,8 @@
 **Never install toolchains, never compile, never package on this dev machine.** All binary and image artifacts are built remotely:
 
 - **Now — Forgejo self-hosted runner:** `root@192.168.1.12` (runner token lives in `~/.zshrc` there; never copy it into this repo). Docker images (linux/amd64 + arm64 via buildx) are built here via Forgejo workflows on push.
-- **Later — GitHub Actions:** a GitHub repo will be added; the same artifacts get GitHub Actions workflows (windows-latest runner for the exe, buildx for multi-arch images). The workflow definitions live in the repo (`.forgejo/workflows/` and `.github/workflows/` kept in lockstep).
+- **Artifact hosting (owner, important, 2026-09-21): images and binaries go to CODEBERG ONLY.** Local Forgejo hosts source + runs builds — it NEVER stores images or binaries. Targets: container image → Codeberg container registry (`registry.codeberg.org/Lawlietr/translate`, multi-arch manifest); exe → Codeberg generic package of the repo.
+- **Later — GitHub Actions:** a GitHub repo will be added; the same artifacts get GitHub Actions workflows (windows-latest runner for the exe, buildx for multi-arch images), publishing to the SAME Codeberg targets. Workflow definitions live in the repo (`.forgejo/workflows/` and `.github/workflows/` kept in lockstep).
 
 ## Artifact → build location
 
@@ -22,4 +23,4 @@ Runner tokens, registry credentials: environment only (runner's `~/.zshrc` / For
 
 ## Artifacts distribution
 
-TBD once the first workflow lands (Forgejo package registry vs. release assets vs. manual pull from the runner). Decision deferred — not needed until the workflows exist.
+**Decided 2026-09-21:** Codeberg only — container registry for the image, generic package for the exe. Local Forgejo: builds only, no artifact storage (owner: "很重要").

@@ -16,7 +16,8 @@
 | 10 | Windows 11 WebView2 wrapper .exe (C# .NET 8, statics embedded): first-run `config.json` in exe dir (bind_ip/port), in-process static server, WebView on `http://127.0.0.1:<port>` — design/local-deployment.md; build host TBD (D5) | P1 |
 | 11 | Docker multi-stage (node build + wasm check → nginx) + compose + buildx linux/amd64,arm64; self-signed TLS auto-generation on first boot required — design/local-deployment.md | P2 |
 | 12 | Local non-Docker Linux serving: docs + optional `scripts/serve-local.sh` — design/local-deployment.md | P2 |
-| 13 | Forgejo workflows: docker image build on runner `192.168.1.12` (multi-arch) + GitHub Actions mirror when repo lands; exe workflow once D5 build host decided — design/ci-build.md | P2 |
+| 13 | Forgejo workflows: docker image build on runner `192.168.1.12` (multi-arch) publishing to Codeberg registry ONLY (local Forgejo never stores artifacts) + GitHub Actions mirror when repo lands; exe workflow once D5 build host decided — design/ci-build.md | P2 |
+| 14 | Finalize license (owner evaluating GPLv3/AGPLv3 dual) → `LICENSE` + SPDX identifiers — discussion 2026-09-21 | P2 |
 
 ## Completed
 
