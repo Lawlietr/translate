@@ -1,13 +1,13 @@
 # UI/UX — Google Translate clone
 
-Single page, dark theme, MUI v9 + Tailwind v4. Text-only.
+Single page, **dark mode by default (light mode toggleable)**, MUI v9 + Tailwind v4. Text-only.
 
 ## Layout
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│  Translate (logo)                          [⚙ Settings]  │
-├──────────────────────────────────────────────────────────┤
+┌────────────────────────────────────────────────────────────────────┐
+│  Translate (logo)      [UI lang ▾][◐ theme][🐙 github][⚙ Settings] │
+├────────────────────────────────────────────────────────────────────┤
 │ ┌────────────────────────┐   ┌────────────────────────┐  │
 │ │ Source [lang ▾][🔁swap]│   │ Target [lang ▾]        │  │
 │ │                        │   │                        │  │
@@ -18,6 +18,13 @@ Single page, dark theme, MUI v9 + Tailwind v4. Text-only.
 │  model: Hy-MT2-1.8B (WebGPU) · [Manage models]           │
 └──────────────────────────────────────────────────────────┘
 ```
+
+## Header right cluster (owner spec, 2026-09-21)
+
+Order, left → right: **UI language dropdown → theme toggle → GitHub icon → ⚙ Settings**.
+
+- **Theme toggle (`◐`):** dark is the DEFAULT; icon switches dark↔light (MUI `DarkModeOutlined`/`LightModeOutlined`); choice persisted in localStorage, applied via MUI `ThemeProvider` mode + `class` on `<html>` so Tailwind dark styles follow. No first-paint flash (default dark = no FOUC concern).
+- **GitHub icon (`🐙`):** **reserved placeholder — there is no GitHub repo yet.** The icon is always rendered in its final position; until the repo URL is configured (single constant, e.g. in settings/site), it is non-interactive (no href, disabled cursor + aria-label from i18n). When the repo lands: set the constant, done — no layout move.
 
 - **Mobile:** single column — input on top, output below; swap button between.
 - **Language pickers:** source + target, sensible defaults (zh-TW / en), swap button exchanges them and the text. A fixed list of major languages (en, zh-TW, zh-CN, ja, ko, fr, de, es, …) — these map to the instruction line, NOT to UI translation. (Source auto-detection is out of scope for v1; the models don't do reliable detection.)

@@ -75,7 +75,7 @@ Both are text-only causal-LM translation models: `AutoTokenizer` + `AutoModelFor
 
 ### UI Guidelines
 
-- Dark theme by default
+- Dark theme by default; top-right header cluster: UI language dropdown → dark/light toggle (persisted) → GitHub icon (reserved placeholder until repo URL set) → Settings — design/ui-ux.md
 - Material Design components via MUI
 - Responsive: mobile-first, breakpoints at `sm`, `lg`, `xl`
 - Loading states for all async operations
