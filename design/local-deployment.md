@@ -22,7 +22,7 @@ Every target below must respect this split.
   3. Open the WebView2 window pointed at `http://127.0.0.1:<port>` — **loopback, never the LAN IP** (secure context is what unlocks WebGPU in the WebView).
 - `bind_ip` exists so *other* LAN devices can also reach the same server (their WebGPU status follows the TLS rule above).
 - Payload placement: **Node runtime + standalone build embedded in the exe** (single distributable artifact; D2 revised 2026-09-21 — statics-only → node, so the .exe also exposes the §API shim). Size cost +~50–100 MB — negligible next to the multi-GB model downloads.
-- Implementation: **C# .NET 8 WinForms + `Microsoft.Web.WebView2` NuGet**, single-file publish (D1 decided 2026-09-21). Build-host constraint: WindowsDesktop does not cross-compile from Linux → exe builds need a Windows build host, see design/ci-build.md.
+- Implementation: **C# .NET 8 WinForms + `Microsoft.Web.WebView2` NuGet**, single-file publish (D1 decided 2026-09-21). Build host: **GitHub Actions `windows-latest`** (D5 decided 2026-09-22 — native Windows build, gated on the GitHub repo landing; the Linux cross-compile path `EnableWindowsTargeting` was evaluated and rejected in favor of native build + runtime smoke test) — design/ci-build.md.
 - Caveats to document in the UI/README: first bind to `0.0.0.0` triggers the Windows Firewall prompt (expected); LAN clients without TLS get a "WebGPU unavailable" notice, not a crash.
 - Acceptance criteria:
   - Double-click exe on a clean Win11 machine → app window opens, `config.json` created with defaults
@@ -85,5 +85,5 @@ Acceptance criteria (per target): with a llama-server running, the extension (or
 | D2 | Static files in wrapper | embedded in exe |
 | D3 | Docker default TLS | plain HTTP + optional TLS modes; **self-signed mode required** (first-boot auto-generation), own-cert mount override |
 | D4 | Build location | Forgejo runner `root@192.168.1.12` now; GitHub Actions later; **never on the dev machine** (design/ci-build.md) |
-| D5 (new) | Windows exe build host | TBD — Windows host required (WinForms can't cross-compile); self-hosted Windows runner preferred, Go re-eval as fallback (design/ci-build.md) |
+| D5 | Windows exe build host | GitHub Actions `windows-latest`, after the GitHub repo lands (decided 2026-09-22) — native build + runtime smoke test; NOT the Linux runner (cross-compile evaluated, rejected — design/ci-build.md) |
 | D6 (new) | API shim scope + .exe runtime | **Every node-based target** (Docker, local Linux, .exe) runs the full Next.js build and exposes the OpenAI-compatible API shim; CF stays static-only. .exe = node-embedded launcher (C# retires its in-process static server). Static export becomes CF-only |

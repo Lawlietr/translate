@@ -13,9 +13,9 @@
 | Artifact | Builder | Notes |
 |----------|---------|-------|
 | Docker image (amd64+arm64) | Forgejo runner `192.168.1.12` (Linux) | `docker buildx build --platform linux/amd64,linux/arm64`; compose per design/local-deployment.md Target 2 |
-| Windows 11 WebView2 .exe (C# .NET 8) | **Windows build host required — TBD** | WindowsDesktop SDK (WinForms) does **not** cross-compile from Linux; the Linux runner cannot build this exe. Options: (a) self-hosted Windows runner (a Win11 machine registered to Forgejo) — preferred, keeps "no local builds" intact; (b) revisit Go + go-webview2 (cross-compiles from Linux, would let the current runner build it) |
+| Windows 11 WebView2 .exe (C# .NET 8) | **GitHub Actions `windows-latest`** (D5 decided 2026-09-22; gated on the GitHub repo landing) | Native Windows build (`dotnet publish -r win-x64 --self-contained`) + runtime smoke test (launch exe, wait for port-ready). Linux cross-compilation via `EnableWindowsTargeting` (available since .NET 6.0.4xx) was **evaluated and rejected**: the dotnet team recommends native builds for shipping binaries, and windows-latest gives the smoke test for free. Self-hosted Windows runner and the Go/go-webview2 fallback are no longer needed. The `192.168.1.12` runner builds **Docker images only** |
 
-The C# choice (D1) is final *for the wrapper implementation*; only its **build host** remains open. If option (a) never materializes, option (b) is the fallback and D1 flips.
+The C# choice (D1) and the build host (D5) are both settled. **D5 (owner, 2026-09-22): the exe is NOT built on the Forgejo runner — it builds on GitHub Actions `windows-latest` after the GitHub repo lands**, so TODO #10 is gated on the repo landing. (Historical note: the 2026-09-21 table said "WinForms can't cross-compile from Linux" — that was true pre-.NET 6.0.4xx; `EnableWindowsTargeting` changed it. Native GHA still wins here because it can actually RUN the exe.)
 
 ## Secrets
 
