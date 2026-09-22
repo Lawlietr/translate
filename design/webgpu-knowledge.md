@@ -44,6 +44,8 @@ Result: one file `src/lib/model-cache.ts`, ~200 lines, zero new dependencies.
 ## 3. Inference pitfalls
 
 - **Secure context:** WebGPU needs `https://` or `localhost`. Local/LAN testing: serve Next on plain http + self-signed HTTPS reverse proxy on the LAN IP (see scripts/https-test-server.mjs pattern in what-do-you-see). `fuser -k <port>/tcp` to stop ports — `pkill -f <pattern>` matches its own command line and kills the caller.
+- **Dev box ≠ user machine:** browser testing always happens over the LAN, so any local server must bind `0.0.0.0` (`npm run dev -H 0.0.0.0`, proxy on the LAN IP), never localhost-only.
+- **Disk space:** the dev box filesystem has run >90% full (20 G total, ~1.8 G free as of 2026-09-21). `node_modules` ~1 GiB + `.next` per build are the big consumers; model bytes land in the browser's Cache API (user's machine), never the dev box. Check `df -h .` before builds; `rm -rf .next out` after verification.
 - **`powerPreference`:** transformers.js 4.x calls `navigator.gpu.requestAdapter()` with NO options. On dual-GPU machines (Intel iGPU + NVIDIA dGPU) this silently selected the iGPU (observed 25 tok/s vs ~80 tok/s on the dGPU). Patch: monkey-patch `requestAdapter` to pass `{ powerPreference: 'high-performance' }` BEFORE the first model load.
 - **Max tokens:** translation LLMs in-browser grind the full `max_new_tokens` budget when EOS comes late. Cap it (2048–3072). A 4B model at 3072 tokens ≈ several minutes on modest GPUs — show the user what they're waiting for.
 - **Decoding:** greedy (`do_sample: false`). Deterministic output also makes A/B testing meaningful.

@@ -10,7 +10,7 @@
 | 5 | Core UI per design/ui-ux.md (input/output, language pickers, swap, states, status footer; dark-default + theme toggle, GitHub icon placeholder) | P1 |
 | 6 | Settings per design/ui-ux.md: Inference tab (backend selector + WebGPU model block + llama-server config with connection test) + General tab (UI language, defaults) — persist to localStorage (`settings-manager.ts` from #14) | P1 |
 | 7 | i18n zh-TW (default) + en: 1:1 port of what-do-you-see in-house pattern, header dropdown, instant switch — design/i18n.md | P2 |
-| 8 | HTTPS LAN test server (`scripts/https-test-server.mjs` pattern) for browser verification | P2 |
+| 8 | HTTPS LAN test server (`scripts/https-test-server.mjs` pattern) for browser verification — **bind `0.0.0.0`** (user tests over LAN from a different machine; dev/preview/proxy all non-localhost) + check dev-box disk before builds (filesystem >90% full; webgpu-knowledge.md §3) | P2 |
 | 9 | Deploy script `scripts/deploy-pages.mjs` (secrets via env, `--branch main`, test/prod split) + Cloudflare projects/domains (TBD) — design/deployment.md | P2 |
 | 10 | Windows 11 WebView2 wrapper .exe (C# .NET 8 **launcher**, embedded node + Next.js standalone → WebUI + API shim, D6): first-run `config.json` in exe dir (bind_ip/port + shim keys), launches embedded node child process, WebView on `http://127.0.0.1:<port>` — design/local-deployment.md; build host TBD (D5) | P1 |
 | 11 | Docker multi-stage (node **full/standalone** build + wasm check → node runtime, nginx optional TLS, D6) + compose (env shim config + optional llama.cpp service) + buildx linux/amd64,arm64; self-signed TLS auto-generation on first boot required — design/local-deployment.md | P2 |
