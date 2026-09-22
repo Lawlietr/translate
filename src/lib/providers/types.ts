@@ -16,6 +16,7 @@ export interface ProviderConfig {
   model?: string;
   apiKey?: string;
   modelPreset?: ModelPreset;
+  onStatus?: (status: string) => void;
 }
 
 export interface ProviderConfigField {

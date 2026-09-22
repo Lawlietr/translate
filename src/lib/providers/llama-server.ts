@@ -6,6 +6,7 @@ import type {
   TranslationResponse,
 } from "./types";
 import { buildMessages, resolveProfile } from "../prompt-profiles";
+import { toTraditionalChinese } from "../zh-variant";
 
 const DEFAULT_BASE_URL = "http://localhost:8080";
 const CONNECT_TIMEOUT_MS = 10_000;
@@ -189,7 +190,10 @@ export const llamaServerProvider: AIProvider = {
       config.apiKey,
       signal
     );
-    return { text: content, latencyMs: Date.now() - started };
+    return {
+      text: toTraditionalChinese(content, request.targetLang),
+      latencyMs: Date.now() - started,
+    };
   },
 
   async testConnection(config: ProviderConfig): Promise<boolean> {

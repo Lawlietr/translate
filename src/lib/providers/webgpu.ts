@@ -3,6 +3,7 @@ import { isWebGpuSupported } from "./webgpu-support";
 import { DEFAULT_WEBGPU_MODEL, getModelInfo } from "../model-catalog";
 import { cachedModelState } from "../model-cache";
 import { buildMessages, resolveProfile, type ChatMessage } from "../prompt-profiles";
+import { toTraditionalChinese } from "../zh-variant";
 
 interface GpuRequestAdapterFn {
   (options?: { powerPreference?: "low-power" | "high-performance" }): Promise<unknown>;
@@ -170,11 +171,14 @@ async function run(
   const outDims = outputs.dims;
   const total = outDims[outDims.length - 1] ?? 0;
   const generated = outputs.slice(null, [inputLength, total]);
-  const text = pipeline.tokenizer.decode(generated, { skip_special_tokens: true });
-  if (typeof text !== "string" || text.trim().length === 0) {
+  const decoded = pipeline.tokenizer.decode(generated, { skip_special_tokens: true });
+  if (typeof decoded !== "string" || decoded.trim().length === 0) {
     throw new Error("Model produced no output");
   }
-  return { text: text.trim(), latencyMs: Date.now() - started };
+  return {
+    text: toTraditionalChinese(decoded.trim(), request.targetLang),
+    latencyMs: Date.now() - started,
+  };
 }
 
 export const webgpuProvider: AIProvider = {

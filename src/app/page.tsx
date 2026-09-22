@@ -17,6 +17,7 @@ import {
   createTheme,
 } from "@mui/material";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import { CopyButton } from "../components/copy-button";
 import { VISIBLE_WEBGPU_MODELS } from "../lib/model-catalog";
 import {
   cachedModelState,
@@ -31,6 +32,39 @@ import { getProviderOrThrow } from "../lib/providers/registry";
 import type { DownloadProgress } from "../lib/types";
 
 const darkTheme = createTheme({ palette: { mode: "dark" } });
+
+const activityLog: string[] = [];
+function logActivity(line: string) {
+  activityLog.push(`${new Date().toTimeString().slice(0, 8)} ${line}`);
+  if (activityLog.length > 300) activityLog.splice(0, activityLog.length - 300);
+}
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (e) => logActivity(`window error: ${e.message}`));
+  window.addEventListener("unhandledrejection", (e) =>
+    logActivity(`unhandled rejection: ${String(e.reason)}`)
+  );
+  if (!((window as unknown as { __fetchLogged?: boolean }).__fetchLogged)) {
+    (window as unknown as { __fetchLogged?: boolean }).__fetchLogged = true;
+    const origFetch = window.fetch.bind(window);
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const short = url.length > 110 ? url.slice(0, 107) + "…" : url;
+      const t0 = Date.now();
+      logActivity(`→ ${short}`);
+      return origFetch(input as RequestInfo, init).then(
+        (res) => {
+          logActivity(`← ${res.status} ${short} (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+          return res;
+        },
+        (e: unknown) => {
+          logActivity(`✗ ${short} (${((Date.now() - t0) / 1000).toFixed(1)}s) ${String(e)}`);
+          throw e;
+        }
+      );
+    };
+  }
+}
 
 interface GpuStatus {
   supported: boolean;
@@ -52,8 +86,17 @@ export default function Page() {
   const [output, setOutput] = useState("");
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [storage, setStorage] = useState<{ usage: number; quota: number } | null>(null);
+  const [logView, setLogView] = useState<string[]>([]);
+  const lastStage = useRef<string | null>(null);
   const downloadAc = useRef<AbortController | null>(null);
   const translateAc = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const t = setInterval(() => setLogView([...activityLog]), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const model = VISIBLE_WEBGPU_MODELS.find((m) => m.id === modelId) ?? VISIBLE_WEBGPU_MODELS[0];
 
@@ -71,6 +114,15 @@ export default function Page() {
     return () => {
       active = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.storage?.estimate) {
+      navigator.storage
+        .estimate()
+        .then((e) => setStorage({ usage: e.usage ?? 0, quota: e.quota ?? 0 }))
+        .catch(() => {});
+    }
   }, []);
 
   const refreshCache = useCallback(
@@ -148,21 +200,44 @@ export default function Page() {
     setElapsed(0);
     setStartedAt(Date.now());
     setPhase("translating");
+    setStatus("starting");
+    lastStage.current = "starting";
+    logActivity(`translate start: ${modelId} (${sourceLang} → ${targetLang}), ${text.trim().length} chars`);
+    const onStatus = (s: string) => {
+      const base = s.startsWith("generating · token") ? "generating" : s;
+      if (base !== lastStage.current) {
+        lastStage.current = base;
+        logActivity(`stage: ${base}`);
+      }
+      setStatus(s);
+    };
     const ac = new AbortController();
     translateAc.current = ac;
     getProviderOrThrow("webgpu")
-      .translate({ text: text.trim(), sourceLang, targetLang }, { model: modelId }, ac.signal)
+      .translate(
+        { text: text.trim(), sourceLang, targetLang },
+        { model: modelId, onStatus },
+        ac.signal
+      )
       .then((res) => {
         setPhase("idle");
         setStartedAt(null);
+        setStatus(null);
+        logActivity(`OK in ${res.latencyMs} ms`);
         setOutput(res.text);
         setLatencyMs(res.latencyMs);
       })
       .catch((e: unknown) => {
         setPhase("idle");
         setStartedAt(null);
-        if (e instanceof DOMException && e.name === "AbortError") return;
-        setError(e instanceof Error ? e.message : String(e));
+        setStatus(null);
+        if (e instanceof DOMException && e.name === "AbortError") {
+          logActivity("aborted by user");
+          return;
+        }
+        const msg = e instanceof Error ? e.message : String(e);
+        logActivity(`ERROR: ${msg}`);
+        setError(msg);
       });
   };
 
@@ -266,16 +341,22 @@ export default function Page() {
           </Select>
         </Box>
 
-        <TextField
-          label="Source text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          multiline
-          minRows={4}
-          maxRows={12}
-          fullWidth
-          disabled={busy}
-        />
+        <Box sx={{ position: "relative" }}>
+          <TextField
+            label="Source text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            multiline
+            minRows={4}
+            maxRows={12}
+            fullWidth
+            disabled={busy}
+            slotProps={{ input: { sx: { pb: 3 } } }}
+          />
+          <Box sx={{ position: "absolute", left: 12, bottom: 6 }}>
+            <CopyButton value={text} label="Copy source" />
+          </Box>
+        </Box>
 
         <Box className="flex items-center gap-4">
           {phase === "translating" ? (
@@ -286,7 +367,9 @@ export default function Page() {
               <Box className="flex items-center gap-2">
                 <CircularProgress size={20} />
                 <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                  {formatDuration(elapsed)} — first run compiles shaders, can take minutes
+                  {formatDuration(elapsed)} — {status ?? "starting"}
+                  {(status === "checking-cache" || status === "loading-model") &&
+                    " (first run compiles shaders, can take minutes)"}
                 </Typography>
               </Box>
             </>
@@ -306,21 +389,42 @@ export default function Page() {
           )}
         </Box>
 
-        <TextField
-          label="Translation"
-          value={output}
-          multiline
-          minRows={4}
-          maxRows={12}
-          fullWidth
-          slotProps={{ input: { readOnly: true } }}
-        />
+        <Box sx={{ position: "relative" }}>
+          <TextField
+            label="Translation"
+            value={output}
+            multiline
+            minRows={4}
+            maxRows={12}
+            fullWidth
+            slotProps={{ input: { readOnly: true, sx: { pb: 3 } } }}
+          />
+          <Box sx={{ position: "absolute", left: 12, bottom: 6 }}>
+            <CopyButton value={output} label="Copy translation" />
+          </Box>
+        </Box>
 
         {error && <Alert severity="error">{error}</Alert>}
+
+        {logView.length > 0 && (
+          <Box sx={{ border: "1px solid rgba(128,128,128,0.35)", borderRadius: 1, p: 1 }}>
+            <Typography variant="caption" sx={{ opacity: 0.6 }}>
+              activity log — stages + fetches (requests without a ← line are still pending)
+            </Typography>
+            <Box
+              component="pre"
+              sx={{ m: 0, fontSize: 11, overflow: "auto", maxHeight: 220, opacity: 0.85 }}
+            >
+              {logView.slice(-100).join("\n")}
+            </Box>
+          </Box>
+        )}
 
         <footer>
           <Typography variant="caption" sx={{ opacity: 0.5 }}>
             Model: {model.name} · backend: WebGPU (in-browser) · nothing leaves this device
+            {storage &&
+              ` · storage: ${formatBytes(storage.usage)} used / ${formatBytes(storage.quota)} quota`}
           </Typography>
         </footer>
       </main>

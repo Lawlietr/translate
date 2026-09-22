@@ -66,6 +66,7 @@ Result: one file `src/lib/model-cache.ts`, ~200 lines, zero new dependencies.
 - Small models (≤2B) **lock into output-language loops** when instruction language and expected output language collide. Verified failure: a zh system-instruction line on LFM2.5-450M → endless `好的。` repetition. Verified fix: **English instructions + a short trailing line** like "Important: reply in Traditional Chinese… keep all JSON structure".
 - Rule: keep ALL model-facing text in English; express the desired output language in one appended sentence. UI (human-facing) language is a separate concern and must never be injected into the instruction.
 - **WebGPU fp16 failure modes are NOT reproducible on CPU.** A/B-test any prompt/template change in the real browser (secure context, real GPU). The what-do-you-see team burned two full attempts on CPU-only reasoning that failed in the browser.
+- **zh-TW target still comes out SIMPLIFIED** (verified 2026-09-22 with BOTH Hy-MT2 q4f16 and TranslateGemma q4, correct meaning, wrong variant — both models are trained predominantly on simplified corpora; instruction text and even the template's `zh-Hant` lang code don't force the output variant reliably). Fix: **deterministic post-processing, not prompting** — `toTraditionalChinese()` in `src/lib/zh-variant.ts` (opencc-js `cn2t` subpath, ~780 KB, lazy-initialized, CJK-guarded) runs on provider output whenever `targetLang === "zh-TW"`, in BOTH the webgpu and llama-server providers.
 
 ## 6. UX for long operations
 
