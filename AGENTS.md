@@ -52,6 +52,10 @@ Both are text-only causal-LM translation models: `AutoTokenizer` + `AutoModelFor
 
 ## Development Conventions
 
+### Change control (owner rule, 2026-09-22)
+
+- **NEVER write or modify code without the owner's explicit permission.** Questions and "is this possible?" are discussion, not work orders — propose the approach, wait for the go-ahead, then implement. Incidental files (tests/docs) may only be touched as part of an explicitly approved change.
+
 ### Code Style
 
 - **No comments** unless explicitly requested by user
