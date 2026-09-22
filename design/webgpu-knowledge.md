@@ -21,7 +21,7 @@ Distilled from the what-do-you-see project (same host), where every one of these
 - `cachedModelState` = per-model list of required cache keys, all present (size check optional). Partial cache reported as "not downloaded"; re-download skips already-cached files (Cache API `match` first).
 - transformers.js `from_pretrained` has **no AbortSignal** — that's why the download is done manually via fetch instead of letting `from_pretrained` prefetch.
 
-### #3 port plan (decided 2026-09-21: PORT, do not rewrite)
+### #3 port plan (decided 2026-09-21: PORT, do not rewrite — implemented as planned; final diff vs sister file = exactly the trims below)
 
 `src/lib/model-cache.ts` = port of what-do-you-see's `src/lib/model-cache.ts` (262 lines → ~200). The catalog (#1) supplies the data-driven inputs with byte-verified `filePatterns`, so the proven implementation shapes above transfer 1:1:
 
