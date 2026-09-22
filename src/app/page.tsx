@@ -341,6 +341,14 @@ export default function Page() {
           </Select>
         </Box>
 
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 2,
+            alignItems: "stretch",
+          }}
+        >
         <Box sx={{ position: "relative" }}>
           <TextField
             label="Source text"
@@ -356,6 +364,22 @@ export default function Page() {
           <Box sx={{ position: "absolute", left: 12, bottom: 6 }}>
             <CopyButton value={text} label="Copy source" />
           </Box>
+        </Box>
+
+        <Box sx={{ position: "relative" }}>
+          <TextField
+            label="Translation"
+            value={output}
+            multiline
+            minRows={4}
+            maxRows={12}
+            fullWidth
+            slotProps={{ input: { readOnly: true, sx: { pb: 3 } } }}
+          />
+          <Box sx={{ position: "absolute", left: 12, bottom: 6 }}>
+            <CopyButton value={output} label="Copy translation" />
+          </Box>
+        </Box>
         </Box>
 
         <Box className="flex items-center gap-4">
@@ -387,21 +411,6 @@ export default function Page() {
               {languageName(targetLang)} · {(latencyMs / 1000).toFixed(1)} s
             </Typography>
           )}
-        </Box>
-
-        <Box sx={{ position: "relative" }}>
-          <TextField
-            label="Translation"
-            value={output}
-            multiline
-            minRows={4}
-            maxRows={12}
-            fullWidth
-            slotProps={{ input: { readOnly: true, sx: { pb: 3 } } }}
-          />
-          <Box sx={{ position: "absolute", left: 12, bottom: 6 }}>
-            <CopyButton value={output} label="Copy translation" />
-          </Box>
         </Box>
 
         {error && <Alert severity="error">{error}</Alert>}
