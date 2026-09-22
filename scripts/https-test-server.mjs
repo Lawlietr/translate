@@ -75,10 +75,10 @@ const server = https.createServer({ key, cert }, (req, res) => {
 
 server.on("upgrade", (req, socket, head) => {
   const upstream = net.connect(targetPort, host, () => {
+    const headers = { ...req.headers, host: `${host}:${targetPort}` };
     const lines = [
       `${req.method} ${req.url} HTTP/1.1`,
-      ...Object.entries(req.headers).map(([k, v]) => `${k}: ${v}`),
-      `host: ${host}:${targetPort}`,
+      ...Object.entries(headers).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`),
       "",
       "",
     ];
