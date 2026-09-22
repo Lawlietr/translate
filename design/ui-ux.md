@@ -41,6 +41,8 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 
 ## Settings dialog
 
+**Implemented 2026-09-22** — `settings-dialog.tsx` (opened from the header ⚙, Material close/X icon with `aria-label`) + `use-app-settings.tsx` (context over `settings-manager.ts`, so every pane re-renders on change). **Every change applies and persists to localStorage immediately** (no Apply button, no draft state) — tab switch keeps both tabs mounted (`display: none`) so in-flight download progress and test results survive. Tab bar = Inference | General.
+
 - **Inference tab:** backend selector (WebGPU [default] / llama-server — `ProviderSelector` pattern) + the active backend's config block:
   - WebGPU block: current model card, "Manage models" (download dialog: per-model size, per-file progress, speed, cancel — see design/webgpu-knowledge.md §2), model switch (downloaded → instant), clear cache, WebGPU support warnings (1:1 port of what-do-you-see `WebGPUSettings.tsx`)
   - llama-server block: baseUrl (`/v1` auto), model (blank = auto-detect from `GET /v1/models`), optional apiKey; **connection test button** → success lists detected models, failure shows reason incl. the `--no-cors` hint (see design/inference-providers.md)
@@ -48,6 +50,7 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
   - Diagnostics on → the main page (`/`) shows the live activity log panel (translate stages, model load, fetches with status/timing, window errors) — the same logger the `/dev` harness uses, extracted to a shared module (`src/lib/activity-log.ts`) so both pages write to one log; the log panel reuses the harness's 100-line capped view
   - Off (default) → zero logging on the main page (no fetch patching, no panel) — the privacy-first default; `/dev` keeps its own always-on log (it is the debug page)
   - Persisted in settings (`diagnostics: boolean`, default `false`)
+  - **Implementation note:** the main page applies the toggle live (`translation-app` calls `setActivityLogEnabled` from settings; the fetch patch itself is installed once unconditionally and is a no-op logger while off — only *entries* are suppressed, keeping the patch/restore bookkeeping out of the render cycle)
 
 ## i18n
 
@@ -56,7 +59,8 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 
 ## Implementation notes (deviations / pitfalls)
 
-- **Model row on the main page (until #6):** the dev box needs model selection + download before Settings exists, so `/` carries a model row above the panes (picker + size + downloaded chip + Download/Cancel with streamed progress — same `prefetchModel` pipeline as `/dev`). It moves into the Settings dialog when #6 lands.
+- **Model row — now in Settings (since #6):** `/` used to carry a model row above the panes while Settings didn't exist; it moved into the Inference tab verbatim (picker + size + downloaded chip + Download/Cancel with streamed progress — same `prefetchModel` pipeline as `/dev`). **Deviation from the original spec:** there is NO separate "Manage models" sub-dialog — the model row IS the management UI (one row, inline), matching what the main page already had; Clear cache is per-model (`clearWebGpuModelCache(modelId)` deletes only that model's HF cache entries, not the whole cache) with a clearing state and a cache re-check afterwards.
+- **llama-server Test connection:** fetches `GET {baseUrl}/models` directly from the browser (client-side, same origin rules as inference); success lists the detected models, failure shows the reason incl. the `--api --host 0.0.0.0` hint for LAN testing (design/inference-providers.md).
 - **MUI v9 Select: never pass a Fragment as child.** `React.Children`-based value matching skips Fragment nodes (`SelectInput.mjs` logs "doesn't accept a Fragment as a child" in dev, and in production the value silently never matches) → the dropdown renders empty and selecting an item never updates the display. Language options must be a plain `map()` array.
 
 ## Out of scope (v1)
