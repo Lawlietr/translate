@@ -19,9 +19,14 @@ llama-server endpoint directly:
 
 - No Next.js API route exists anywhere (AGENTS rule 9 stays intact: public build has
   zero server-side routes, `out/` stays fully static).
-- llama-server ships with **CORS enabled by default** (`--no-cors` opts out). If the
-  user's server has CORS disabled, the browser fetch fails — the error message must
-  say so explicitly ("start llama-server without `--no-cors`").
+- **CORS hint (owner-corrected 2026-09-22):** when the user's llama-server has no
+  CORS configured, the browser fetch fails (preflight blocked). Every failure message
+  that touches reachability must say to add **`--cors-origins '*'`** when starting
+  llama-server — the old "start without `--no-cors`" hint was wrong.
+- **Model auto-detect:** the llama-server config's Model field is an `Autocomplete`
+  (`freeSolo`) that fetches `GET {baseUrl}/models` when the dropdown opens AND via an
+  explicit "Detect models" button; options are the returned ids, free typing stays
+  possible (1:1 port of what-do-you-see `ProviderConfigForm.tsx` ModelField).
 - Privacy: requests go only to (a) `huggingface.co` (user-initiated model downloads)
   and (b) the endpoint the user themselves configured. AGENTS rule 10 updated.
 
@@ -184,7 +189,8 @@ default). No migration keys needed at first launch.
   not-downloaded status + bytes, Manage models dialog, Clear cache, support warnings)
 - llama-server block: `ProviderConfigForm.tsx` (form auto-generated from `configSchema`)
   + Connection test button with spinner → success shows detected model list / failure
-  shows the reason (incl. the `--no-cors` hint)
+  shows the reason (incl. the `--cors-origins '*'` hint) + Model field with `/v1/models`
+  auto-detect dropdown (see §CORS/model auto-detect above)
 - `ConnectionTest.tsx` ports 1:1
 
 ## Build impact

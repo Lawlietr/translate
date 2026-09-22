@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Chip,
@@ -34,6 +35,7 @@ import { SUPPORTED_TRANSLATION_LANGUAGES, languageName } from "../lib/languages"
 import { useAppSettings } from "../hooks/use-app-settings";
 import { fetchAvailableModels } from "../lib/providers/llama-server";
 import CloseIcon from "@mui/icons-material/Close";
+import SearchIcon from "@mui/icons-material/Search";
 import type { DownloadProgress } from "../lib/types";
 import type { UILanguage } from "../lib/settings-manager";
 
@@ -93,6 +95,28 @@ function InferenceTab() {
   const [clearing, setClearing] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; detail: string } | null>(null);
+  const [modelOptions, setModelOptions] = useState<string[]>([]);
+  const [detecting, setDetecting] = useState(false);
+  const [detectError, setDetectError] = useState<string | null>(null);
+
+  const detectModels = useCallback(() => {
+    const baseUrl = settings.llamaServerConfig.baseUrl;
+    if (!baseUrl.trim()) {
+      setDetectError("Enter the server URL first");
+      return;
+    }
+    setDetecting(true);
+    setDetectError(null);
+    fetchAvailableModels(baseUrl, settings.llamaServerConfig.apiKey || undefined)
+      .then((models) => {
+        setModelOptions(models);
+        if (models.length === 0) {
+          setDetectError("Connected, but no models are exposed (empty list).");
+        }
+      })
+      .catch((e: unknown) => setDetectError(e instanceof Error ? e.message : String(e)))
+      .finally(() => setDetecting(false));
+  }, [settings.llamaServerConfig.baseUrl, settings.llamaServerConfig.apiKey]);
   const downloadAc = useRef<AbortController | null>(null);
 
   const refreshCache = useCallback(async (id: string) => {
@@ -184,7 +208,7 @@ function InferenceTab() {
         setTestResult({
           ok: false,
           detail: looksLikeNetwork
-            ? `${msg} — check the server is running and reachable; if it runs on another machine, make sure CORS is enabled (start llama-server without --no-cors).`
+            ? `${msg} — check the server is running and reachable; if it runs on another machine, make sure CORS is configured (start llama-server with --cors-origins '*').`
             : msg,
         });
       })
@@ -281,13 +305,42 @@ function InferenceTab() {
             placeholder="http://<your-llama-server-host>:8080"
             helperText="host:port of your llama-server — the /v1 prefix is added automatically"
           />
-          <TextField
-            size="small"
-            label="Model"
-            value={settings.llamaServerConfig.model}
-            onChange={(e) => updateLlama({ model: e.target.value })}
-            placeholder="preset name or model id from /v1/models (blank = auto-detect)"
-          />
+          <Box>
+            <Autocomplete
+              freeSolo
+              size="small"
+              value={settings.llamaServerConfig.model}
+              onChange={(_, v) => updateLlama({ model: typeof v === "string" ? v : "" })}
+              onInputChange={(_, v, reason) => {
+                if (reason === "reset" || reason === "blur") return;
+                updateLlama({ model: v });
+              }}
+              options={modelOptions}
+              onOpen={detectModels}
+              loading={detecting}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Model"
+                  placeholder="preset name or model id from /v1/models (blank = auto-detect)"
+                />
+              )}
+              sx={{ minWidth: 0 }}
+            />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+              <Button
+                size="small"
+                startIcon={detecting ? undefined : <SearchIcon />}
+                onClick={detectModels}
+                disabled={detecting}
+              >
+                {detecting ? "Detecting…" : "Detect models"}
+              </Button>
+              {detectError && (
+                <Typography variant="caption" color="error">{detectError}</Typography>
+              )}
+            </Box>
+          </Box>
           <TextField
             size="small"
             label="API Key"

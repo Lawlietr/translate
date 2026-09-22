@@ -1,5 +1,6 @@
 import https from "node:https";
 import http from "node:http";
+import net from "node:net";
 import { execSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { readFile, access } from "node:fs/promises";
@@ -70,6 +71,24 @@ const server = https.createServer({ key, cert }, (req, res) => {
     res.end(`proxy error: ${err.message}`);
   });
   req.pipe(upstream);
+});
+
+server.on("upgrade", (req, socket, head) => {
+  const upstream = net.connect(targetPort, host, () => {
+    const lines = [
+      `${req.method} ${req.url} HTTP/1.1`,
+      ...Object.entries(req.headers).map(([k, v]) => `${k}: ${v}`),
+      `host: ${host}:${targetPort}`,
+      "",
+      "",
+    ];
+    upstream.write(lines.join("\r\n"));
+    if (head.length) upstream.write(head);
+    upstream.pipe(socket);
+    socket.pipe(upstream);
+  });
+  upstream.on("error", () => socket.destroy());
+  socket.on("error", () => upstream.destroy());
 });
 
 server.listen(port, "0.0.0.0", () => {
