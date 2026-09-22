@@ -35,7 +35,7 @@ interface CausalOutputs {
 interface CausalTokenizer {
   apply_chat_template(
     messages: ChatMessage[],
-    options: { add_generation_prompt: boolean; return_tensor?: boolean }
+    options: { add_generation_prompt: boolean; tokenize?: boolean }
   ): string;
   (input: string[]): Promise<CausalInputs>;
   decode(
@@ -45,7 +45,11 @@ interface CausalTokenizer {
 }
 
 interface CausalModel {
-  generate(options: Record<string, unknown>): Promise<CausalOutputs>;
+  generate(
+    options: Record<string, unknown> & {
+      progress_callback?: (p: { status?: string; progress?: number; total?: number }) => void;
+    }
+  ): Promise<CausalOutputs>;
 }
 
 interface CausalPipeline {
@@ -64,16 +68,21 @@ function loadTransformers(): Promise<TransformersModule> {
   return transformersPromise;
 }
 
-async function loadPipeline(modelId: string): Promise<CausalPipeline> {
+async function loadPipeline(
+  modelId: string,
+  onStatus?: (status: string) => void
+): Promise<CausalPipeline> {
   const existing = pipelines.get(modelId);
   if (existing) return existing;
   const promise = (async () => {
+    onStatus?.("checking-cache");
     const status = await cachedModelState(modelId);
     if (!status.cached) {
       throw new Error(
         `Model ${modelId} is not fully downloaded — download it first (Settings → Manage models).`
       );
     }
+    onStatus?.("loading-model");
     const { AutoModelForCausalLM, AutoTokenizer, env } = await loadTransformers();
     env.allowLocalModels = false;
     const info = getModelInfo(modelId);
@@ -82,6 +91,11 @@ async function loadPipeline(modelId: string): Promise<CausalPipeline> {
       AutoModelForCausalLM.from_pretrained(modelId, {
         device,
         dtype: info?.dtype ?? "q4",
+        progress_callback: (p: { status?: string; file?: string; progress?: number }) => {
+          if (p.status === "progress" && p.file) {
+            onStatus?.(`loading-model ${p.file} ${Math.round(p.progress ?? 0)}%`);
+          }
+        },
       }),
       AutoTokenizer.from_pretrained(modelId),
     ]);
@@ -128,20 +142,30 @@ async function run(
   config: ProviderConfig
 ): Promise<TranslationResponse> {
   const started = Date.now();
-  const pipeline = await loadPipeline(modelId);
+  const pipeline = await loadPipeline(modelId, config.onStatus);
   const profile = resolveProfile(modelId, config.modelPreset);
   const messages = buildMessages(profile, request);
   const chatPrompt = pipeline.tokenizer.apply_chat_template(messages, {
     add_generation_prompt: true,
-    return_tensor: false,
+    tokenize: false,
   });
+  if (typeof chatPrompt !== "string" || chatPrompt.length === 0) {
+    throw new Error("Chat template rendered an empty prompt");
+  }
+  config.onStatus?.("tokenizing");
   const inputs = await pipeline.tokenizer([chatPrompt]);
   const dims = inputs.input_ids.dims;
   const inputLength = dims[dims.length - 1] ?? 0;
+  config.onStatus?.("generating");
   const outputs = await pipeline.model.generate({
     ...inputs,
     do_sample: false,
     max_new_tokens: planMaxNewTokens(inputLength),
+    progress_callback: (p: { status?: string; progress?: number }) => {
+      if (p.status === "generate" && typeof p.progress === "number") {
+        config.onStatus?.(`generating · token ${Math.round(p.progress)}`);
+      }
+    },
   });
   const outDims = outputs.dims;
   const total = outDims[outDims.length - 1] ?? 0;

@@ -9,7 +9,7 @@ export interface ModelInfo {
 }
 
 export interface WebGpuModelInfo extends ModelInfo {
-  dtype: Record<string, DataType>;
+  dtype: DataType;
   filePatterns: string[];
   hidden?: boolean;
 }
@@ -39,7 +39,7 @@ export const WEBGPU_MODELS: WebGpuModelInfo[] = [
     format: "ONNX",
     sizeBytes: 1_383_140_565,
     source: "huggingface.co (Hugging Face CDN)",
-    dtype: { text: "q4f16" },
+    dtype: "q4f16",
     filePatterns: HY_MT2_FILE_PATTERNS,
   },
   {
@@ -48,7 +48,7 @@ export const WEBGPU_MODELS: WebGpuModelInfo[] = [
     format: "ONNX",
     sizeBytes: 3_111_911_523,
     source: "huggingface.co (Hugging Face CDN)",
-    dtype: { text: "q4" },
+    dtype: "q4",
     filePatterns: TRANSLATEGEMMA_FILE_PATTERNS,
   },
 ];
