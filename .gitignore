@@ -14,3 +14,7 @@
 .DS_Store
 npm-debug.log*
 .env*.local
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
