@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  defaultSettings,
   loadSettings,
   saveSettings,
   type AppSettings,
@@ -24,11 +25,18 @@ interface AppSettingsValue {
 const AppSettingsContext = createContext<AppSettingsValue | null>(null);
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    setSettings(loadSettings());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     saveSettings(settings);
-  }, [settings]);
+  }, [settings, hydrated]);
 
   const value = useMemo<AppSettingsValue>(
     () => ({

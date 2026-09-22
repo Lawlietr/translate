@@ -152,7 +152,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
           WebGPU needs a secure context — open over https:// or http://localhost.
         </Alert>
       )}
-      {webgpuBackend && gpu.secureContext && !gpu.supported && (
+      {webgpuBackend && !gpu.checking && gpu.secureContext && !gpu.supported && (
         <Alert severity="error">
           WebGPU is not available in this browser. Use a recent Chrome/Edge/Chromium build with
           WebGPU enabled, or switch the backend to llama-server in Settings.
