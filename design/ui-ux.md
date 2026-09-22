@@ -51,6 +51,11 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 - UI strings via a small `t()` in `src/lib/i18n/` (zh-TW + en), persisted in localStorage — port the pattern from what-do-you-see
 - **UI language and model instruction language are separate concerns** (webgpu-knowledge.md §5): the instruction to the model is always English; only the requested OUTPUT language changes
 
+## Implementation notes (deviations / pitfalls)
+
+- **Model row on the main page (until #6):** the dev box needs model selection + download before Settings exists, so `/` carries a model row above the panes (picker + size + downloaded chip + Download/Cancel with streamed progress — same `prefetchModel` pipeline as `/dev`). It moves into the Settings dialog when #6 lands.
+- **MUI v9 Select: never pass a Fragment as child.** `React.Children`-based value matching skips Fragment nodes (`SelectInput.mjs` logs "doesn't accept a Fragment as a child" in dev, and in production the value silently never matches) → the dropdown renders empty and selecting an item never updates the display. Language options must be a plain `map()` array.
+
 ## Out of scope (v1)
 
 - Speech input/output, document translation, auto-detect, glossaries, translation history, multiple concurrent requests, cloud API providers (OpenAI/Claude/…) — only WebGPU + user's local llama-server (design/inference-providers.md)

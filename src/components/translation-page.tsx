@@ -19,38 +19,47 @@ import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { CopyButton } from "./copy-button";
 import { useWebGpu } from "../hooks/use-webgpu";
 import { VISIBLE_WEBGPU_MODELS, getModelInfo } from "../lib/model-catalog";
-import { cachedModelState, formatDuration, type CacheStatus } from "../lib/model-cache";
+import {
+  cachedModelState,
+  formatBytes,
+  formatDuration,
+  prefetchModel,
+  type CacheStatus,
+} from "../lib/model-cache";
 import { SUPPORTED_TRANSLATION_LANGUAGES } from "../lib/languages";
 import { loadSettings, saveSettings } from "../lib/settings-manager";
 import { getProviderOrThrow } from "../lib/providers/registry";
+import type { DownloadProgress } from "../lib/types";
 
 function errorHint(message: string): string | null {
   const lower = message.toLowerCase();
   if (lower.includes("download") || lower.includes("cache")) {
-    return "Download the model first — use the dev page (/dev) for now; model management moves into Settings in TODO #6.";
+    return "Download the model first — use the Download model button above.";
   }
   if (lower.includes("memory") || lower.includes("oom") || lower.includes("allocat")) {
-    return "This model is likely too large for your GPU memory — switch to the smaller model in Settings.";
+    return "This model is likely too large for your GPU memory — switch to the smaller model in the model picker above.";
   }
   return null;
 }
 
 export function TranslationPage() {
   const gpu = useWebGpu();
-  const [modelId] = useState(() => loadSettings().webgpuModelId);
+  const [modelId, setModelId] = useState(() => loadSettings().webgpuModelId);
   const [sourceLang, setSourceLang] = useState(() => loadSettings().defaultSourceLang);
   const [targetLang, setTargetLang] = useState(() => loadSettings().defaultTargetLang);
   const [text, setText] = useState("");
   const [output, setOutput] = useState("");
   const [cache, setCache] = useState<CacheStatus>({ cached: false, bytes: 0 });
   const [cacheChecked, setCacheChecked] = useState(false);
-  const [phase, setPhase] = useState<"idle" | "translating">("idle");
+  const [phase, setPhase] = useState<"idle" | "downloading" | "translating">("idle");
+  const [progress, setProgress] = useState<DownloadProgress | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const translateAc = useRef<AbortController | null>(null);
+  const downloadAc = useRef<AbortController | null>(null);
 
   const model = getModelInfo(modelId) ?? VISIBLE_WEBGPU_MODELS[0];
 
@@ -68,7 +77,7 @@ export function TranslationPage() {
   }, [modelId, phase]);
 
   useEffect(() => {
-    if (phase !== "translating" || startedAt == null) return;
+    if (phase === "idle" || startedAt == null) return;
     const timer = setInterval(() => setElapsed((Date.now() - startedAt) / 1000), 500);
     return () => clearInterval(timer);
   }, [phase, startedAt]);
@@ -76,10 +85,11 @@ export function TranslationPage() {
   useEffect(() => {
     saveSettings({
       ...loadSettings(),
+      webgpuModelId: modelId,
       defaultSourceLang: sourceLang,
       defaultTargetLang: targetLang,
     });
-  }, [sourceLang, targetLang]);
+  }, [modelId, sourceLang, targetLang]);
 
   const swapLangs = () => {
     setSourceLang(targetLang);
@@ -90,6 +100,34 @@ export function TranslationPage() {
       setLatencyMs(null);
     }
   };
+
+  const startDownload = () => {
+    setError(null);
+    setProgress(null);
+    setElapsed(0);
+    setStartedAt(Date.now());
+    setPhase("downloading");
+    const ac = new AbortController();
+    downloadAc.current = ac;
+    prefetchModel(modelId, {
+      onProgress: (p) => setProgress(p),
+      signal: ac.signal,
+    })
+      .then(() => {
+        setPhase("idle");
+        setStartedAt(null);
+        setProgress(null);
+      })
+      .catch((e: unknown) => {
+        setPhase("idle");
+        setStartedAt(null);
+        setProgress(null);
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        setError(e instanceof Error ? e.message : String(e));
+      });
+  };
+
+  const cancelDownload = () => downloadAc.current?.abort();
 
   const translate = () => {
     if (!text.trim()) return;
@@ -127,18 +165,16 @@ export function TranslationPage() {
   const cancelTranslate = () => translateAc.current?.abort();
 
   const translating = phase === "translating";
+  const downloading = phase === "downloading";
+  const busy = downloading || translating;
   const modelReady = !cacheChecked || cache.cached;
   const hint = error ? errorHint(error) : null;
 
-  const languageOptions = (
-    <>
-      {SUPPORTED_TRANSLATION_LANGUAGES.map((l) => (
-        <MenuItem key={l.id} value={l.id}>
-          {l.id === "zh-TW" ? "繁體中文" : l.id === "zh-CN" ? "簡體中文" : l.enName}
-        </MenuItem>
-      ))}
-    </>
-  );
+  const languageOptions = SUPPORTED_TRANSLATION_LANGUAGES.map((l) => (
+    <MenuItem key={l.id} value={l.id}>
+      {l.id === "zh-TW" ? "繁體中文" : l.id === "zh-CN" ? "簡體中文" : l.enName}
+    </MenuItem>
+  ));
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 flex flex-col gap-4">
@@ -159,6 +195,61 @@ export function TranslationPage() {
         </Alert>
       )}
 
+      <Box className="flex flex-col gap-1">
+        <Box className="flex flex-wrap items-center gap-2">
+          <Select
+            size="small"
+            value={modelId}
+            onChange={(e) => setModelId(e.target.value)}
+            sx={{ minWidth: 300 }}
+            disabled={busy}
+            aria-label="Model"
+          >
+            {VISIBLE_WEBGPU_MODELS.map((m) => (
+              <MenuItem key={m.id} value={m.id}>
+                {m.name}
+              </MenuItem>
+            ))}
+          </Select>
+          <Typography variant="body2" sx={{ opacity: 0.7 }}>
+            {formatBytes(model.sizeBytes)}
+          </Typography>
+          {cacheChecked &&
+            (cache.cached ? (
+              <Chip
+                label={`downloaded · ${formatBytes(cache.bytes)}`}
+                color="success"
+                size="small"
+              />
+            ) : (
+              <Chip label="not downloaded" size="small" />
+            ))}
+        </Box>
+        {downloading && progress && (
+          <Box className="flex flex-col gap-1">
+            <LinearProgress variant="determinate" value={progress.percent * 100} />
+            <Typography variant="caption" sx={{ opacity: 0.8 }}>
+              {formatBytes(progress.loaded)} / {formatBytes(progress.total)} ·{" "}
+              {formatBytes(progress.speedBps)}/s · {formatDuration(elapsed)}
+            </Typography>
+          </Box>
+        )}
+        {downloading ? (
+          <Button variant="outlined" color="error" onClick={cancelDownload} size="small">
+            Cancel download
+          </Button>
+        ) : (
+          <Button
+            variant="outlined"
+            onClick={startDownload}
+            size="small"
+            disabled={cache.cached}
+          >
+            {cache.cached ? "Downloaded" : "Download model"}
+          </Button>
+        )}
+      </Box>
+
       <Box
         sx={{
           display: "grid",
@@ -178,14 +269,14 @@ export function TranslationPage() {
                 value={sourceLang}
                 onChange={(e) => setSourceLang(e.target.value)}
                 sx={{ minWidth: 140 }}
-                disabled={translating}
+                disabled={busy}
               >
                 {languageOptions}
               </Select>
               <IconButton
                 size="small"
                 onClick={swapLangs}
-                disabled={translating}
+                disabled={busy}
                 title="Swap languages"
               >
                 <SwapHorizIcon fontSize="small" />
@@ -220,7 +311,7 @@ export function TranslationPage() {
               value={targetLang}
               onChange={(e) => setTargetLang(e.target.value)}
               sx={{ minWidth: 140 }}
-              disabled={translating}
+              disabled={busy}
             >
               {languageOptions}
             </Select>
@@ -241,12 +332,14 @@ export function TranslationPage() {
               <Typography variant="body2">
                 No model downloaded for this browser yet.
               </Typography>
-              <Button component="a" href="/dev" variant="outlined" size="small">
-                Download a model
+              <Button
+                onClick={startDownload}
+                variant="outlined"
+                size="small"
+                disabled={downloading}
+              >
+                Download model
               </Button>
-              <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                Model management moves into Settings in TODO #6
-              </Typography>
             </Box>
           ) : (
             <Box sx={{ position: "relative", flex: 1 }}>
@@ -287,7 +380,14 @@ export function TranslationPage() {
             <Button
               variant="contained"
               onClick={translate}
-              disabled={!text.trim() || gpu.checking || !gpu.secureContext || !gpu.supported || !modelReady}
+              disabled={
+                !text.trim() ||
+                busy ||
+                gpu.checking ||
+                !gpu.secureContext ||
+                !gpu.supported ||
+                !modelReady
+              }
             >
               Translate
             </Button>
