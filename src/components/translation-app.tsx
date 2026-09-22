@@ -1,22 +1,62 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Box, createTheme, ThemeProvider } from "@mui/material";
 import { AppHeader } from "./app-header";
 import { TranslationPage } from "./translation-page";
+import { SettingsDialog } from "./settings-dialog";
+import { AppSettingsProvider, useAppSettings } from "../hooks/use-app-settings";
+import { installActivityLogPatches, setActivityLogEnabled } from "../lib/activity-log";
 import { useThemeMode } from "../hooks/use-theme";
 
-export function TranslationApp() {
+function AppContent() {
   const { mode, toggle } = useThemeMode();
+  const { settings } = useAppSettings();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<"inference" | "general">("inference");
   const theme = createTheme({ palette: { mode } });
+
+  useEffect(() => {
+    installActivityLogPatches();
+  }, []);
+
+  useEffect(() => {
+    setActivityLogEnabled(settings.diagnostics);
+  }, [settings.diagnostics]);
+
+  const openSettings = (tab: "inference" | "general" = "inference") => {
+    setSettingsTab(tab);
+    setSettingsOpen(true);
+  };
 
   return (
     <ThemeProvider theme={theme}>
       <Box className="min-h-full flex flex-col">
         <Box className="mx-auto w-full max-w-5xl px-4 pt-4">
-          <AppHeader themeMode={mode} onToggleTheme={toggle} />
+          <AppHeader
+            themeMode={mode}
+            onToggleTheme={toggle}
+            onOpenSettings={() => openSettings("inference")}
+          />
         </Box>
-        <TranslationPage />
+        <TranslationPage
+          onOpenSettings={openSettings}
+          settingsOpen={settingsOpen}
+        />
+        <SettingsDialog
+          open={settingsOpen}
+          initialTab={settingsTab}
+          onClose={() => setSettingsOpen(false)}
+        />
       </Box>
     </ThemeProvider>
+  );
+}
+
+export function TranslationApp() {
+  return (
+    <AppSettingsProvider>
+      <AppContent />
+    </AppSettingsProvider>
   );
 }

@@ -30,41 +30,14 @@ import { SUPPORTED_TRANSLATION_LANGUAGES, languageName } from "../../lib/languag
 import { loadSettings, saveSettings } from "../../lib/settings-manager";
 import { getProviderOrThrow } from "../../lib/providers/registry";
 import type { DownloadProgress } from "../../lib/types";
+import {
+  getActivityLog,
+  installActivityLogPatches,
+  logActivity,
+  setActivityLogEnabled,
+} from "../../lib/activity-log";
 
 const darkTheme = createTheme({ palette: { mode: "dark" } });
-
-const activityLog: string[] = [];
-function logActivity(line: string) {
-  activityLog.push(`${new Date().toTimeString().slice(0, 8)} ${line}`);
-  if (activityLog.length > 300) activityLog.splice(0, activityLog.length - 300);
-}
-if (typeof window !== "undefined") {
-  window.addEventListener("error", (e) => logActivity(`window error: ${e.message}`));
-  window.addEventListener("unhandledrejection", (e) =>
-    logActivity(`unhandled rejection: ${String(e.reason)}`)
-  );
-  if (!((window as unknown as { __fetchLogged?: boolean }).__fetchLogged)) {
-    (window as unknown as { __fetchLogged?: boolean }).__fetchLogged = true;
-    const origFetch = window.fetch.bind(window);
-    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-      const url =
-        typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-      const short = url.length > 110 ? url.slice(0, 107) + "…" : url;
-      const t0 = Date.now();
-      logActivity(`→ ${short}`);
-      return origFetch(input as RequestInfo, init).then(
-        (res) => {
-          logActivity(`← ${res.status} ${short} (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
-          return res;
-        },
-        (e: unknown) => {
-          logActivity(`✗ ${short} (${((Date.now() - t0) / 1000).toFixed(1)}s) ${String(e)}`);
-          throw e;
-        }
-      );
-    };
-  }
-}
 
 interface GpuStatus {
   supported: boolean;
@@ -94,7 +67,12 @@ export default function Page() {
   const translateAc = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    const t = setInterval(() => setLogView([...activityLog]), 1000);
+    installActivityLogPatches();
+    setActivityLogEnabled(true);
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(() => setLogView(getActivityLog().slice(-100)), 1000);
     return () => clearInterval(t);
   }, []);
 

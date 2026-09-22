@@ -19,6 +19,7 @@ export interface AppSettings {
   language: UILanguage;
   defaultSourceLang: string;
   defaultTargetLang: string;
+  diagnostics: boolean;
 }
 
 const STORAGE_KEY = "translate:settings";
@@ -36,6 +37,7 @@ export function defaultSettings(): AppSettings {
     language: "zh-TW",
     defaultSourceLang: "zh-TW",
     defaultTargetLang: "en",
+    diagnostics: false,
   };
 }
 
@@ -76,6 +78,7 @@ export function loadSettings(): AppSettings {
       backend: normalizeBackend(parsed.backend),
       webgpuModelId: normalizeModelId(parsed.webgpuModelId),
       language: normalizeLanguage(parsed.language),
+      diagnostics: parsed.diagnostics === true,
       llamaServerConfig: {
         ...defaults.llamaServerConfig,
         ...normalizeLlamaServerConfig(parsed.llamaServerConfig),

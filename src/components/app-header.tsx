@@ -1,12 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import {
   Box,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   IconButton,
   MenuItem,
   Select,
@@ -18,7 +13,8 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { GITHUB_REPO_URL } from "../lib/site";
-import { loadSettings, saveSettings, type UILanguage } from "../lib/settings-manager";
+import { useAppSettings } from "../hooks/use-app-settings";
+import type { UILanguage } from "../lib/settings-manager";
 import type { ThemeMode } from "../hooks/use-theme";
 
 function GithubIcon(props: React.ComponentProps<typeof SvgIcon>) {
@@ -32,80 +28,58 @@ function GithubIcon(props: React.ComponentProps<typeof SvgIcon>) {
 interface AppHeaderProps {
   themeMode: ThemeMode;
   onToggleTheme: () => void;
+  onOpenSettings: () => void;
 }
 
-export function AppHeader({ themeMode, onToggleTheme }: AppHeaderProps) {
-  const [uiLanguage, setUiLanguage] = useState<UILanguage>(() => loadSettings().language);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-
-  const changeUiLanguage = (value: UILanguage) => {
-    setUiLanguage(value);
-    saveSettings({ ...loadSettings(), language: value });
-  };
+export function AppHeader({ themeMode, onToggleTheme, onOpenSettings }: AppHeaderProps) {
+  const { settings, update } = useAppSettings();
 
   return (
-    <>
-      <header className="flex items-center justify-between gap-3">
-        <Typography variant="h5">Translate</Typography>
-        <Box className="flex items-center gap-1">
-          <Select
-            size="small"
-            value={uiLanguage}
-            onChange={(e) => changeUiLanguage(e.target.value as UILanguage)}
-            sx={{ minWidth: 100 }}
-            aria-label="UI language"
-          >
-            <MenuItem value="zh-TW">繁體中文</MenuItem>
-            <MenuItem value="en">English</MenuItem>
-          </Select>
-          <Tooltip title={themeMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
-            <IconButton onClick={onToggleTheme} aria-label="Toggle theme">
-              {themeMode === "dark" ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
+    <header className="flex items-center justify-between gap-3">
+      <Typography variant="h5">Translate</Typography>
+      <Box className="flex items-center gap-1">
+        <Select
+          size="small"
+          value={settings.language}
+          onChange={(e) => update({ language: e.target.value as UILanguage })}
+          sx={{ minWidth: 100 }}
+          aria-label="UI language"
+        >
+          <MenuItem value="zh-TW">繁體中文</MenuItem>
+          <MenuItem value="en">English</MenuItem>
+        </Select>
+        <Tooltip title={themeMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+          <IconButton onClick={onToggleTheme} aria-label="Toggle theme">
+            {themeMode === "dark" ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
+          </IconButton>
+        </Tooltip>
+        {GITHUB_REPO_URL ? (
+          <Tooltip title="GitHub">
+            <IconButton
+              component="a"
+              href={GITHUB_REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="GitHub repository"
+            >
+              <GithubIcon />
             </IconButton>
           </Tooltip>
-          {GITHUB_REPO_URL ? (
-            <Tooltip title="GitHub">
-              <IconButton
-                component="a"
-                href={GITHUB_REPO_URL}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="GitHub repository"
-              >
+        ) : (
+          <Tooltip title="GitHub repository — coming soon">
+            <span>
+              <IconButton disabled aria-label="GitHub repository (reserved)">
                 <GithubIcon />
               </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip title="GitHub repository — coming soon">
-              <span>
-                <IconButton disabled aria-label="GitHub repository (reserved)">
-                  <GithubIcon />
-                </IconButton>
-              </span>
-            </Tooltip>
-          )}
-          <Tooltip title="Settings">
-            <IconButton onClick={() => setSettingsOpen(true)} aria-label="Settings">
-              <SettingsIcon />
-            </IconButton>
+            </span>
           </Tooltip>
-        </Box>
-      </header>
-
-      <Dialog open={settingsOpen} onClose={() => setSettingsOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Settings</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ opacity: 0.7 }}>
-            The settings dialog lands in the next milestone (TODO #6): backend selector, WebGPU
-            model management, llama-server configuration, UI language and default languages.
-          </Typography>
-        </DialogContent>
-        <Box sx={{ px: 2, pb: 2 }}>
-          <Button variant="text" onClick={() => setSettingsOpen(false)}>
-            Close
-          </Button>
-        </Box>
-      </Dialog>
-    </>
+        )}
+        <Tooltip title="Settings">
+          <IconButton onClick={onOpenSettings} aria-label="Settings">
+            <SettingsIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </header>
   );
 }
