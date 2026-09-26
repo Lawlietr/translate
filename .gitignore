@@ -18,3 +18,8 @@ npm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# .NET wrapper (TODO #10)
+/wrapper/bin/
+/wrapper/obj/
+config.json
