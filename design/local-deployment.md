@@ -24,7 +24,20 @@ Every target below must respect this split.
 - Payload placement: **Node runtime + standalone build embedded in the exe** (single distributable artifact; D2 revised 2026-09-21 — statics-only → node, so the .exe also exposes the §API shim). Size cost +~50–100 MB — negligible next to the multi-GB model downloads.
 - Implementation: **C# .NET 8 WinForms + `Microsoft.Web.WebView2` NuGet**, single-file publish (D1 decided 2026-09-21). Build host: **GitHub Actions `windows-latest`** (D5 decided 2026-09-22 — native Windows build, gated on the GitHub repo landing; the Linux cross-compile path `EnableWindowsTargeting` was evaluated and rejected in favor of native build + runtime smoke test) — design/ci-build.md.
 - Caveats to document in the UI/README: first bind to `0.0.0.0` triggers the Windows Firewall prompt (expected); LAN clients without TLS get a "WebGPU unavailable" notice, not a crash.
-- Acceptance criteria:
+### Sub-tasks (split 2026-09-26 — each independently testable)
+
+| Sub-task | Scope | Deliverable / exit criterion |
+|----------|-------|------------------------------|
+| **10a** — C# launcher skeleton | WinForms + `Microsoft.Web.WebView2` NuGet; `config.json` read/write (first-run defaults: `bind_ip`, `port`, `open_view`, shim keys); node child-process launch (path configurable for dev) + port-ready HTTP poll; WebView2 window → `http://127.0.0.1:<port>`; clean shutdown (kill child on window close) | `dotnet run` on the dev box opens a WebView pointing at the local dev server (3001) — no CI, no Windows needed |
+| **10b** — Node runtime + standalone embedding | Embed node win-x64 binary + `next` standalone output as a zip resource in the exe; first-run extract to `%LOCALAPPDATA%/translate/`; version-check + re-extract on update; launcher resolves the extracted node path (replaces the dev-box 3001 path from 10a) | Launcher on Windows finds its own embedded node + app; no external node install needed |
+| **10c** — GitHub Actions workflow | `.github/workflows/exe.yml` on `windows-latest`: `dotnet publish -r win-x64 --self-contained -c Release` → build standalone → package exe + payload → **smoke test job** (launch exe, wait port-ready, `curl /api/v1/models`) → upload artifact to Codeberg generic package | Green CI run produces a downloadable .exe zip; smoke test passes |
+| **10d** — Real Win11 integration test | Double-click on a clean Win11 machine → `config.json` created with defaults → WebView opens → WebGPU translation works (loopback) → edit `bind_ip`/`port` + restart → LAN device can reach the server, WebGPU status correct per TLS rule | Owner confirms all acceptance criteria on a real machine |
+
+**Dependency chain:** 10a → 10b → 10c → 10d. Each step builds on the previous; 10a is testable with zero Windows infrastructure (dev box `dotnet run`), 10b needs a Windows box to verify extraction, 10c needs the GitHub repo (landed), 10d needs the owner's Win11 machine.
+
+**Note on #19 (API shim):** 10a–10c do NOT require #19 to be complete. The launcher embeds whatever `next` standalone build exists; the shim endpoints are added to the Next.js app by #19. The exe is structurally ready for the shim the moment #19 lands — no rework.
+
+- Acceptance criteria (10d):
   - Double-click exe on a clean Win11 machine → app window opens, `config.json` created with defaults
   - Edit `bind_ip`/`port`, restart → server binds the new address
   - WebGPU translation works inside the WebView (loopback URL)
