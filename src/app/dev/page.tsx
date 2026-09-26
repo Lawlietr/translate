@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { CopyButton } from "../../components/copy-button";
+import { AppSettingsProvider } from "../../hooks/use-app-settings";
 import { VISIBLE_WEBGPU_MODELS } from "../../lib/model-catalog";
 import {
   cachedModelState,
@@ -224,7 +225,8 @@ export default function Page() {
   const busy = phase !== "idle";
 
   return (
-    <ThemeProvider theme={darkTheme}>
+    <AppSettingsProvider>
+      <ThemeProvider theme={darkTheme}>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 flex flex-col gap-5">
         <header className="flex items-center justify-between gap-3">
           <div>
@@ -415,6 +417,7 @@ export default function Page() {
           </Typography>
         </footer>
       </main>
-    </ThemeProvider>
+      </ThemeProvider>
+    </AppSettingsProvider>
   );
 }

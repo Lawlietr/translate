@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { getActivityLog } from "../lib/activity-log";
+import { useI18n } from "../hooks/useI18n";
 
 export function ActivityLogPanel() {
+  const { t } = useI18n();
   const [lines, setLines] = useState<string[]>([]);
 
   useEffect(() => {
@@ -15,7 +17,7 @@ export function ActivityLogPanel() {
   return (
     <Box sx={{ border: "1px solid rgba(128,128,128,0.35)", borderRadius: 1, p: 1 }}>
       <Typography variant="caption" sx={{ opacity: 0.6 }}>
-        diagnostics — stages + fetches (requests without a ← line are still pending)
+        {t("activity.title")}
       </Typography>
       <Box
         component="pre"
@@ -28,7 +30,7 @@ export function ActivityLogPanel() {
           whiteSpace: "pre-wrap",
         }}
       >
-        {lines.length > 0 ? lines.join("\n") : "no entries yet"}
+        {lines.length > 0 ? lines.join("\n") : t("activity.empty")}
       </Box>
     </Box>
   );

@@ -13,8 +13,8 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { GITHUB_REPO_URL } from "../lib/site";
-import { useAppSettings } from "../hooks/use-app-settings";
-import type { UILanguage } from "../lib/settings-manager";
+import { useI18n } from "../hooks/useI18n";
+import { SUPPORTED_LANGUAGES } from "../lib/i18n/translations";
 import type { ThemeMode } from "../hooks/use-theme";
 
 function GithubIcon(props: React.ComponentProps<typeof SvgIcon>) {
@@ -32,50 +32,53 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ themeMode, onToggleTheme, onOpenSettings }: AppHeaderProps) {
-  const { settings, update } = useAppSettings();
+  const { t, lang, setLanguage } = useI18n();
 
   return (
     <header className="flex items-center justify-between gap-3">
-      <Typography variant="h5">Translate</Typography>
+      <Typography variant="h5">{t("site.title")}</Typography>
       <Box className="flex items-center gap-1">
         <Select
           size="small"
-          value={settings.language}
-          onChange={(e) => update({ language: e.target.value as UILanguage })}
+          value={lang}
+          onChange={(e) => setLanguage(e.target.value as (typeof SUPPORTED_LANGUAGES)[number]["id"])}
           sx={{ minWidth: 100 }}
-          aria-label="UI language"
+          aria-label={t("header.languageAria")}
         >
-          <MenuItem value="zh-TW">繁體中文</MenuItem>
-          <MenuItem value="en">English</MenuItem>
+          {SUPPORTED_LANGUAGES.map((l) => (
+            <MenuItem key={l.id} value={l.id}>
+              {l.label}
+            </MenuItem>
+          ))}
         </Select>
-        <Tooltip title={themeMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
-          <IconButton onClick={onToggleTheme} aria-label="Toggle theme">
+        <Tooltip title={themeMode === "dark" ? t("header.toLight") : t("header.toDark")}>
+          <IconButton onClick={onToggleTheme} aria-label={t("header.themeAria")}>
             {themeMode === "dark" ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
           </IconButton>
         </Tooltip>
         {GITHUB_REPO_URL ? (
-          <Tooltip title="GitHub">
+          <Tooltip title={t("header.githubTooltip")}>
             <IconButton
               component="a"
               href={GITHUB_REPO_URL}
               target="_blank"
               rel="noreferrer"
-              aria-label="GitHub repository"
+              aria-label={t("header.githubAria")}
             >
               <GithubIcon />
             </IconButton>
           </Tooltip>
         ) : (
-          <Tooltip title="GitHub repository — coming soon">
+          <Tooltip title={t("header.githubComingSoon")}>
             <span>
-              <IconButton disabled aria-label="GitHub repository (reserved)">
+              <IconButton disabled aria-label={t("header.githubReservedAria")}>
                 <GithubIcon />
               </IconButton>
             </span>
           </Tooltip>
         )}
-        <Tooltip title="Settings">
-          <IconButton onClick={onOpenSettings} aria-label="Settings">
+        <Tooltip title={t("header.settingsTooltip")}>
+          <IconButton onClick={onOpenSettings} aria-label={t("header.settingsAria")}>
             <SettingsIcon />
           </IconButton>
         </Tooltip>

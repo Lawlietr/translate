@@ -34,6 +34,8 @@ import {
 import { SUPPORTED_TRANSLATION_LANGUAGES, languageName } from "../lib/languages";
 import { getPromptProfile, resolveProfile } from "../lib/prompt-profiles";
 import { useAppSettings } from "../hooks/use-app-settings";
+import { useI18n } from "../hooks/useI18n";
+import { SUPPORTED_LANGUAGES } from "../lib/i18n/translations";
 import { fetchAvailableModels } from "../lib/providers/llama-server";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
@@ -57,20 +59,21 @@ export function SettingsDialog({ open, initialTab, onClose }: SettingsDialogProp
 }
 
 function SettingsBody({ initialTab, onClose }: { initialTab: TabId; onClose: () => void }) {
+  const { t } = useI18n();
   const [tab, setTab] = useState<TabId>(initialTab);
 
   return (
     <>
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        Settings
-        <IconButton size="small" onClick={onClose} aria-label="Close settings">
+        {t("settings.title")}
+        <IconButton size="small" onClick={onClose} aria-label={t("settings.closeAria")}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
       <DialogContent dividers>
         <Tabs value={tab} onChange={(_, value) => setTab(value as TabId)} sx={{ mb: 3 }}>
-          <Tab value="inference" label="Inference" />
-          <Tab value="general" label="General" />
+          <Tab value="inference" label={t("settings.tabInference")} />
+          <Tab value="general" label={t("settings.tabGeneral")} />
         </Tabs>
         <Box sx={{ display: tab === "inference" ? "block" : "none" }}>
           <InferenceTab />
@@ -85,6 +88,7 @@ function SettingsBody({ initialTab, onClose }: { initialTab: TabId; onClose: () 
 
 function InferenceTab() {
   const { settings, update, updateLlama } = useAppSettings();
+  const { t } = useI18n();
   const modelId = settings.webgpuModelId;
   const model = getModelInfo(modelId) ?? VISIBLE_WEBGPU_MODELS[0];
   const [cache, setCache] = useState<CacheStatus>({ cached: false, bytes: 0 });
@@ -103,7 +107,7 @@ function InferenceTab() {
   const detectModels = useCallback(() => {
     const baseUrl = settings.llamaServerConfig.baseUrl;
     if (!baseUrl.trim()) {
-      setDetectError("Enter the server URL first");
+      setDetectError(t("provider.enterUrlFirst"));
       return;
     }
     setDetecting(true);
@@ -112,7 +116,7 @@ function InferenceTab() {
       .then((models) => {
         setModelOptions(models);
         if (models.length === 0) {
-          setDetectError("Connected, but no models are exposed (empty list).");
+          setDetectError(t("provider.noModels"));
         }
       })
       .catch((e: unknown) => setDetectError(e instanceof Error ? e.message : String(e)))
@@ -196,8 +200,8 @@ function InferenceTab() {
           ok: true,
           detail:
             models.length > 0
-              ? `Connected — models: ${models.join(", ")}`
-              : "Connected, but no models are exposed (GET /v1/models returned an empty list).",
+              ? t("provider.connectedModels", { list: models.join(", ") })
+              : t("provider.connectedEmpty"),
         });
       })
       .catch((e: unknown) => {
@@ -208,9 +212,7 @@ function InferenceTab() {
           msg.toLowerCase().includes("timeout");
         setTestResult({
           ok: false,
-          detail: looksLikeNetwork
-            ? `${msg} — check the server is running and reachable; if it runs on another machine, make sure CORS is configured (start llama-server with --cors-origins '*').`
-            : msg,
+          detail: looksLikeNetwork ? `${msg} ${t("provider.corsHint")}` : msg,
         });
       })
       .finally(() => setTesting(false));
@@ -219,15 +221,15 @@ function InferenceTab() {
   return (
     <Box className="flex flex-col gap-3">
       <Box className="flex items-center justify-between gap-2">
-        <Typography variant="body2">Backend</Typography>
+        <Typography variant="body2">{t("settings.backend")}</Typography>
         <Select
           size="small"
           value={settings.backend}
           onChange={(e) => update({ backend: e.target.value })}
           sx={{ minWidth: 200 }}
         >
-          <MenuItem value="webgpu">WebGPU (in-browser)</MenuItem>
-          <MenuItem value="llama-server">llama-server (local)</MenuItem>
+          <MenuItem value="webgpu">{t("settings.backendWebgpu")}</MenuItem>
+          <MenuItem value="llama-server">{t("settings.backendLlama")}</MenuItem>
         </Select>
       </Box>
 
@@ -242,7 +244,7 @@ function InferenceTab() {
               onChange={(e) => update({ webgpuModelId: e.target.value })}
               sx={{ minWidth: 240 }}
               disabled={phase === "downloading"}
-              aria-label="WebGPU model"
+              aria-label={t("settings.webgpuModelAria")}
             >
               {VISIBLE_WEBGPU_MODELS.map((m) => (
                 <MenuItem key={m.id} value={m.id}>
@@ -255,9 +257,13 @@ function InferenceTab() {
             </Typography>
           </Box>
           {cache.cached ? (
-            <Chip label={`downloaded · ${formatBytes(cache.bytes)}`} color="success" size="small" />
+            <Chip
+              label={t("settings.downloadedChip", { bytes: formatBytes(cache.bytes) })}
+              color="success"
+              size="small"
+            />
           ) : (
-            <Chip label="not downloaded" size="small" />
+            <Chip label={t("settings.notDownloadedChip")} size="small" />
           )}
           {phase === "downloading" && progress && (
             <Box className="flex flex-col gap-1">
@@ -276,7 +282,7 @@ function InferenceTab() {
                 onClick={cancelDownload}
                 size="small"
               >
-                Cancel download
+                {t("settings.cancelDownload")}
               </Button>
             ) : (
               <Button
@@ -285,30 +291,30 @@ function InferenceTab() {
                 size="small"
                 disabled={cache.cached}
               >
-                {cache.cached ? "Downloaded" : "Download model"}
+                {cache.cached ? t("settings.downloaded") : t("settings.downloadModel")}
               </Button>
             )}
             {cache.cached && (
               <Button variant="text" color="warning" onClick={clearCache} size="small" disabled={clearing}>
-                {clearing ? "Clearing…" : "Clear cached model"}
+                {clearing ? t("settings.clearing") : t("settings.clearCached")}
               </Button>
             )}
           </Box>
           {modelError && <Alert severity="error">{modelError}</Alert>}
           <TextField
             size="small"
-            label="Custom system prompt"
+            label={t("settings.systemPromptLabel")}
             value={settings.webgpuSystemPrompt}
             onChange={(e) => update({ webgpuSystemPrompt: e.target.value })}
             multiline
             minRows={2}
             maxRows={6}
             disabled={getPromptProfile(modelId) === "translategemma"}
-            placeholder="optional — e.g. terminology, style, persona"
+            placeholder={t("settings.systemPromptPlaceholder")}
             helperText={
               getPromptProfile(modelId) === "translategemma"
-                ? "this model's chat template does not accept system messages"
-                : "added as a system message — the official task instruction is kept"
+                ? t("settings.systemPromptTgHelper")
+                : t("settings.systemPromptWebgpuHelper")
             }
           />
         </Box>
@@ -316,11 +322,11 @@ function InferenceTab() {
         <Box className="flex flex-col gap-2">
           <TextField
             size="small"
-            label="Server"
+            label={t("provider.server")}
             value={settings.llamaServerConfig.baseUrl}
             onChange={(e) => updateLlama({ baseUrl: e.target.value })}
             placeholder="http://<your-llama-server-host>:8080"
-            helperText="host:port of your llama-server — the /v1 prefix is added automatically"
+            helperText={t("provider.serverHelper")}
           />
           <Box>
             <Autocomplete
@@ -338,8 +344,8 @@ function InferenceTab() {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Model"
-                  placeholder="preset name or model id from /v1/models (blank = auto-detect)"
+                  label={t("provider.model")}
+                  placeholder={t("provider.modelPlaceholder")}
                 />
               )}
               sx={{ minWidth: 0 }}
@@ -351,7 +357,7 @@ function InferenceTab() {
                 onClick={detectModels}
                 disabled={detecting}
               >
-                {detecting ? "Detecting…" : "Detect models"}
+                {detecting ? t("provider.detecting") : t("provider.detect")}
               </Button>
               {detectError && (
                 <Typography variant="caption" color="error">{detectError}</Typography>
@@ -360,14 +366,14 @@ function InferenceTab() {
           </Box>
           <TextField
             size="small"
-            label="API Key"
+            label={t("provider.apiKey")}
             type="password"
             value={settings.llamaServerConfig.apiKey}
             onChange={(e) => updateLlama({ apiKey: e.target.value })}
-            placeholder="only if llama-server was started with --api-key"
+            placeholder={t("provider.apiKeyPlaceholder")}
           />
           <Box className="flex items-center justify-between gap-2">
-            <Typography variant="body2">Prompt preset</Typography>
+            <Typography variant="body2">{t("provider.preset")}</Typography>
             <Select
               size="small"
               value={settings.llamaServerConfig.modelPreset}
@@ -382,7 +388,7 @@ function InferenceTab() {
           </Box>
           <TextField
             size="small"
-            label="Custom system prompt"
+            label={t("settings.systemPromptLabel")}
             value={settings.llamaServerConfig.systemPrompt}
             onChange={(e) => updateLlama({ systemPrompt: e.target.value })}
             multiline
@@ -394,14 +400,14 @@ function InferenceTab() {
                 settings.llamaServerConfig.modelPreset
               ) === "translategemma"
             }
-            placeholder="optional — e.g. terminology, style, persona"
+            placeholder={t("settings.systemPromptPlaceholder")}
             helperText={
               resolveProfile(
                 settings.llamaServerConfig.model,
                 settings.llamaServerConfig.modelPreset
               ) === "translategemma"
-                ? "this model's chat template does not accept system messages"
-                : "hy-mt2: added as a system message (task instruction kept) · generic: replaces the default instruction"
+                ? t("settings.systemPromptTgHelper")
+                : t("settings.systemPromptLlamaHelper")
             }
           />
           <Box>
@@ -409,7 +415,7 @@ function InferenceTab() {
               {testing ? (
                 <CircularProgress size={16} sx={{ mr: 1 }} />
               ) : null}
-              {testing ? "Testing…" : "Test connection"}
+              {testing ? t("provider.testing") : t("provider.test")}
             </Button>
           </Box>
           {testResult && (
@@ -423,23 +429,27 @@ function InferenceTab() {
 
 function GeneralTab() {
   const { settings, update } = useAppSettings();
+  const { t } = useI18n();
 
   return (
     <Box className="flex flex-col gap-3">
       <Box className="flex items-center justify-between gap-2">
-        <Typography variant="body2">UI language</Typography>
+        <Typography variant="body2">{t("general.uiLanguage")}</Typography>
         <Select
           size="small"
           value={settings.language}
           onChange={(e) => update({ language: e.target.value as UILanguage })}
           sx={{ minWidth: 130 }}
         >
-          <MenuItem value="zh-TW">繁體中文</MenuItem>
-          <MenuItem value="en">English</MenuItem>
+          {SUPPORTED_LANGUAGES.map((l) => (
+            <MenuItem key={l.id} value={l.id}>
+              {l.label}
+            </MenuItem>
+          ))}
         </Select>
       </Box>
       <Box className="flex items-center justify-between gap-2">
-        <Typography variant="body2">Default source language</Typography>
+        <Typography variant="body2">{t("general.defaultSource")}</Typography>
         <Select
           size="small"
           value={settings.defaultSourceLang}
@@ -454,7 +464,7 @@ function GeneralTab() {
         </Select>
       </Box>
       <Box className="flex items-center justify-between gap-2">
-        <Typography variant="body2">Default target language</Typography>
+        <Typography variant="body2">{t("general.defaultTarget")}</Typography>
         <Select
           size="small"
           value={settings.defaultTargetLang}
@@ -471,9 +481,9 @@ function GeneralTab() {
       <Divider />
       <Box className="flex items-center justify-between gap-2">
         <Box>
-          <Typography variant="body2">Diagnostics</Typography>
+          <Typography variant="body2">{t("general.diagnostics")}</Typography>
           <Typography variant="caption" sx={{ opacity: 0.6 }}>
-            Show the live activity log (stages, fetches, errors) on the main page
+            {t("general.diagnosticsHelper")}
           </Typography>
         </Box>
         <Switch

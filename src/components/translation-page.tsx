@@ -19,6 +19,8 @@ import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { CopyButton } from "./copy-button";
 import { SUPPORTED_TRANSLATION_LANGUAGES, languageName } from "../lib/languages";
 import { useAppSettings } from "../hooks/use-app-settings";
+import { useI18n } from "../hooks/useI18n";
+import type { Messages } from "../lib/i18n/translations";
 import { useWebGpu } from "../hooks/use-webgpu";
 import { useWorkspace } from "../hooks/use-workspace";
 import { getModelInfo, VISIBLE_WEBGPU_MODELS } from "../lib/model-catalog";
@@ -34,23 +36,27 @@ interface TranslationPageProps {
   settingsOpen: boolean;
 }
 
-function errorHint(message: string, webgpu: boolean): string | null {
+function errorHint(
+  message: string,
+  webgpu: boolean,
+  t: (key: keyof Messages, vars?: Record<string, string | number>) => string
+): string | null {
   const msg = message.toLowerCase();
-  if (msg.includes("no usable webgpu device"))
-    return "This browser has no WebGPU device. Use a recent Chrome/Edge/Chromium build, enable WebGPU if it is disabled, or switch the backend to llama-server in Settings.";
+  if (msg.includes("no usable webgpu device")) return t("hint.noDevice");
   if (msg.includes("secure context") || msg.includes("only available in a secure"))
-    return "WebGPU requires a secure context — open the app over HTTPS or http://localhost, not plain http over the LAN.";
+    return t("hint.secureContext");
   if (webgpu && (msg.includes("download") || msg.includes("cache")))
-    return "The model is not fully downloaded in this browser — open Settings (Inference tab) and download it there first.";
+    return t("hint.notDownloaded");
   if (msg.includes("allocationsize") || msg.includes("insufficient"))
-    return "The GPU ran out of memory for this model — open Settings (Inference tab), switch to the smaller model, or close GPU-heavy tabs and retry.";
+    return t("hint.outOfMemory");
   if (msg.includes("llama-server") || msg.includes("failed to fetch"))
-    return "Could not reach llama-server — open Settings (Inference tab) and use Test connection to check the server, URL, and CORS.";
+    return t("hint.llamaUnreachable");
   return null;
 }
 
 export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPageProps) {
   const { settings, update } = useAppSettings();
+  const { t } = useI18n();
   const backend = settings.backend;
   const webgpuBackend = backend === "webgpu";
   const modelId = settings.webgpuModelId;
@@ -94,7 +100,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   const startTranslate = () => {
     if (!text.trim()) return;
     if (webgpuBackend && cache !== null && !cache.cached) {
-      setError("No model downloaded in this browser yet. Open Settings (Inference tab) and download the model first.");
+      setError(t("page.noModelLong"));
       return;
     }
     setError(null);
@@ -117,7 +123,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
       .then((result) => workspace.set({ output: result.text }))
       .catch((e: unknown) => {
         if (e instanceof DOMException && e.name === "AbortError") {
-          setError("Cancelled.");
+          setError(t("page.cancelled"));
         } else {
           setError(e instanceof Error ? e.message : String(e));
         }
@@ -149,13 +155,12 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
     <Box className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 flex flex-col gap-3">
       {webgpuBackend && !gpu.secureContext && (
         <Alert severity="warning">
-          WebGPU needs a secure context — open over https:// or http://localhost.
+          {t("page.insecureAlert")}
         </Alert>
       )}
       {webgpuBackend && !gpu.checking && gpu.secureContext && !gpu.supported && (
         <Alert severity="error">
-          WebGPU is not available in this browser. Use a recent Chrome/Edge/Chromium build with
-          WebGPU enabled, or switch the backend to llama-server in Settings.
+          {t("page.unsupportedAlert")}
         </Alert>
       )}
 
@@ -170,7 +175,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
               value={settings.defaultSourceLang}
               onChange={(e) => update({ defaultSourceLang: e.target.value })}
               sx={{ minWidth: 150 }}
-              aria-label="Source language"
+              aria-label={t("page.sourceLangAria")}
             >
               {SUPPORTED_TRANSLATION_LANGUAGES.map((l) => (
                 <MenuItem key={l.id} value={l.id}>
@@ -178,8 +183,8 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
                 </MenuItem>
               ))}
             </Select>
-            <Tooltip title="Swap languages (moves the result into the source box)">
-              <IconButton onClick={swap} size="small" aria-label="Swap languages">
+            <Tooltip title={t("page.swapTooltip")}>
+              <IconButton onClick={swap} size="small" aria-label={t("page.swapAria")}>
                 <SwapHorizIcon />
               </IconButton>
             </Tooltip>
@@ -188,20 +193,20 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
             fullWidth
             multiline
             minRows={7}
-            placeholder="Type or paste text to translate…"
+            placeholder={t("page.inputPlaceholder")}
             value={text}
             onChange={(e) => workspace.set({ text: e.target.value })}
-            slotProps={{ input: { "aria-label": "Source text" } }}
+            slotProps={{ input: { "aria-label": t("page.sourceTextAria") } }}
             size="small"
           />
           <Box className="flex items-center justify-between">
             <Typography variant="caption" sx={{ opacity: 0.6 }}>
-              {text.length.toLocaleString()} chars
+              {t("common.chars", { n: text.length.toLocaleString() })}
             </Typography>
             <Box className="flex items-center gap-1">
-              <CopyButton value={text} label="Copy source" />
-              <Tooltip title="Clear">
-                <IconButton size="small" onClick={clear} aria-label="Clear">
+              <CopyButton value={text} label={t("page.copySource")} />
+              <Tooltip title={t("page.clearAria")}>
+                <IconButton size="small" onClick={clear} aria-label={t("page.clearAria")}>
                   <DeleteSweepIcon />
                 </IconButton>
               </Tooltip>
@@ -216,7 +221,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
               value={settings.defaultTargetLang}
               onChange={(e) => update({ defaultTargetLang: e.target.value })}
               sx={{ minWidth: 150 }}
-              aria-label="Target language"
+              aria-label={t("page.targetLangAria")}
             >
               {SUPPORTED_TRANSLATION_LANGUAGES.map((l) => (
                 <MenuItem key={l.id} value={l.id}>
@@ -234,31 +239,31 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
               onChange={(e) => workspace.set({ output: e.target.value })}
               placeholder={
                 webgpuBackend
-                  ? "Translation appears here (editable)."
-                  : "Translation appears here (editable) — sent to your llama-server."
+                  ? t("page.outputPlaceholderWebgpu")
+                  : t("page.outputPlaceholderLlama")
               }
-              slotProps={{ input: { "aria-label": "Translated text" } }}
+              slotProps={{ input: { "aria-label": t("page.outputTextAria") } }}
               size="small"
             />
           ) : (
             <Box className="flex-1 flex flex-col items-center justify-center gap-3 border border-dashed rounded-md p-6 text-center">
               <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                No model downloaded in this browser yet.
+                {t("page.noModelShort")}
               </Typography>
               <Button
                 variant="outlined"
                 size="small"
                 onClick={() => onOpenSettings("inference")}
               >
-                Choose & download a model in Settings
+                {t("page.chooseModel")}
               </Button>
             </Box>
           )}
           <Box className="flex items-center justify-between">
             <Typography variant="caption" sx={{ opacity: 0.6 }}>
-              {output.length.toLocaleString()} chars
+              {t("common.chars", { n: output.length.toLocaleString() })}
             </Typography>
-            <CopyButton value={output} label="Copy translation" />
+            <CopyButton value={output} label={t("page.copyOutput")} />
           </Box>
         </Box>
       </Box>
@@ -266,7 +271,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
       <Box className="flex flex-wrap items-center gap-2">
         {translating ? (
           <Button variant="outlined" color="error" onClick={cancel}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         ) : (
           <Button
@@ -278,7 +283,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
               (webgpuBackend && (gpu.checking || !gpu.secureContext || !gpu.supported))
             }
           >
-            Translate
+            {t("page.translate")}
           </Button>
         )}
         {status && (
@@ -296,9 +301,9 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
       {error && (
         <Box className="flex flex-col gap-1">
           <Alert severity="error">{error}</Alert>
-          {errorHint(error, webgpuBackend) && (
+          {errorHint(error, webgpuBackend, t) && (
             <Typography variant="caption" sx={{ opacity: 0.7, pl: 1 }}>
-              {errorHint(error, webgpuBackend)}
+              {errorHint(error, webgpuBackend, t)}
             </Typography>
           )}
         </Box>
@@ -311,27 +316,29 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
         <Box className="flex items-center gap-2 flex-wrap">
           <Typography variant="caption" sx={{ opacity: 0.6 }}>
             {webgpuBackend
-              ? `${model.name} · WebGPU (in-browser)`
-              : `llama-server · ${settings.llamaServerConfig.model || "auto-detect"}`}
+              ? t("page.footerWebgpu", { model: model.name })
+              : t("page.footerLlama", {
+                  model: settings.llamaServerConfig.model || t("common.autoDetect"),
+                })}
           </Typography>
           {webgpuBackend ? (
             gpu.checking ? (
-              <Chip label="checking WebGPU…" size="small" />
+              <Chip label={t("chip.checking")} size="small" />
             ) : !gpu.secureContext ? (
-              <Chip label="NOT a secure context" color="warning" size="small" />
+              <Chip label={t("chip.notSecure")} color="warning" size="small" />
             ) : !gpu.supported ? (
-              <Chip label="WebGPU unavailable" color="error" size="small" />
+              <Chip label={t("chip.unavailable")} color="error" size="small" />
             ) : cache !== null && !cache.cached ? (
-              <Chip label="model not downloaded" color="warning" size="small" />
+              <Chip label={t("chip.notDownloaded")} color="warning" size="small" />
             ) : (
-              <Chip label="WebGPU ready" color="success" size="small" />
+              <Chip label={t("chip.ready")} color="success" size="small" />
             )
           ) : (
-            <Chip label="llama-server (local)" size="small" />
+            <Chip label={t("chip.llamaLocal")} size="small" />
           )}
         </Box>
         <Typography variant="caption" sx={{ opacity: 0.5 }}>
-          nothing leaves this device
+          {t("page.privacy")}
         </Typography>
       </Box>
     </Box>

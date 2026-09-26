@@ -4,9 +4,12 @@ import { useState } from "react";
 import { IconButton, Tooltip } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
+import { useI18n } from "../hooks/useI18n";
 
-export function CopyButton({ value, label = "Copy" }: { value: string; label?: string }) {
+export function CopyButton({ value, label }: { value: string; label?: string }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
+  const effectiveLabel = label ?? t("common.copy");
 
   const copy = async () => {
     if (!value) return;
@@ -20,13 +23,13 @@ export function CopyButton({ value, label = "Copy" }: { value: string; label?: s
   };
 
   return (
-    <Tooltip title={copied ? "Copied" : label}>
+    <Tooltip title={copied ? t("common.copied") : effectiveLabel}>
       <span>
         <IconButton
           size="small"
           onClick={copy}
           disabled={!value}
-          aria-label={label}
+          aria-label={effectiveLabel}
           sx={{
             p: 0.5,
             bgcolor: "rgba(128,128,128,0.15)",

@@ -15,6 +15,7 @@ import {
   type AppSettings,
   type LlamaServerConfig,
 } from "../lib/settings-manager";
+import { normalizeLanguage } from "../lib/i18n/translations";
 
 interface AppSettingsValue {
   settings: AppSettings;
@@ -37,6 +38,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     if (!hydrated) return;
     saveSettings(settings);
   }, [settings, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    document.documentElement.lang = normalizeLanguage(settings.language);
+  }, [settings.language, hydrated]);
 
   const value = useMemo<AppSettingsValue>(
     () => ({
