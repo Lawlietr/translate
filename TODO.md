@@ -14,6 +14,7 @@
 | 12 | Local non-Docker Linux serving (full build + `npm start`, Caddy/nginx optional TLS, D6): docs + optional `scripts/serve-local.sh` — design/local-deployment.md | P2 |
 | 19 | OpenAI-compatible API shim for **all node targets** (Docker / local Linux / .exe — D6; CF stays static-only): `/api/v1/chat/completions` + `/v1/models`, server-side prompt-profile reuse (#16/#17), server config `LLAMA_BASE_URL`/`MODEL_PRESET`/`SYSTEM_PROMPT`/`API_TOKEN` (env/.env/config.json per target), optional llama.cpp compose service — design/local-deployment.md §API shim | P2 |
 | 13 | Forgejo workflows: docker image build on runner `192.168.1.12` (multi-arch) publishing to Codeberg registry ONLY (local Forgejo never stores artifacts) + GitHub Actions mirror when repo lands; exe workflow once D5 build host decided — design/ci-build.md | P2 |
+| 23 | TTS on-demand read-aloud (input + output text, user-initiated, never auto): **A** local Kokoro-82M ONNX (kokoro-js, English-only in mainline) + **B** Web Speech API (Chinese, opt-in, OS-dependent) — design/tts.md; **C** (uzen-zone zh fork) / **D** (MeloTTS standalone pipeline) = optional evaluation only; ZeroGPU excluded (privacy + feature mismatch) | P3 |
 
 ## Completed
 
