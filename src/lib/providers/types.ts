@@ -16,13 +16,14 @@ export interface ProviderConfig {
   model?: string;
   apiKey?: string;
   modelPreset?: ModelPreset;
+  systemPrompt?: string;
   onStatus?: (status: string) => void;
 }
 
 export interface ProviderConfigField {
   key: string;
   label: string;
-  type: "text" | "url" | "password" | "select";
+  type: "text" | "url" | "password" | "select" | "multiline";
   required: boolean;
   placeholder?: string;
   helperText?: string;

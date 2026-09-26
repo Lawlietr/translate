@@ -106,7 +106,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
     const ac = new AbortController();
     acRef.current = ac;
     const config: ProviderConfig = webgpuBackend
-      ? { model: modelId, onStatus: setStatus }
+      ? { model: modelId, systemPrompt: settings.webgpuSystemPrompt, onStatus: setStatus }
       : { ...settings.llamaServerConfig, onStatus: setStatus };
     getProviderOrThrow(backend)
       .translate(

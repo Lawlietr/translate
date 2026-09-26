@@ -32,6 +32,7 @@ import {
   type CacheStatus,
 } from "../lib/model-cache";
 import { SUPPORTED_TRANSLATION_LANGUAGES, languageName } from "../lib/languages";
+import { getPromptProfile, resolveProfile } from "../lib/prompt-profiles";
 import { useAppSettings } from "../hooks/use-app-settings";
 import { fetchAvailableModels } from "../lib/providers/llama-server";
 import CloseIcon from "@mui/icons-material/Close";
@@ -294,6 +295,22 @@ function InferenceTab() {
             )}
           </Box>
           {modelError && <Alert severity="error">{modelError}</Alert>}
+          <TextField
+            size="small"
+            label="Custom system prompt"
+            value={settings.webgpuSystemPrompt}
+            onChange={(e) => update({ webgpuSystemPrompt: e.target.value })}
+            multiline
+            minRows={2}
+            maxRows={6}
+            disabled={getPromptProfile(modelId) === "translategemma"}
+            placeholder="optional — e.g. terminology, style, persona"
+            helperText={
+              getPromptProfile(modelId) === "translategemma"
+                ? "this model's chat template does not accept system messages"
+                : "added as a system message — the official task instruction is kept"
+            }
+          />
         </Box>
       ) : (
         <Box className="flex flex-col gap-2">
@@ -363,6 +380,30 @@ function InferenceTab() {
               <MenuItem value="generic">generic</MenuItem>
             </Select>
           </Box>
+          <TextField
+            size="small"
+            label="Custom system prompt"
+            value={settings.llamaServerConfig.systemPrompt}
+            onChange={(e) => updateLlama({ systemPrompt: e.target.value })}
+            multiline
+            minRows={2}
+            maxRows={6}
+            disabled={
+              resolveProfile(
+                settings.llamaServerConfig.model,
+                settings.llamaServerConfig.modelPreset
+              ) === "translategemma"
+            }
+            placeholder="optional — e.g. terminology, style, persona"
+            helperText={
+              resolveProfile(
+                settings.llamaServerConfig.model,
+                settings.llamaServerConfig.modelPreset
+              ) === "translategemma"
+                ? "this model's chat template does not accept system messages"
+                : "hy-mt2: added as a system message (task instruction kept) · generic: replaces the default instruction"
+            }
+          />
           <Box>
             <Button variant="outlined" onClick={runTest} size="small" disabled={testing}>
               {testing ? (

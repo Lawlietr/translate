@@ -40,15 +40,24 @@ function toGemmaLangCode(appCode: string): string {
   return GEMMA_LANG_CODE_MAP[appCode] ?? appCode;
 }
 
+export function systemPromptAllowed(profile: PromptProfileId): boolean {
+  return profile !== "translategemma";
+}
+
 export function buildMessages(
   profile: PromptProfileId,
-  request: TranslationPromptInput
+  request: TranslationPromptInput,
+  systemPrompt?: string
 ): ChatMessage[] {
+  const system = (systemPrompt ?? "").trim();
   switch (profile) {
     case "hy-mt2":
       return [
+        ...(system
+          ? [{ role: "system" as const, content: system }]
+          : []),
         {
-          role: "user",
+          role: "user" as const,
           content:
             `Translate the following text into ${languageName(request.targetLang)}. ` +
             "Note that you should only output the translated result without any additional explanation:\n\n" +
@@ -70,6 +79,12 @@ export function buildMessages(
         },
       ];
     case "generic":
+      if (system) {
+        return [
+          { role: "system", content: system },
+          { role: "user", content: request.text },
+        ];
+      }
       return [
         {
           role: "user",

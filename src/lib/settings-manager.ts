@@ -10,12 +10,14 @@ export interface LlamaServerConfig {
   model: string;
   apiKey: string;
   modelPreset: ModelPreset;
+  systemPrompt: string;
 }
 
 export interface AppSettings {
   backend: Backend;
   webgpuModelId: string;
   llamaServerConfig: LlamaServerConfig;
+  webgpuSystemPrompt: string;
   language: UILanguage;
   defaultSourceLang: string;
   defaultTargetLang: string;
@@ -33,7 +35,9 @@ export function defaultSettings(): AppSettings {
       model: "",
       apiKey: "",
       modelPreset: "auto",
+      systemPrompt: "",
     },
+    webgpuSystemPrompt: "",
     language: "zh-TW",
     defaultSourceLang: "zh-TW",
     defaultTargetLang: "en",
@@ -62,6 +66,10 @@ function normalizeLlamaServerConfig(
   if ("modelPreset" in parsed) {
     normalized.modelPreset = normalizeModelPreset(parsed.modelPreset);
   }
+  if ("systemPrompt" in parsed) {
+    normalized.systemPrompt =
+      typeof parsed.systemPrompt === "string" ? parsed.systemPrompt : "";
+  }
   return normalized;
 }
 
@@ -77,6 +85,10 @@ export function loadSettings(): AppSettings {
       ...parsed,
       backend: normalizeBackend(parsed.backend),
       webgpuModelId: normalizeModelId(parsed.webgpuModelId),
+      webgpuSystemPrompt:
+        typeof parsed.webgpuSystemPrompt === "string"
+          ? parsed.webgpuSystemPrompt
+          : "",
       language: normalizeLanguage(parsed.language),
       diagnostics: parsed.diagnostics === true,
       llamaServerConfig: {

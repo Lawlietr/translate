@@ -145,7 +145,7 @@ async function run(
   const started = Date.now();
   const pipeline = await loadPipeline(modelId, config.onStatus);
   const profile = resolveProfile(modelId, config.modelPreset);
-  const messages = buildMessages(profile, request);
+  const messages = buildMessages(profile, request, config.systemPrompt);
   const chatPrompt = pipeline.tokenizer.apply_chat_template(messages, {
     add_generation_prompt: true,
     tokenize: false,

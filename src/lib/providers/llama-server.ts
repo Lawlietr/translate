@@ -81,6 +81,7 @@ async function chatCompletion(
   model: string,
   request: TranslationRequest,
   preset: ProviderConfig["modelPreset"],
+  systemPrompt: string | undefined,
   apiKey: string | undefined,
   signal?: AbortSignal
 ): Promise<string> {
@@ -91,7 +92,7 @@ async function chatCompletion(
       headers: { "Content-Type": "application/json", ...authHeaders(apiKey) },
       body: JSON.stringify({
         model,
-        messages: buildMessages(resolveProfile(model, preset), request),
+        messages: buildMessages(resolveProfile(model, preset), request, systemPrompt),
         max_tokens: estimateMaxTokens(request.text),
         temperature: 0,
         chat_template_kwargs: { enable_thinking: false },
@@ -157,6 +158,15 @@ const CONFIG_SCHEMA: ProviderConfigField[] = [
     helperText:
       "how to format requests for the loaded model — auto-detect from the model id, override for renamed/repacked files",
   },
+  {
+    key: "systemPrompt",
+    label: "Custom system prompt",
+    type: "multiline",
+    required: false,
+    placeholder: "optional — e.g. terminology, style, persona",
+    helperText:
+      "hy-mt2: added as a system message (the official task instruction is kept) · generic: replaces the default instruction · translategemma: not allowed (its chat template rejects system messages)",
+  },
 ];
 
 export const llamaServerProvider: AIProvider = {
@@ -187,6 +197,7 @@ export const llamaServerProvider: AIProvider = {
       model,
       request,
       config.modelPreset,
+      config.systemPrompt,
       config.apiKey,
       signal
     );

@@ -145,9 +145,16 @@ selection, hidden/disabled while the active model is the translategemma profile)
 Per AGENTS rule 8, user-supplied prompts are the user's own text — the app never
 injects UI language into them; no translation of the field itself.
 
-⚠ The implemented `llama-server.ts` (from #14) still sends system + string content —
-**hard-incompatible with translategemma** (both rules raise). Follow-up: refactor its
-message building onto the profiles (task in TODO).
+Implementation status (verified 2026-09-26, TODO #17 done): both providers pass the
+user's `systemPrompt` through to `buildMessages(profile, request, systemPrompt)` —
+`hy-mt2` prepends the system message (official user instruction untouched),
+`translategemma` is defensively ignored in `buildMessages` **and** UI-disabled, `generic`
+replaces the default instruction (user message carries the raw text). Settings keys:
+`llamaServerConfig.systemPrompt` + top-level `webgpuSystemPrompt` (both `""` = unset).
+The llama-server field is UI-disabled whenever the **effective** profile is
+translategemma (`modelPreset === 'translategemma'`, or `auto` + model field matching
+the translategemma pattern); the WebGPU field is disabled when the active model's
+profile is translategemma.
 
 Prompt changes for the small models must be A/B-tested in a real browser (AGENTS rule 8)
 — WebGPU fp16 failures are not reproducible on CPU.
