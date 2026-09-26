@@ -57,6 +57,19 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 - UI strings via a small `t()` in `src/lib/i18n/` (zh-TW + en), persisted in localStorage — port the pattern from what-do-you-see
 - **UI language and model instruction language are separate concerns** (webgpu-knowledge.md §5): the instruction to the model is always English; only the requested OUTPUT language changes
 
+## Workspace persistence (input + output survive reload — TODO #22)
+
+**Owner-requested 2026-09-23** — Google Translate parity: type a translation, reload the page, and both the source text and the last result are still there (the result is restored, so no re-inference is needed).
+
+- **What persists:** source text + output text only. **Languages persist already** — the pane selectors bind straight to the settings fields `defaultSourceLang`/`defaultTargetLang` (see Settings dialog above), which `AppSettingsProvider` saves to `translate:settings` on every change; verified, no extra work.
+- **Storage:** separate key `translate:workspace` with `JSON { text, output }` — deliberately NOT folded into `translate:settings`: settings has a normalize/validate pipeline (`loadSettings`) meant for config, while the workspace is two plain strings. Quota/privacy-mode errors are swallowed (same `try/catch` pattern as `saveSettings`) — a full localStorage must never break the page.
+- **Restore is post-mount** (hydration-safe): SSR and the client's first render both show empty panes (no mismatch), then a mount effect loads the stored workspace — the exact `AppSettingsProvider`/`useThemeMode` pattern, StrictMode-safe (the load happens before the hydrated gate opens, so the double mount cannot clobber stored text with empty strings).
+- **Save is debounced (~400 ms)** — one localStorage write per typing burst, not per keystroke. The pending timer is cancelled on unmount.
+- **Clear button wipes storage too** (owner decision 2026-09-23): `clear()` resets the in-memory state AND `removeItem`s the key, so a reload after Clear does not resurrect the text (that would feel like a bug). A subsequent debounced save of the empty state is harmless (equivalent to absent).
+- **Swap** composes naturally: it sets `text = output, output = ""`, and the debounced save persists exactly that.
+- **Mid-translation reload:** the in-flight phase is never persisted — a reload lands in `idle` with whatever output was last completed. No special handling needed.
+- **Not doing:** URL-fragment persistence (`#src=...|text`) — no sharing need in a local-only app, URL length limits, and the text would sit in the address bar; if "share a translation link" is ever wanted it is a separate feature.
+
 ## Implementation notes (deviations / pitfalls)
 
 - **Model row — now in Settings (since #6):** `/` used to carry a model row above the panes while Settings didn't exist; it moved into the Inference tab verbatim (picker + size + downloaded chip + Download/Cancel with streamed progress — same `prefetchModel` pipeline as `/dev`). **Deviation from the original spec:** there is NO separate "Manage models" sub-dialog — the model row IS the management UI (one row, inline), matching what the main page already had; Clear cache is per-model (`clearWebGpuModelCache(modelId)` deletes only that model's HF cache entries, not the whole cache) with a clearing state and a cache re-check afterwards.

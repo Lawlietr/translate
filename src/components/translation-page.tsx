@@ -18,8 +18,9 @@ import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { CopyButton } from "./copy-button";
 import { SUPPORTED_TRANSLATION_LANGUAGES, languageName } from "../lib/languages";
-import { useWebGpu } from "../hooks/use-webgpu";
 import { useAppSettings } from "../hooks/use-app-settings";
+import { useWebGpu } from "../hooks/use-webgpu";
+import { useWorkspace } from "../hooks/use-workspace";
 import { getModelInfo, VISIBLE_WEBGPU_MODELS } from "../lib/model-catalog";
 import { cachedModelState, formatDuration, type CacheStatus } from "../lib/model-cache";
 import { getProviderOrThrow } from "../lib/providers/registry";
@@ -56,8 +57,9 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   const model = getModelInfo(modelId) ?? VISIBLE_WEBGPU_MODELS[0];
   const gpu = useWebGpu();
 
-  const [text, setText] = useState("");
-  const [output, setOutput] = useState("");
+  const workspace = useWorkspace();
+  const text = workspace.text;
+  const output = workspace.output;
   const [phase, setPhase] = useState<Phase>("idle");
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +98,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
       return;
     }
     setError(null);
-    setOutput("");
+    workspace.set({ output: "" });
     setStatus("");
     setStartedAt(Date.now());
     setElapsed(0);
@@ -112,7 +114,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
         config,
         ac.signal
       )
-      .then((result) => setOutput(result.text))
+      .then((result) => workspace.set({ output: result.text }))
       .catch((e: unknown) => {
         if (e instanceof DOMException && e.name === "AbortError") {
           setError("Cancelled.");
@@ -129,15 +131,13 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   const cancel = () => acRef.current?.abort();
 
   const clear = () => {
-    setText("");
-    setOutput("");
+    workspace.clear();
     setError(null);
   };
 
   const swap = () => {
     if (output) {
-      setText(output);
-      setOutput("");
+      workspace.set({ text: output, output: "" });
     }
     update({
       defaultSourceLang: settings.defaultTargetLang,
@@ -190,7 +190,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
             minRows={7}
             placeholder="Type or paste text to translate…"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => workspace.set({ text: e.target.value })}
             slotProps={{ input: { "aria-label": "Source text" } }}
             size="small"
           />
@@ -231,7 +231,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
               multiline
               minRows={7}
               value={output}
-              onChange={(e) => setOutput(e.target.value)}
+              onChange={(e) => workspace.set({ output: e.target.value })}
               placeholder={
                 webgpuBackend
                   ? "Translation appears here (editable)."
