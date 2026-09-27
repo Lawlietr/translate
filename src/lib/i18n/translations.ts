@@ -1,4 +1,4 @@
-export type Language = "en" | "zh-TW";
+export type Language = "en" | "zh-TW" | "ja" | "ko";
 
 export interface Messages {
   "site.title": string;
@@ -108,6 +108,8 @@ export interface Messages {
 export const SUPPORTED_LANGUAGES: Array<{ id: Language; label: string }> = [
   { id: "zh-TW", label: "繁體中文" },
   { id: "en", label: "English" },
+  { id: "ja", label: "日本語" },
+  { id: "ko", label: "한국어" },
 ];
 
 export const translations: Record<Language, Messages> = {
@@ -349,10 +351,245 @@ export const translations: Record<Language, Messages> = {
     "activity.title": "診斷 — 階段 + 抓取（沒有 ← 列的請求仍在進行中）",
     "activity.empty": "尚無記錄",
   },
+
+  ja: {
+    "site.title": "Translate",
+
+    "header.languageAria": "UI言語",
+    "header.themeAria": "テーマ切替",
+    "header.toLight": "ライトモードに切替",
+    "header.toDark": "ダークモードに切替",
+    "header.githubAria": "GitHub リポジトリ",
+    "header.githubReservedAria": "GitHub リポジトリ（予約）",
+    "header.githubTooltip": "GitHub",
+    "header.githubComingSoon": "GitHub リポジトリ — 近日公開",
+    "header.settingsAria": "設定",
+    "header.settingsTooltip": "設定",
+
+    "common.cancel": "キャンセル",
+    "common.copy": "コピー",
+    "common.copied": "コピーしました",
+    "common.clear": "クリア",
+    "common.chars": "{n} 文字",
+    "common.autoDetect": "自動検出",
+
+    "page.insecureAlert":
+      "WebGPU はセキュアなコンテキストが必要です — https:// または http://localhost で開いてください。",
+    "page.unsupportedAlert":
+      "このブラウザは WebGPU を利用できません。WebGPU 有効の比較的新しい Chrome/Edge/Chromium を使用するか、設定でバックエンドを llama-server に切替してください。",
+    "page.sourceLangAria": "元の言語",
+    "page.swapTooltip": "言語を入れ替え（結果を入力欄へ移動）",
+    "page.swapAria": "言語を入れ替え",
+    "page.inputPlaceholder": "翻訳するテキストを入力または貼り付け…",
+    "page.sourceTextAria": "元のテキスト",
+    "page.copySource": "元テキストをコピー",
+    "page.clearAria": "クリア",
+    "page.targetLangAria": "目標言語",
+    "page.outputPlaceholderWebgpu": "ここに翻訳結果が表示されます（編集可能）。",
+    "page.outputPlaceholderLlama":
+      "ここに翻訳結果が表示されます（編集可能）— llama-server に送信されます。",
+    "page.outputTextAria": "翻訳テキスト",
+    "page.noModelShort": "このブラウザにはまだモデルがダウンロードされていません。",
+    "page.chooseModel": "設定でモデルを選択してダウンロード",
+    "page.copyOutput": "翻訳をコピー",
+    "page.translate": "翻訳",
+    "page.noModelLong":
+      "このブラウザにはまだモデルがダウンロードされていません。設定（推論タブ）を開いて、先にモデルをダウンロードしてください。",
+    "page.cancelled": "キャンセルしました。",
+    "page.footerWebgpu": "{model} · WebGPU（ブラウザ内）",
+    "page.footerLlama": "llama-server · {model}",
+    "page.privacy": "データはこの端末から出ません",
+
+    "chip.checking": "WebGPU を確認中…",
+    "chip.notSecure": "セキュアなコンテキストではありません",
+    "chip.unavailable": "WebGPU 利用不可",
+    "chip.notDownloaded": "モデル未ダウンロード",
+    "chip.ready": "WebGPU 準備完了",
+    "chip.llamaLocal": "llama-server（ローカル）",
+
+    "hint.noDevice":
+      "このブラウザには WebGPU デバイスがありません。新しい Chrome/Edge/Chromium を使用し、無効になっている場合は WebGPU を有効にするか、設定でバックエンドを llama-server に切替してください。",
+    "hint.secureContext":
+      "WebGPU はセキュアなコンテキストが必要です — LAN 上の素の HTTP ではなく、HTTPS または http://localhost で開いてください。",
+    "hint.notDownloaded":
+      "モデルがこのブラウザに完全にダウンロードされていません — 設定（推論タブ）を開いて先にダウンロードしてください。",
+    "hint.outOfMemory":
+      "このモデルに GPU メモリが不足しています — 設定（推論タブ）で小さいモデルに切替するか、GPU を多用するタブを閉じて再試行してください。",
+    "hint.llamaUnreachable":
+      "llama-server に接続できません — 設定（推論タブ）の「接続テスト」でサーバー、URL、CORS を確認してください。",
+
+    "settings.title": "設定",
+    "settings.closeAria": "設定を閉じる",
+    "settings.tabInference": "推論",
+    "settings.tabGeneral": "一般",
+    "settings.backend": "バックエンド",
+    "settings.backendWebgpu": "WebGPU（ブラウザ内）",
+    "settings.backendLlama": "llama-server（ローカル）",
+    "settings.webgpuModelAria": "WebGPU モデル",
+    "settings.downloadedChip": "ダウンロード済み · {bytes}",
+    "settings.notDownloadedChip": "未ダウンロード",
+    "settings.cancelDownload": "ダウンロードをキャンセル",
+    "settings.downloaded": "ダウンロード済み",
+    "settings.downloadModel": "モデルをダウンロード",
+    "settings.clearing": "削除中…",
+    "settings.clearCached": "キャッシュされたモデルを削除",
+    "settings.systemPromptLabel": "カスタムシステムプロンプト",
+    "settings.systemPromptPlaceholder": "任意 — 例：用語、スタイル、ペルソナ",
+    "settings.systemPromptTgHelper": "このモデルのチャットテンプレートはシステムメッセージを受け付けません",
+    "settings.systemPromptWebgpuHelper": "システムメッセージとして追加されます — 公式のタスク指示は保持されます",
+    "settings.systemPromptLlamaHelper":
+      "hy-mt2：システムメッセージとして追加（タスク指示は保持）· generic：デフォルト指示を置き換え",
+
+    "provider.server": "サーバー",
+    "provider.serverHelper":
+      "llama-server の host:port — /v1 プレフィックスは自動で追加されます",
+    "provider.model": "モデル",
+    "provider.modelPlaceholder": "プリセット名または /v1/models のモデル ID（空白＝自動検出）",
+    "provider.detecting": "検出中…",
+    "provider.detect": "モデルを検出",
+    "provider.enterUrlFirst": "先にサーバー URL を入力してください",
+    "provider.noModels": "接続済みですが、モデルが公開されていません（リストが空です）。",
+    "provider.apiKey": "API キー",
+    "provider.apiKeyPlaceholder": "llama-server を --api-key で起動した場合のみ",
+    "provider.preset": "プロンプトプリセット",
+    "provider.testing": "テスト中…",
+    "provider.test": "接続をテスト",
+    "provider.connectedModels": "接続済み — モデル：{list}",
+    "provider.connectedEmpty":
+      "接続済みですが、モデルが公開されていません（GET /v1/models が空のリストを返しました）。",
+    "provider.corsHint":
+      "— サーバーが起動して接続可能か確認してください。別のマシン上で起動している場合は CORS の設定を（llama-server を --cors-origins '*' で起動）。",
+
+    "general.uiLanguage": "UI 言語",
+    "general.defaultSource": "デフォルトの元の言語",
+    "general.defaultTarget": "デフォルトの目標言語",
+    "general.diagnostics": "診断",
+    "general.diagnosticsHelper": "メインページにライブのアクティビティログ（段階、フェッチ、エラー）を表示",
+
+    "activity.title": "診断 — 段階 + フェッチ（← 行のないリクエストは保留中）",
+    "activity.empty": "まだエントリがありません",
+  },
+
+  ko: {
+    "site.title": "Translate",
+
+    "header.languageAria": "UI 언어",
+    "header.themeAria": "테마 전환",
+    "header.toLight": "라이트 모드로 전환",
+    "header.toDark": "다크 모드로 전환",
+    "header.githubAria": "GitHub 저장소",
+    "header.githubReservedAria": "GitHub 저장소 (예약)",
+    "header.githubTooltip": "GitHub",
+    "header.githubComingSoon": "GitHub 저장소 — 곧 공개 예정",
+    "header.settingsAria": "설정",
+    "header.settingsTooltip": "설정",
+
+    "common.cancel": "취소",
+    "common.copy": "복사",
+    "common.copied": "복사됨",
+    "common.clear": "지우기",
+    "common.chars": "{n}자",
+    "common.autoDetect": "자동 감지",
+
+    "page.insecureAlert":
+      "WebGPU는 보안 컨텍스트가 필요합니다 — https:// 또는 http://localhost 로 여세요.",
+    "page.unsupportedAlert":
+      "이 브라우저에서는 WebGPU를 사용할 수 없습니다. WebGPU가 켜진 최신 Chrome/Edge/Chromium을 사용하거나, 설정에서 백엔드를 llama-server로 전환하세요.",
+    "page.sourceLangAria": "원래 언어",
+    "page.swapTooltip": "언어 교환 (결과를 입력 칸으로 이동)",
+    "page.swapAria": "언어 교환",
+    "page.inputPlaceholder": "번역할 텍스트를 입력하거나 붙여넣기…",
+    "page.sourceTextAria": "원래 텍스트",
+    "page.copySource": "원래 텍스트 복사",
+    "page.clearAria": "지우기",
+    "page.targetLangAria": "목표 언어",
+    "page.outputPlaceholderWebgpu": "번역 결과가 여기에 표시됩니다 (편집 가능).",
+    "page.outputPlaceholderLlama":
+      "번역 결과가 여기에 표시됩니다 (편집 가능) — llama-server로 전송됩니다.",
+    "page.outputTextAria": "번역된 텍스트",
+    "page.noModelShort": "이 브라우저에는 아직 다운로드된 모델이 없습니다.",
+    "page.chooseModel": "설정에서 모델을 선택해 다운로드",
+    "page.copyOutput": "번역 복사",
+    "page.translate": "번역",
+    "page.noModelLong":
+      "이 브라우저에는 아직 다운로드된 모델이 없습니다. 설정(추론 탭)을 열어서 먼저 모델을 다운로드하세요.",
+    "page.cancelled": "취소됨.",
+    "page.footerWebgpu": "{model} · WebGPU (브라우저 내)",
+    "page.footerLlama": "llama-server · {model}",
+    "page.privacy": "데이터는 이 기기를 떠나지 않습니다",
+
+    "chip.checking": "WebGPU 확인 중…",
+    "chip.notSecure": "보안 컨텍스트 아님",
+    "chip.unavailable": "WebGPU 사용 불가",
+    "chip.notDownloaded": "모델 미다운로드",
+    "chip.ready": "WebGPU 준비 완료",
+    "chip.llamaLocal": "llama-server (로컬)",
+
+    "hint.noDevice":
+      "이 브라우저에는 WebGPU 장치가 없습니다. 최신 Chrome/Edge/Chromium을 사용하고, 비활성화된 경우 WebGPU를 활성화하거나, 설정에서 백엔드를 llama-server로 전환하세요.",
+    "hint.secureContext":
+      "WebGPU는 보안 컨텍스트가 필요합니다 — LAN의 일반 HTTP가 아니라 HTTPS 또는 http://localhost로 앱을 여세요.",
+    "hint.notDownloaded":
+      "모델이 이 브라우저에 완전히 다운로드되지 않았습니다 — 설정(추론 탭)을 열어서 먼저 다운로드하세요.",
+    "hint.outOfMemory":
+      "이 모델을 실행할 GPU 메모리가 부족합니다 — 설정(추론 탭)에서 더 작은 모델로 전환하거나, GPU를 많이 쓰는 탭을 닫고 다시 시도하세요.",
+    "hint.llamaUnreachable":
+      "llama-server에 연결할 수 없습니다 — 설정(추론 탭)의 '연결 테스트'로 서버, URL, CORS를 확인하세요.",
+
+    "settings.title": "설정",
+    "settings.closeAria": "설정 닫기",
+    "settings.tabInference": "추론",
+    "settings.tabGeneral": "일반",
+    "settings.backend": "백엔드",
+    "settings.backendWebgpu": "WebGPU (브라우저 내)",
+    "settings.backendLlama": "llama-server (로컬)",
+    "settings.webgpuModelAria": "WebGPU 모델",
+    "settings.downloadedChip": "다운로드됨 · {bytes}",
+    "settings.notDownloadedChip": "다운로드 안 됨",
+    "settings.cancelDownload": "다운로드 취소",
+    "settings.downloaded": "다운로드됨",
+    "settings.downloadModel": "모델 다운로드",
+    "settings.clearing": "삭제 중…",
+    "settings.clearCached": "캐시된 모델 지우기",
+    "settings.systemPromptLabel": "사용자 정의 시스템 프롬프트",
+    "settings.systemPromptPlaceholder": "선택 — 예: 용어, 스타일, 페르소나",
+    "settings.systemPromptTgHelper": "이 모델의 채팅 템플릿은 시스템 메시지를 받지 않습니다",
+    "settings.systemPromptWebgpuHelper": "시스템 메시지로 추가됩니다 — 공식 작업 지시 사항은 유지됩니다",
+    "settings.systemPromptLlamaHelper":
+      "hy-mt2: 시스템 메시지로 추가 (작업 지시 유지) · generic: 기본 지시 사항 대체",
+
+    "provider.server": "서버",
+    "provider.serverHelper": "llama-server의 host:port — /v1 접두사는 자동 추가됩니다",
+    "provider.model": "모델",
+    "provider.modelPlaceholder": "프리셋 이름 또는 /v1/models의 모델 id (빈 값 = 자동 감지)",
+    "provider.detecting": "감지 중…",
+    "provider.detect": "모델 감지",
+    "provider.enterUrlFirst": "먼저 서버 URL을 입력하세요",
+    "provider.noModels": "연결되었지만 공개된 모델이 없습니다 (목록이 비어 있음).",
+    "provider.apiKey": "API 키",
+    "provider.apiKeyPlaceholder": "llama-server를 --api-key로 시작한 경우에만",
+    "provider.preset": "프롬프트 프리셋",
+    "provider.testing": "테스트 중…",
+    "provider.test": "연결 테스트",
+    "provider.connectedModels": "연결됨 — 모델: {list}",
+    "provider.connectedEmpty": "연결되었지만 공개된 모델이 없습니다 (GET /v1/models가 빈 목록을 반환).",
+    "provider.corsHint":
+      "— 서버가 실행 중이고 접속 가능한지 확인하세요. 다른 기계에서 실행 중인 경우 CORS가 설정되어 있는지 확인 (llama-server를 --cors-origins '*'으로 시작).",
+
+    "general.uiLanguage": "UI 언어",
+    "general.defaultSource": "기본 원래 언어",
+    "general.defaultTarget": "기본 목표 언어",
+    "general.diagnostics": "진단",
+    "general.diagnosticsHelper": "메인 페이지에 실시간 활동 로그(단계, fetch, 오류) 표시",
+
+    "activity.title": "진단 — 단계 + fetch (← 행이 없는 요청은 대기 중)",
+    "activity.empty": "아직 항목이 없습니다",
+  },
 };
 
 export function normalizeLanguage(value: string): Language {
-  return value === "zh-TW" ? "zh-TW" : "en";
+  if (value === "zh-TW" || value === "ja" || value === "ko") return value;
+  return "en";
 }
 
 export function getMessages(language: string): Messages {

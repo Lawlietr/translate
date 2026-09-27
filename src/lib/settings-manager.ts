@@ -1,9 +1,10 @@
+import { normalizeLanguage as normalizeUILanguage, type Language } from "./i18n/translations";
 import { DEFAULT_WEBGPU_MODEL, WEBGPU_MODELS } from "./model-catalog";
 import { normalizeModelPreset, type ModelPreset } from "./prompt-profiles";
 
 export type Backend = "webgpu" | "llama-server";
 
-export type UILanguage = "zh-TW" | "en";
+export type UILanguage = Language;
 
 export interface LlamaServerConfig {
   baseUrl: string;
@@ -50,7 +51,7 @@ function normalizeBackend(value: unknown): Backend {
 }
 
 function normalizeLanguage(value: unknown): UILanguage {
-  return value === "en" ? "en" : "zh-TW";
+  return normalizeUILanguage(typeof value === "string" ? value : "");
 }
 
 function normalizeModelId(value: unknown): string {
