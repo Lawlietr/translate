@@ -16,8 +16,13 @@ Single page, **dark mode by default (light mode toggleable)**, MUI v9 + Tailwind
 │ │ …chars · [Translate][⏹]│   │ [📋 copy] · elapsed t   │  │
 │ └────────────────────────┘   └────────────────────────┘  │
 │  model: Hy-MT2-1.8B (WebGPU) · [Manage models]           │
+├──────────────────────────────────────────────────────────┤
+│ AGPL-3.0 (→ gnu.org) · local inference, text never leaves device│
 └──────────────────────────────────────────────────────────┘
 ```
+
+Three visual layers (owner 2026-09-28): **header** (`py-4` + `border-b` hairline, theme `divider` color) / **content** (`flex-1`) / **footer** (AGPL-3.0 license link → GNU official + privacy line, `text-xs` muted). The header previously had only `pt-4` and touched the translation block.
+
 
 ## Header right cluster (owner spec, 2026-09-21)
 
