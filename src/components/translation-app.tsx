@@ -38,7 +38,7 @@ function AppContent() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box className="min-h-full flex flex-col">
+      <Box className="min-h-screen flex flex-col">
         <Box className="mx-auto w-full max-w-5xl px-4 py-4 border-b" sx={{ borderColor: "divider" }}>
           <AppHeader
             themeMode={mode}
