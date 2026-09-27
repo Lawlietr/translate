@@ -2,7 +2,7 @@
 
 Three local deployment targets beyond Cloudflare Pages (see deployment.md). Shared premise: **zero backend inference** — inference always runs on the user's device (browser WebGPU or the user's own llama-server); the app never runs a model, whatever the packaging.
 
-**Runtime split (D6, 2026-09-21):** all three local targets run the **full Next.js build** (node server), not the static export — each therefore serves the **WebUI** *and* the **OpenAI-compatible API shim** for external clients (§API shim). The static export (`build:export`) is now dedicated to Cloudflare Pages (shim impossible there — see §API shim). What differs per target is *who serves*, *how TLS terminates*, and *where the server config comes from*.
+**Runtime split (D6 2026-09-21, revised D7 2026-09-26):** the **node targets** (Docker, local non-Docker Linux) run the **full Next.js build** (node server) and serve the **WebUI** *and* the **OpenAI-compatible API shim** (§API shim). The **Windows .exe** (D7) leaves the node set: it serves the **static export** (`build:export`) via a built-in C# `HttpListener` — no node, no shim for now. Cloudflare Pages is also static (shim impossible there — see §API shim). What differs per target is *who serves*, *how TLS terminates*, and *where the server config comes from*.
 
 ## Governing constraint: secure context (AGENTS.md rule 5)
 
@@ -16,12 +16,13 @@ Every target below must respect this split.
 ## Target 1 — Windows 11 WebView2 wrapper (.exe)
 
 - **WebView2 Evergreen Runtime is preinstalled on Windows 11** and tracks current Chromium, where WebGPU is enabled by default (≥113) → WebGPU inference works out of the box, no extra install.
-- Architecture (single .exe, **D2 revised 2026-09-21 — node-embedded launcher**):
-  1. On first run: `config.json` missing → write it **next to the exe** with defaults, e.g. `{"bind_ip":"0.0.0.0","port":8321,"open_view":true, ...§API-shim keys}`. On startup: read it (change requires restart; keep it simple).
-  2. Launch the **embedded Node.js runtime + Next.js standalone build** (extracted on first run into a local cache dir) as a child process bound to `bind_ip:port`; wait for port-ready. C# is **launcher + window manager only** — no in-process static server (that design is retired; the node server serves both WebUI and §API shim).
+- Architecture (**D2 revised 2026-09-26 — zip folder distribution; D7 2026-09-26 — static export + built-in C# HTTP server, node deferred**):
+  1. On first run: `config.json` missing → write it **next to the exe** with defaults, e.g. `{"bind_ip":"0.0.0.0","port":8321,"open_view":true}`. On startup: read it (change requires restart; keep it simple).
+  2. Start the **built-in C# `HttpListener` static server** serving the static export folder (`web/`, next to the exe; correct MIME types + SPA fallback to `index.html`) bound to `bind_ip:port`; wait for port-ready. C# is launcher + static server + window manager — **no node, no embedded payload, no extraction** (D7).
   3. Open the WebView2 window pointed at `http://127.0.0.1:<port>` — **loopback, never the LAN IP** (secure context is what unlocks WebGPU in the WebView).
 - `bind_ip` exists so *other* LAN devices can also reach the same server (their WebGPU status follows the TLS rule above).
-- Payload placement: **Node runtime + standalone build embedded in the exe** (single distributable artifact; D2 revised 2026-09-21 — statics-only → node, so the .exe also exposes the §API shim). Size cost +~50–100 MB — negligible next to the multi-GB model downloads.
+- Distribution: **zip folder** (D2 revised 2026-09-26): `translate.exe` (self-contained .NET, ~70–90 MB) + `web/` (static export, ~25–40 MB incl. the 17.8 MiB ort wasm) in one **pre-extracted zip** (~100–130 MB). No embedded resources (200 MB single-file download + AV false-positive surface), no first-run extraction, no version stamps; update = replace the folder. Portable — works from a USB stick.
+- API shim: **not in the .exe for now** (D7 — static builds have no server routes). Docker + local Linux keep the §API shim via #19. If the .exe later needs it, implement **in C# on the same `HttpListener`** (new sub-task) — node stays out of the payload.
 - Implementation: **C# .NET 8 WinForms + `Microsoft.Web.WebView2` NuGet**, single-file publish (D1 decided 2026-09-21). Build host: **GitHub Actions `windows-latest`** (D5 decided 2026-09-22 — native Windows build, gated on the GitHub repo landing; the Linux cross-compile path `EnableWindowsTargeting` was evaluated and rejected in favor of native build + runtime smoke test) — design/ci-build.md.
 - Caveats to document in the UI/README: first bind to `0.0.0.0` triggers the Windows Firewall prompt (expected); LAN clients without TLS get a "WebGPU unavailable" notice, not a crash.
 ### Sub-tasks (split 2026-09-26 — each independently testable)
@@ -29,13 +30,13 @@ Every target below must respect this split.
 | Sub-task | Scope | Deliverable / exit criterion |
 |----------|-------|------------------------------|
 | **10a** — C# launcher skeleton | WinForms + `Microsoft.Web.WebView2` NuGet; `config.json` read/write (first-run defaults: `bind_ip`, `port`, `open_view`, shim keys); node child-process launch (path configurable for dev) + port-ready HTTP poll; WebView2 window → `http://127.0.0.1:<port>`; clean shutdown (kill child on window close) | `dotnet run` on the dev box opens a WebView pointing at the local dev server (3001) — no CI, no Windows needed |
-| **10b** — Node runtime + standalone embedding | Embed node win-x64 binary + `next` standalone output as a zip resource in the exe; first-run extract to `%LOCALAPPDATA%/translate/`; version-check + re-extract on update; launcher resolves the extracted node path (replaces the dev-box 3001 path from 10a) | Launcher on Windows finds its own embedded node + app; no external node install needed |
-| **10c** — GitHub Actions workflow | `.github/workflows/exe.yml` on `windows-latest`: `dotnet publish -r win-x64 --self-contained -c Release` → build standalone → package exe + payload → **smoke test job** (launch exe, wait port-ready, `curl /api/v1/models`) → upload artifact to Codeberg generic package | Green CI run produces a downloadable .exe zip; smoke test passes |
+| **10b** — static payload + built-in HTTP server (D7) | `npm run build:export` → `web/` folder next to the exe; C# `HttpListener` static file server (MIME + SPA fallback); launcher `serve` mode replaces 10a's node `managed` mode (`external` stays for dev); packaging script zips exe + `web/` | Double-click exe with `web/` alongside → WebView shows the app — no node, no extraction, no `%LOCALAPPDATA%` writes |
+| **10c** — GitHub Actions workflow | `.github/workflows/exe.yml` on `windows-latest`: `dotnet publish -r win-x64 --self-contained -c Release` + `npm run build:export` → package **zip folder** (exe + `web/`) → **smoke test job** (launch exe, wait port-ready, `curl /` = 200 — static build has no API routes) → upload to Codeberg generic package | Green CI run produces a downloadable zip folder; smoke test passes |
 | **10d** — Real Win11 integration test | Double-click on a clean Win11 machine → `config.json` created with defaults → WebView opens → WebGPU translation works (loopback) → edit `bind_ip`/`port` + restart → LAN device can reach the server, WebGPU status correct per TLS rule | Owner confirms all acceptance criteria on a real machine |
 
-**Dependency chain:** 10a → 10b → 10c → 10d. Each step builds on the previous; 10a is testable with zero Windows infrastructure (dev box `dotnet run`), 10b needs a Windows box to verify extraction, 10c needs the GitHub repo (landed), 10d needs the owner's Win11 machine.
+**Dependency chain:** 10a → 10b → 10c → 10d. Each step builds on the previous; 10a is testable with zero Windows infrastructure (dev box `dotnet run`), 10b is a small C# static server + packaging (testable with `dotnet run` on any Windows box — nothing to extract, nothing to verify in a cache dir), 10c needs the GitHub repo (landed), 10d needs the owner's Win11 machine.
 
-**Note on #19 (API shim):** 10a–10c do NOT require #19 to be complete. The launcher embeds whatever `next` standalone build exists; the shim endpoints are added to the Next.js app by #19. The exe is structurally ready for the shim the moment #19 lands — no rework.
+**Note on #19 (API shim):** 10a–10d do NOT include the shim — the .exe serves a static export (D7) and has no server routes. Docker + local Linux get the shim via #19. If the .exe later needs the shim, it is a **new sub-task in C# on the same `HttpListener`** (keeps node out of the payload).
 
 - Acceptance criteria (10d):
   - Double-click exe on a clean Win11 machine → app window opens, `config.json` created with defaults
@@ -64,7 +65,7 @@ Every target below must respect this split.
 - Optional convenience: `scripts/serve-local.sh` (build if needed, start server, open browser) — keep minimal, part of this task.
 - Acceptance criteria: documented command sequence works on a clean Debian/Ubuntu machine; WebGPU translation works at `http://localhost:<port>`; the §API shim responds at `http://localhost:<port>/api/v1/models`.
 
-## API shim (OpenAI-compatible — all node targets, D6)
+## API shim (OpenAI-compatible — node targets: Docker + local Linux, D6; .exe static per D7)
 
 Purpose: give **external clients** — browser translation extensions (e.g. Immersive Translate's OpenAI-compatible provider setting), scripts, other local tools — one stable local translation endpoint. The WebUI is **not** affected: the page still translates via browser WebGPU or browser→llama-server direct fetch (design/inference-providers.md); the shim is an additional door, not a replacement.
 
@@ -77,12 +78,12 @@ Behavior: parse → select the **prompt profile** (same logic as TODO #16/#17, s
 
 Server config — the server has no localStorage, so one variable set, sourced per target:
 
-| variable | meaning | Docker | local Linux | .exe |
-|---|---|---|---|---|
-| `LLAMA_BASE_URL` | llama-server endpoint | compose env | `.env` / env | `config.json` |
-| `MODEL_PRESET` | `auto` / `hy-mt2` / `translategemma` / `generic` | same | same | same |
-| `SYSTEM_PROMPT` | custom system prompt (same profile restrictions as #17) | same | same | same |
-| `API_TOKEN` (optional) | bearer token enforced when the endpoint is exposed beyond loopback | same | same | same |
+| variable | meaning | Docker | local Linux |
+|---|---|---|---|
+| `LLAMA_BASE_URL` | llama-server endpoint | compose env | `.env` / env |
+| `MODEL_PRESET` | `auto` / `hy-mt2` / `translategemma` / `generic` | same | same |
+| `SYSTEM_PROMPT` | custom system prompt (same profile restrictions as #17) | same | same |
+| `API_TOKEN` (optional) | bearer token enforced when the endpoint is exposed beyond loopback | same | same |
 
 Loopback default: no token. LAN exposure: set `API_TOKEN` (the extension's browser may live on another machine). Privacy invariant holds (AGENTS rule 10): zero requests except to the user-configured endpoint.
 
@@ -95,8 +96,9 @@ Acceptance criteria (per target): with a llama-server running, the extension (or
 | # | Question | Decision |
 |---|----------|----------|
 | D1 | WebView2 wrapper language | C# .NET 8 WinForms |
-| D2 | Static files in wrapper | embedded in exe |
+| D2 | Distribution format of the wrapper | **zip folder** (revised 2026-09-26): exe + static export folder as one pre-extracted zip — NOT embedded in the exe (no AV false-positive surface, no first-run extraction, cheap updates) |
 | D3 | Docker default TLS | plain HTTP + optional TLS modes; **self-signed mode required** (first-boot auto-generation), own-cert mount override |
 | D4 | Build location | Forgejo runner `root@192.168.1.12` now; GitHub Actions later; **never on the dev machine** (design/ci-build.md) |
 | D5 | Windows exe build host | GitHub Actions `windows-latest`, after the GitHub repo lands (decided 2026-09-22) — native build + runtime smoke test; NOT the Linux runner (cross-compile evaluated, rejected — design/ci-build.md) |
-| D6 (new) | API shim scope + .exe runtime | **Every node-based target** (Docker, local Linux, .exe) runs the full Next.js build and exposes the OpenAI-compatible API shim; CF stays static-only. .exe = node-embedded launcher (C# retires its in-process static server). Static export becomes CF-only |
+| D6 (new) | API shim scope + .exe runtime | **Every node-based target** (Docker, local Linux, .exe) runs the full Next.js build and exposes the OpenAI-compatible API shim; CF stays static-only. .exe = node-embedded launcher (C# retires its in-process static server). Static export becomes CF-only *(the .exe part is superseded by D7)* |
+| D7 (new) | .exe runtime + distribution | **zip folder** (exe + static export `web/`, pre-extracted — supersedes D2's "embedded in exe") + **static export served by a built-in C# `HttpListener`** (node deferred; the .exe leaves the D6 node-target set — Docker + local Linux keep the full build + §API shim). A future .exe shim, if wanted, is a C# `HttpListener` sub-task, not node |
