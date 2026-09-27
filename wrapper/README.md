@@ -2,7 +2,7 @@
 
 C# .NET 8 WinForms launcher for the translate app. See `design/local-deployment.md` §Target 1 for the full architecture and sub-tasks 10a–10d.
 
-**Status: 10a (launcher skeleton) — code written, not yet compiled/run** (needs a Windows machine; rule 11: no toolchain installs/compiles on the dev box; 10c adds the GitHub Actions build).
+**Status: PAUSED by owner 2026-09-26** (whole #10). 10a (launcher skeleton) — code written, not yet compiled/run (needs a Windows machine; rule 11: no toolchain installs/compiles on the dev box; 10c adds the GitHub Actions build).
 
 **2026-09-26 pivot (D7):** 10b is **no longer** node-runtime embedding. The exe ships as a **zip folder** (exe + static export `web/` next to it) and serves the static files itself via a built-in C# `HttpListener` — no node, no extraction, no `%LOCALAPPDATA%` runtime writes. The `managed` mode below is a 10a dev convenience (spawns a local node); 10b replaces it with the built-in static server (`serve` mode).
 
@@ -26,10 +26,10 @@ C# .NET 8 WinForms launcher for the translate app. See `design/local-deployment.
 | `server_mode` | `external` | `external` = use an already-running server (10a dev); `managed` = launcher spawns `node server.js` (10b) |
 | `node_path` | `""` | (managed mode, 10a dev only) path to the node binary — **10b (D7) no longer uses node**; the built-in static server serves `web/` |
 | `app_dir` | `""` | (managed mode, 10a dev only) directory containing the Next.js standalone `server.js` |
-| `llama_base_url` | `""` | API shim → llama-server endpoint (TODO #19) |
-| `model_preset` | `auto` | `auto` / `hy-mt2` / `translategemma` / `generic` |
-| `system_prompt` | `""` | custom system prompt (profile restrictions per #17) |
-| `api_token` | `""` | bearer token for LAN-exposed shim (empty = loopback only) |
+| `llama_base_url` | `""` | **legacy (D8)** — API provider dropped (was TODO #19); remove when 10b lands |
+| `model_preset` | `auto` | **legacy (D8)** — same |
+| `system_prompt` | `""` | **legacy (D8)** — same |
+| `api_token` | `""` | **legacy (D8)** — same |
 
 Changes require a restart (kept simple by design).
 

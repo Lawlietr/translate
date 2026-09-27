@@ -1,6 +1,6 @@
 # Deployment
 
-Cloudflare Pages, static export only. No server-side routes in the public build.
+Cloudflare Pages (one of the static hosts — GitHub Pages / HF Space / Docker / local Linux in design/local-deployment.md), static export only. No server-side routes in **any** build (D8).
 
 ## The 25 MiB per-file limit (non-negotiable)
 
@@ -17,8 +17,8 @@ And `package.json` pins `@huggingface/transformers` to an exact version (no `^`)
 
 ## Build modes
 
-- `npm run build` — self-hosted full build (`next start`)
-- `npm run build:export` — `NEXT_STATIC_EXPORT=1`, `output: 'export'`, output in `/out`; if API routes exist, move `src/app/api` out of the tree during the build (stale `.next/dev/types/validator.ts` fails type-check otherwise — delete `.next/dev` first)
+- `npm run build:export` — `NEXT_STATIC_EXPORT=1`, `output: 'export'`, output in `/out` — **the only production build (D8)**
+- `npm run build` — full build (`next start`) — **legacy, no target needs it** (cleanup TODO #26; no API routes exist)
 
 ## Deploy script pattern (from what-do-you-see `scripts/deploy-pages.mjs`)
 

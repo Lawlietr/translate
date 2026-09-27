@@ -44,7 +44,7 @@ A third backend, **vLLM, is reserved but NOT implemented** (lowest priority, TOD
 6. **Never detect model classes by `constructor.name`** — the production bundle is minified (class names become `ut`, `A`, …) and the branch silently never fires. Detect by model-id string / repo prefix.
 7. **Cap `max_new_tokens`.** Weak/translation LLMs in-browser grind the full budget when EOS comes late. 2048–3072 is the ceiling; a 4B model at 3072 tokens can take minutes on modest GPUs.
 8. **Keep model-facing prompts/instructions in English; never mix UI language into the instruction text. Message STRUCTURE is per-model — each model gets its own prompt profile (Hy-MT2 = official Default Translation single user message; TranslateGemma = structured list content, no system message, template-generated instruction; generic fallback), selected by model-id — see `design/inference-providers.md` §Prompts.** Small models (≤2B) can lock into an output-language loop (verified twice with LFM2.5 450M: zh instruction line → infinite repetition; English instruction + trailing output-language line → works). WebGPU fp16 failure modes are NOT reproducible on CPU — A/B-test prompt changes in the real browser, or not at all. **Verify chat-template requirements from the actual `chat_template.jinja` in the model repo before designing message formats** (TranslateGemma's template `raise_exception`s on system messages and plain-string user content — discovered 2026-09 by reading the shipped template).
-9. **No server-side routes in the PUBLIC (CF) build; the server never runs inference.** The app is text-only and the WebUI calls the user's llama-server directly from the browser (client-side fetch, `design/inference-providers.md`). Static export for Cloudflare Pages; the export build moves `src/app/api` out of the tree during `next build`. The local **node targets** (Docker, local Linux — D6) run the full build, which adds an **OpenAI-compatible translation shim** (`/api/v1/chat/completions`, `/v1/models`) for external clients (e.g. translation extensions): a proxy to the user's llama-server only — inference still never runs on the app's server. The **Windows .exe** (D7) serves the **static export** via a built-in C# `HttpListener` — no node, no shim (a future shim would be a C# sub-task). CF stays static-only (a CF function couldn't reach a LAN llama-server, and relaying text through a third-party edge would break rule 10). design/local-deployment.md §API shim.
+9. **No server-side routes in ANY build; no target runs inference.** The app is text-only and the WebUI calls the user's llama-server directly from the browser (client-side fetch, `design/inference-providers.md`). **Every deployment target serves the static export** (`build:export` → `/out`): Cloudflare Pages, GitHub Pages, HF Space, Docker (nginx), local Linux (serve `/out`), Windows .exe (C# `HttpListener` — D7, paused). The API-provider idea (server-side OpenAI shim, was #19) was **dropped 2026-09-26 (D8)**: WebGPU is browser-only and extensions point at the user's own llama-server directly. design/local-deployment.md §API provider.
 10. **Privacy:** zero external requests except (a) user-initiated model downloads from `huggingface.co`, (b) inference calls to a llama-server endpoint the user themselves configured in Settings (opt-in; never sent anywhere else; the endpoint string stays in localStorage). No analytics, no cookies, no telemetry. Keys/settings in localStorage only.
 11. **Never install toolchains, compile, or package on the dev machine.** Docker images build on the Forgejo runner `root@192.168.1.12`; the Windows exe builds on GitHub Actions `windows-latest` (D5) — `design/ci-build.md`.
 12. **Never change the local obscura container's port or restart it ad-hoc.** The obscura browser container (`obscura-cjk` compose) owns host port **3000**; the obscura skill (used by OTHER agents on this host) hardcodes `http://192.168.1.15:3000/mcp`, so remapping the port silently breaks every other agent's obscura calls. If another local service needs 3000, move THAT service — this is why the translate dev server runs on **3001** and the HTTPS proxy points there (`PROXY_TARGET=127.0.0.1:3001`). Restart obscura only via its own `docker compose` (default `0.0.0.0:3000:3000`), never `docker run`. Incident 2026-09-22: obscura was ad-hoc restarted on `-p 3010:3000` because the translate server held 3000, breaking all skill-based calls until it was restored from the compose file.
@@ -95,25 +95,22 @@ npm install
 # Development (port 3001 — host 3000 belongs to the obscura container, rule 12)
 npm run dev -H 0.0.0.0 -p 3001
 
-# Production build — self-hosted (full)
-npm run build && npm start
-
-# Production build — static export for Cloudflare Pages
-npm run build:export      # NEXT_STATIC_EXPORT=1; output in /out
+# Production build — ALL targets (static export; D8)
+npm run build:export      # NEXT_STATIC_EXPORT=1; output in /out; serve /out with any static server
 
 # Optional — HTTPS test server (secure context so WebGPU works over LAN IP)
 HTTPS_PORT=3443 PROXY_TARGET=127.0.0.1:3001 node scripts/https-test-server.mjs   # https://<lan-ip>:3443 -> dev server on 3001
 ```
 
-**Dual build mode:** `next.config.ts` reads `NEXT_STATIC_EXPORT=1` to toggle `output: 'export'`. If any API routes exist, the export build moves `src/app/api` out of the tree during the build (stale `.next/dev/types/validator.ts` will fail type-check otherwise — delete `.next/dev` first).
+**Dual build mode (legacy):** `next.config.ts` reads `NEXT_STATIC_EXPORT=1` to toggle `output: 'export'`. Since D8 (2026-09-26) no target needs the full build — simplifying to export-only is a cleanup TODO (no API routes exist, so nothing blocks it).
 
 **Post-build check (mandatory for CF deploy):** `find out -name "*.wasm*" -exec du -h {} +` — every file must be < 25 MiB (ort wasm lands in `out/_next/static/media/`).
 
 ## Deployment
 
-Local targets (D1–D7 settled; see `design/local-deployment.md`): **Windows 11 WebView2 .exe** (C# .NET 8, **zip folder**: exe + static export, built-in C# HTTP server — D7), **Docker/compose** (linux/amd64 + arm64, self-signed TLS), **local non-Docker Linux** (full build, `npm start`). Public target: **Cloudflare Pages, static export.**
+All targets serve the **static export** (D1–D8 settled; see `design/local-deployment.md`): **Docker/compose** (nginx + self-signed TLS, linux/amd64 + arm64), **local non-Docker Linux** (serve `/out`), **Windows 11 WebView2 .exe** (C# .NET 8, zip folder + built-in C# HTTP server — D7, **paused**). Public static hosts: **Cloudflare Pages**, **GitHub Pages**, **HF Space**.
 
-Build location (rule 11): Forgejo runner `192.168.1.12` for Docker images, GitHub Actions `windows-latest` for the exe — `design/ci-build.md`.
+Build location (rule 11): Forgejo runner `192.168.1.12` for Docker images; GitHub Actions `windows-latest` for the exe (paused) — `design/ci-build.md`.
 
 Cloudflare deploy policy — `design/deployment.md` for the deploy-script pattern + secrets policy (no credentials in repo; `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` from env):
 
