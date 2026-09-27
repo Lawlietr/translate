@@ -107,7 +107,8 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
     setError(null);
     workspace.set({ output: "" });
     setStatus("");
-    setStartedAt(Date.now());
+    const started = Date.now();
+    setStartedAt(started);
     setElapsed(0);
     setPhase("translating");
     const ac = new AbortController();
@@ -130,7 +131,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
         }
       })
       .finally(() => {
-        if (startedAt != null) setLastDuration((Date.now() - startedAt) / 1000);
+        setLastDuration((Date.now() - started) / 1000);
         setStatus("");
         setPhase("idle");
         setStartedAt(null);
