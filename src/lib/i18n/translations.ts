@@ -12,6 +12,8 @@ export interface Messages {
   "header.githubTooltip": string;
   "header.githubComingSoon": string;
   "header.settingsAria": string;
+    "footer.license": string;
+  "footer.privacy": string;
   "header.settingsTooltip": string;
 
   "common.cancel": string;
@@ -126,6 +128,8 @@ export const translations: Record<Language, Messages> = {
     "header.githubComingSoon": "GitHub repository — coming soon",
     "header.settingsAria": "Settings",
     "header.settingsTooltip": "Settings",
+"footer.license": "Released under",
+    "footer.privacy": "All inference runs locally in your browser — your text never leaves your device.",
 
     "common.cancel": "Cancel",
     "common.copy": "Copy",
@@ -249,6 +253,8 @@ export const translations: Record<Language, Messages> = {
     "header.githubComingSoon": "GitHub 儲存庫 — 即將推出",
     "header.settingsAria": "設定",
     "header.settingsTooltip": "設定",
+"footer.license": "本專案以",
+    "footer.privacy": "所有推理均在你的瀏覽器本機執行,文字不會離開你的裝置。",
 
     "common.cancel": "取消",
     "common.copy": "複製",
@@ -365,6 +371,8 @@ export const translations: Record<Language, Messages> = {
     "header.githubComingSoon": "GitHub リポジトリ — 近日公開",
     "header.settingsAria": "設定",
     "header.settingsTooltip": "設定",
+"footer.license": "本プロジェクトは",
+    "footer.privacy": "すべての推論はブラウザ内でローカルに実行され、テキストはデバイスから離れません。",
 
     "common.cancel": "キャンセル",
     "common.copy": "コピー",
@@ -483,6 +491,8 @@ export const translations: Record<Language, Messages> = {
     "header.githubComingSoon": "GitHub 저장소 — 곧 공개 예정",
     "header.settingsAria": "설정",
     "header.settingsTooltip": "설정",
+"footer.license": "본 프로젝트는",
+    "footer.privacy": "모든 추론은 브라우저에서 로컬로 실행되며, 텍스트는 장치에서 나가지 않습니다.",
 
     "common.cancel": "취소",
     "common.copy": "복사",

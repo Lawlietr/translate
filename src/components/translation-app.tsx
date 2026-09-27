@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Box, createTheme, ThemeProvider } from "@mui/material";
 import { AppHeader } from "./app-header";
+import { AppFooter } from "./app-footer";
 import { TranslationPage } from "./translation-page";
 import { SettingsDialog } from "./settings-dialog";
 import { AppSettingsProvider, useAppSettings } from "../hooks/use-app-settings";
@@ -43,6 +44,7 @@ function AppContent() {
           onOpenSettings={openSettings}
           settingsOpen={settingsOpen}
         />
+        <AppFooter />
         <SettingsDialog
           open={settingsOpen}
           initialTab={settingsTab}
