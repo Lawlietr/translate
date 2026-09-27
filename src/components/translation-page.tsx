@@ -347,9 +347,6 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
             <Chip label={t("chip.llamaLocal")} size="small" />
           )}
         </Box>
-        <Typography variant="caption" sx={{ opacity: 0.5 }}>
-          {t("page.privacy")}
-        </Typography>
       </Box>
     </Box>
   );

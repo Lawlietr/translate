@@ -44,7 +44,6 @@ export interface Messages {
   "page.cancelled": string;
   "page.footerWebgpu": string;
   "page.footerLlama": string;
-  "page.privacy": string;
 
   "chip.checking": string;
   "chip.notSecure": string;
@@ -163,7 +162,6 @@ export const translations: Record<Language, Messages> = {
     "page.cancelled": "Cancelled.",
     "page.footerWebgpu": "{model} · WebGPU (in-browser)",
     "page.footerLlama": "llama-server · {model}",
-    "page.privacy": "nothing leaves this device",
 
     "chip.checking": "checking WebGPU…",
     "chip.notSecure": "NOT a secure context",
@@ -288,7 +286,6 @@ export const translations: Record<Language, Messages> = {
     "page.cancelled": "已取消。",
     "page.footerWebgpu": "{model} · WebGPU（瀏覽器內）",
     "page.footerLlama": "llama-server · {model}",
-    "page.privacy": "資料不會離開此裝置",
 
     "chip.checking": "正在檢查 WebGPU…",
     "chip.notSecure": "非安全情境",
@@ -406,7 +403,6 @@ export const translations: Record<Language, Messages> = {
     "page.cancelled": "キャンセルしました。",
     "page.footerWebgpu": "{model} · WebGPU（ブラウザ内）",
     "page.footerLlama": "llama-server · {model}",
-    "page.privacy": "データはこの端末から出ません",
 
     "chip.checking": "WebGPU を確認中…",
     "chip.notSecure": "セキュアなコンテキストではありません",
@@ -526,7 +522,6 @@ export const translations: Record<Language, Messages> = {
     "page.cancelled": "취소됨.",
     "page.footerWebgpu": "{model} · WebGPU (브라우저 내)",
     "page.footerLlama": "llama-server · {model}",
-    "page.privacy": "데이터는 이 기기를 떠나지 않습니다",
 
     "chip.checking": "WebGPU 확인 중…",
     "chip.notSecure": "보안 컨텍스트 아님",
