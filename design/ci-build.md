@@ -23,4 +23,4 @@ Runner tokens, registry credentials: environment only (runner's `~/.zshrc` / For
 
 ## Artifacts distribution
 
-**Decided 2026-09-21:** Codeberg only — container registry for the image, generic package for the exe **zip folder** (D7). Local Forgejo: builds only, no artifact storage (owner: "很重要").
+**Reconfirmed 2026-09-26 (owner):** Codeberg only — container registry for the image (`registry.codeberg.org/Lawlietr/translate`), generic package for the exe **zip folder** (D7). **Explicitly NOT** stored on: local Forgejo (builds only, never artifacts — owner: "很重要") **or GitHub (no GHCR)** — GitHub Actions workflows are build hosts only; they push to Codeberg and keep nothing on GitHub.

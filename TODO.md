@@ -13,7 +13,7 @@
 | # | Task |
 |---|------|
 | 9+24+25 | **Public static hosts (do together)**: Cloudflare Pages (`scripts/deploy-pages.mjs`, secrets via env, `--branch main`) + GitHub Pages (Actions workflow, decide repo-root vs subpath) + HF Space (Static Space + workflow pushing `/out`) — design/deployment.md, design/local-deployment.md §Target 4 |
-| 13 | Forgejo workflows: docker image build on runner `192.168.1.12` (multi-arch) publishing to Codeberg registry ONLY + GitHub Actions mirror (repo landed 2026-09-26 — `.forgejo/workflows/` and `.github/workflows/` kept in lockstep); exe workflow (D5 host settled) — design/ci-build.md |
+| 13 | Forgejo workflows: docker image build on runner `192.168.1.12` (multi-arch) publishing to **Codeberg registry ONLY — not local Forgejo, not GHCR** (owner reconfirmed 2026-09-26) + GitHub Actions mirror (repo landed 2026-09-26 — `.forgejo/workflows/` and `.github/workflows/` kept in lockstep, GHA pushes to Codeberg too); exe workflow (D5 host settled) — design/ci-build.md |
 | 12 | Local non-Docker Linux serving (D8 — **static**): `npm run build:export` → serve `/out` (any static server; Caddy/nginx optional TLS): docs + optional `scripts/serve-local.sh` — design/local-deployment.md |
 
 ### P3
