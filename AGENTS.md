@@ -80,7 +80,7 @@ A third backend, **vLLM, is reserved but NOT implemented** (lowest priority, TOD
 
 ### UI Guidelines
 
-- Dark theme by default; top-right header cluster: UI language dropdown → dark/light toggle (persisted) → GitHub icon (reserved placeholder until repo URL set) → Settings — design/ui-ux.md
+- Dark theme by default; top-right header cluster: UI language dropdown → dark/light toggle (persisted) → GitHub icon → repo (`src/lib/site.ts` `GITHUB_REPO_URL`) → Settings — design/ui-ux.md
 - Material Design components via MUI
 - Responsive: mobile-first, breakpoints at `sm`, `lg`, `xl`
 - Loading states for all async operations

@@ -1,1 +1,1 @@
-export const GITHUB_REPO_URL = "";
+export const GITHUB_REPO_URL = "https://github.com/Lawlietr/translate";
