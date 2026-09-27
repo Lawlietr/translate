@@ -209,9 +209,9 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
-export function formatDuration(seconds: number): string {
+export function formatDuration(seconds: number, decimals = 0): string {
   if (!Number.isFinite(seconds) || seconds <= 0) return "—";
-  if (seconds < 60) return `${Math.ceil(seconds)}s`;
+  if (seconds < 60) return decimals > 0 ? `${seconds.toFixed(decimals)}s` : `${Math.ceil(seconds)}s`;
   const m = Math.floor(seconds / 60);
   const s = Math.round(seconds % 60);
   if (m < 60) return `${m}m ${s}s`;

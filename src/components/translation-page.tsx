@@ -71,6 +71,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   const [error, setError] = useState<string | null>(null);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [lastDuration, setLastDuration] = useState(0);
   const [cache, setCache] = useState<CacheStatus | null>(null);
   const acRef = useRef<AbortController | null>(null);
 
@@ -129,6 +130,8 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
         }
       })
       .finally(() => {
+        if (startedAt != null) setLastDuration((Date.now() - startedAt) / 1000);
+        setStatus("");
         setPhase("idle");
         setStartedAt(null);
       });
@@ -270,7 +273,12 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
 
       <Box className="flex flex-wrap items-center gap-2">
         {translating ? (
-          <Button variant="outlined" color="error" onClick={cancel}>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={cancel}
+            sx={{ fontSize: "1.25rem", px: 4, py: 1.25 }}
+          >
             {t("common.cancel")}
           </Button>
         ) : (
@@ -282,6 +290,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
               !modelReady ||
               (webgpuBackend && (gpu.checking || !gpu.secureContext || !gpu.supported))
             }
+            sx={{ fontSize: "1.25rem", px: 4, py: 1.25 }}
           >
             {t("page.translate")}
           </Button>
@@ -291,9 +300,9 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
             {status}
           </Typography>
         )}
-        {translating && startedAt != null && (
+        {(translating || lastDuration > 0) && (
           <Typography variant="caption" sx={{ opacity: 0.6 }}>
-            {formatDuration(elapsed)}
+            {formatDuration(translating ? elapsed : lastDuration, 1)}
           </Typography>
         )}
       </Box>

@@ -36,7 +36,8 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 |-------|-----|
 | No model downloaded | Output pane shows a call-to-action: "Choose & download a model in Settings" + button |
 | Model loading (first run) | Spinner + "Loading model into WebGPU — first run compiles shaders, can take minutes" |
-| Translating | Indeterminate progress + elapsed seconds; ⏹ cancels (AbortController on generation) |
+| Translating | Button-right status text (load/generate stages) + **live elapsed timer (0.1 s precision)**; ⏹ cancels (AbortController on generation) |
+| Finished (success OR cancelled) | Status text **cleared** (never leaves a stale "generating" behind); the **final elapsed time persists** (precise terminal value, 0.1 s) until the next translation starts |
 | Error (fp16 fallback / OOM / loop) | Clear error box with the actionable hint (e.g. "this model is too large for your GPU memory — switch to the smaller model in Settings") |
 
 ## Settings dialog
@@ -69,6 +70,13 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 - **Swap** composes naturally: it sets `text = output, output = ""`, and the debounced save persists exactly that.
 - **Mid-translation reload:** the in-flight phase is never persisted — a reload lands in `idle` with whatever output was last completed. No special handling needed.
 - **Not doing:** URL-fragment persistence (`#src=...|text`) — no sharing need in a local-only app, URL length limits, and the text would sit in the address bar; if "share a translation link" is ever wanted it is a separate feature.
+
+## Translation button + timer (owner refinement, 2026-09-26)
+
+- **Button size:** the Translate / Cancel buttons render at a larger size (font ~1.25rem, extra padding) than MUI's default `contained`. **Both states must share the same size** — while translating the button is swapped in place (Translate → Cancel), so a size mismatch would make the button jump on click.
+- **`formatDuration` gained a `decimals` parameter (default 0)** in `src/lib/model-cache.ts` — it is shared with the model-download progress UI (settings dialog), which keeps whole-second display; only the translation timer passes `decimals: 1`. Do not change the default: other call sites rely on it.
+- **Timer lifecycle:** while translating, a 500 ms interval updates a live `elapsed` readout. On finish (success **and** cancel — owner decision 2026-09-26: cancelled runs keep their timer too), the timer stops and the displayed value switches to the **precise terminal value** (`Date.now() - startedAt`, 0.1 s) — the last interval tick can lag up to 500 ms and `Math.ceil` rounds up, so the terminal value is always computed fresh, never read from the ticker. The terminal value persists after completion (so the user can compare runs); the next `startTranslate` resets it to 0.
+- **Stale status bug (fixed 2026-09-26):** `status` was only cleared at the start of a new translation, so the last provider stage ("generating · token N") stayed on screen after completion. The `.finally()` of the translate call now clears `status` — finished state = button + terminal timer only.
 
 ## Implementation notes (deviations / pitfalls)
 

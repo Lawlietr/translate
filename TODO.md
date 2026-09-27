@@ -28,6 +28,7 @@
 
 | Task |
 |------|
+| UI refinement: larger translate/cancel buttons (20px, same size both states) + persistent 0.1 s terminal timer (also on cancel) + stale "generating" status bug fixed (`formatDuration` gained `decimals` param, default 0 for download UI) — design/ui-ux.md §Translation button + timer |
 | i18n ja + ko (owner 2026-09-26) — `Language` type + `SUPPORTED_LANGUAGES` + 93 keys × 2 locales; `settings-manager` `UILanguage` now reuses i18n `Language`/normalization (was hard-coded zh-TW/en only, would have silently coerced ja/ko back); verified 7/7 round-trip + persistence + 0 console errors — design/i18n.md |
 | Export-only build (TODO #26, D8) — `next.config.ts` fixed to `output: 'export'`, removed `build`/`start` scripts + `NEXT_STATIC_EXPORT` toggle + dead api-stash logic; verified build + wasm 10M + dev smoke |
 | i18n zh-TW (default) + en (TODO #7) — `useI18n` hook + `translations.ts`, 7 components via `t()`, verified 12/12 — design/i18n.md |
