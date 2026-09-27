@@ -6,6 +6,7 @@
 
 | # | Task |
 |---|------|
+| 27 | **Translation history** (owner spec 2026-09-28): left drawer below the translation block (squeeze layout), 100 entries, dedupe + 2,000-char gate + success-only, single/multi-select/clear-all deletion, click-to-restore, Settings → General → **Privacy block above Diagnostics** ("never record" switch + delete-all) — design/history.md |
 | 11 | Docker (D8 — **static**): multi-stage `build:export` + wasm check → `nginx:alpine` (self-signed TLS auto-generation on first boot required) + compose (port mapping, healthcheck, cert volume — no env config, no llama.cpp service) + buildx linux/amd64,arm64 — design/local-deployment.md |
 
 ### P2

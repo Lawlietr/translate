@@ -94,4 +94,4 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 
 ## Out of scope (v1)
 
-- Speech input/output, document translation, auto-detect, glossaries, translation history, multiple concurrent requests, cloud API providers (OpenAI/Claude/…) — only WebGPU + user's local llama-server (design/inference-providers.md)
+- Speech input/output, document translation, auto-detect, glossaries, multiple concurrent requests, cloud API providers (OpenAI/Claude/…) — only WebGPU + user's local llama-server (design/inference-providers.md). (Translation history was out of scope for v1 but is now in scope as TODO #27 — design/history.md)
