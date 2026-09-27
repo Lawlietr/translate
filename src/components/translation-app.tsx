@@ -8,10 +8,12 @@ import { TranslationPage } from "./translation-page";
 import { SettingsDialog } from "./settings-dialog";
 import { AppSettingsProvider, useAppSettings } from "../hooks/use-app-settings";
 import { installActivityLogPatches, setActivityLogEnabled } from "../lib/activity-log";
+import { useI18n } from "../hooks/useI18n";
 import { useThemeMode } from "../hooks/use-theme";
 
 function AppContent() {
   const { mode, toggle } = useThemeMode();
+  const { lang } = useI18n();
   const { settings } = useAppSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<"inference" | "general">("inference");
@@ -24,6 +26,10 @@ function AppContent() {
   useEffect(() => {
     setActivityLogEnabled(settings.diagnostics);
   }, [settings.diagnostics]);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const openSettings = (tab: "inference" | "general" = "inference") => {
     setSettingsTab(tab);
