@@ -6,7 +6,6 @@
 
 | # | Task |
 |---|------|
-| 26 | Cleanup (D8): remove the legacy full-build mode — `next.config.ts` dual mode → export-only; `package.json` scripts (`build`/`start`) no longer needed by any target |
 | 11 | Docker (D8 — **static**): multi-stage `build:export` + wasm check → `nginx:alpine` (self-signed TLS auto-generation on first boot required) + compose (port mapping, healthcheck, cert volume — no env config, no llama.cpp service) + buildx linux/amd64,arm64 — design/local-deployment.md |
 
 ### P2
@@ -29,9 +28,9 @@
 
 | Task |
 |------|
+| Export-only build (TODO #26, D8) — `next.config.ts` fixed to `output: 'export'`, removed `build`/`start` scripts + `NEXT_STATIC_EXPORT` toggle + dead api-stash logic; verified build + wasm 10M + dev smoke |
 | i18n zh-TW (default) + en (TODO #7) — `useI18n` hook + `translations.ts`, 7 components via `t()`, verified 12/12 — design/i18n.md |
 | Custom system prompt (TODO #17) — both backends, profile-aware `buildMessages`, per-backend UI field, verified 13/13 — design/inference-providers.md §Prompts |
 | **API provider DROPPED (D8, owner 2026-09-26)** — no server-side OpenAI shim: WebGPU is browser-only (server ONNX = CPU-only, too slow); extensions point at the user's own llama-server directly; **all targets static** — design/local-deployment.md §API provider |
 | Workspace persistence (TODO #22) — input + output survive reload, verified 9/9 — design/ui-ux.md §Workspace persistence |
-| Settings (TODO #6, owner-accepted) — `settings-dialog.tsx` tabs + `use-app-settings` hook — ui-ux.md Implementation notes |
 
