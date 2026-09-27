@@ -96,13 +96,13 @@ npm install
 npm run dev -H 0.0.0.0 -p 3001
 
 # Production build — ALL targets (static export; D8)
-npm run build:export      # NEXT_STATIC_EXPORT=1; output in /out; serve /out with any static server
+npm run build:export      # static export; output in /out; serve /out with any static server
 
 # Optional — HTTPS test server (secure context so WebGPU works over LAN IP)
 HTTPS_PORT=3443 PROXY_TARGET=127.0.0.1:3001 node scripts/https-test-server.mjs   # https://<lan-ip>:3443 -> dev server on 3001
 ```
 
-**Dual build mode (legacy):** `next.config.ts` reads `NEXT_STATIC_EXPORT=1` to toggle `output: 'export'`. Since D8 (2026-09-26) no target needs the full build — simplifying to export-only is a cleanup TODO (no API routes exist, so nothing blocks it).
+**Export-only build (D8):** `next.config.ts` is fixed to `output: 'export'` — the full-build mode was removed (TODO #26, 2026-09-26). If API routes are ever added, the export build fails loudly — that is the intended signal.
 
 **Post-build check (mandatory for CF deploy):** `find out -name "*.wasm*" -exec du -h {} +` — every file must be < 25 MiB (ort wasm lands in `out/_next/static/media/`).
 

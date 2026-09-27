@@ -17,8 +17,7 @@ And `package.json` pins `@huggingface/transformers` to an exact version (no `^`)
 
 ## Build modes
 
-- `npm run build:export` — `NEXT_STATIC_EXPORT=1`, `output: 'export'`, output in `/out` — **the only production build (D8)**
-- `npm run build` — full build (`next start`) — **legacy, no target needs it** (cleanup TODO #26; no API routes exist)
+- `npm run build:export` — static export (fixed in `next.config.ts`, D8), output in `/out` — **the only production build**. The full-build mode (`build`/`start` scripts, `NEXT_STATIC_EXPORT` toggle) was removed in TODO #26 (2026-09-26)
 
 ## Deploy script pattern (from what-do-you-see `scripts/deploy-pages.mjs`)
 
