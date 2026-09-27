@@ -28,10 +28,9 @@
 
 | Task |
 |------|
+| Activity-log sticky-bottom autoscroll (owner 2026-09-28) — follows new lines while view is at bottom (8 px tolerance), pauses on manual scroll-up, resumes on scroll-to-bottom; `followRef` (no re-render on scroll) + post-render `useEffect` on `lines` — design/ui-ux.md §Diagnostics |
+| Three visual layers (owner 2026-09-28) — header `py-4` + hairline `border-b`; new `AppFooter` pinned to viewport bottom (`min-h-screen` + `flex-1` content wrapper) with **AGPL-3.0 → GNU official** + privacy line (2 i18n keys × 4 locales); redundant in-block "nothing leaves this device" caption removed (5 keys, 94 total); `<html lang>` follows UI language (server default zh-TW, client sync post-hydration); header GitHub icon now links to the repo (`GITHUB_REPO_URL`); timer terminal-value stale-closure bug fixed (local `started` const) — design/ui-ux.md, design/i18n.md |
 | UI refinement: larger translate/cancel buttons (20px, same size both states) + persistent 0.1 s terminal timer (also on cancel) + stale "generating" status bug fixed (`formatDuration` gained `decimals` param, default 0 for download UI) — design/ui-ux.md §Translation button + timer |
 | i18n ja + ko (owner 2026-09-26) — `Language` type + `SUPPORTED_LANGUAGES` + 93 keys × 2 locales; `settings-manager` `UILanguage` now reuses i18n `Language`/normalization (was hard-coded zh-TW/en only, would have silently coerced ja/ko back); verified 7/7 round-trip + persistence + 0 console errors — design/i18n.md |
 | Export-only build (TODO #26, D8) — `next.config.ts` fixed to `output: 'export'`, removed `build`/`start` scripts + `NEXT_STATIC_EXPORT` toggle + dead api-stash logic; verified build + wasm 10M + dev smoke |
-| i18n zh-TW (default) + en (TODO #7) — `useI18n` hook + `translations.ts`, 7 components via `t()`, verified 12/12 — design/i18n.md |
-| Custom system prompt (TODO #17) — both backends, profile-aware `buildMessages`, per-backend UI field, verified 13/13 — design/inference-providers.md §Prompts |
-| **API provider DROPPED (D8, owner 2026-09-26)** — no server-side OpenAI shim: WebGPU is browser-only (server ONNX = CPU-only, too slow); extensions point at the user's own llama-server directly; **all targets static** — design/local-deployment.md §API provider |
 
