@@ -188,7 +188,11 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   return (
     <Box className="flex-1 w-full flex">
       {historyOpen && (
-        <HistoryPanel entries={history} onClose={() => setHistoryOpen(false)} />
+        <HistoryPanel
+          entries={history}
+          onUpdate={setHistory}
+          onClose={() => setHistoryOpen(false)}
+        />
       )}
       <Box className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 flex flex-col gap-3 min-w-0">
       {webgpuBackend && !gpu.secureContext && (

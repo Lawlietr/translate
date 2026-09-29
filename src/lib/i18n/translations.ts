@@ -109,6 +109,13 @@ export interface Messages {
   "history.title": string;
   "history.empty": string;
   "history.close": string;
+  "history.select": string;
+  "history.deleteSelected": string;
+  "history.cancelSelect": string;
+  "history.clearAll": string;
+  "history.confirmClearTitle": string;
+  "history.confirmClearBody": string;
+  "history.deleteEntry": string;
 }
 
 export const SUPPORTED_LANGUAGES: Array<{ id: Language; label: string }> = [
@@ -245,6 +252,14 @@ export const translations: Record<Language, Messages> = {
     "history.title": "Translation history",
     "history.empty": "No translation history yet",
     "history.close": "Close translation history",
+    "history.select": "Select multiple",
+    "history.deleteSelected": "Delete selected ({n})",
+    "history.cancelSelect": "Cancel",
+    "history.clearAll": "Clear all",
+    "history.confirmClearTitle": "Delete all translation history?",
+    "history.confirmClearBody":
+      "This will permanently delete {n} entries. This cannot be undone.",
+    "history.deleteEntry": "Delete this entry",
   },
 
   "zh-TW": {
@@ -366,6 +381,13 @@ export const translations: Record<Language, Messages> = {
     "history.title": "翻譯紀錄",
     "history.empty": "尚無翻譯紀錄",
     "history.close": "關閉翻譯紀錄",
+    "history.select": "多選",
+    "history.deleteSelected": "刪除已選 ({n})",
+    "history.cancelSelect": "取消",
+    "history.clearAll": "全部刪除",
+    "history.confirmClearTitle": "刪除所有翻譯紀錄？",
+    "history.confirmClearBody": "將永久刪除 {n} 條紀錄，此動作無法復原。",
+    "history.deleteEntry": "刪除這條紀錄",
   },
 
   ja: {
@@ -489,6 +511,14 @@ export const translations: Record<Language, Messages> = {
     "history.title": "翻訳履歴",
     "history.empty": "翻訳履歴はまだありません",
     "history.close": "翻訳履歴を閉じる",
+    "history.select": "複数選択",
+    "history.deleteSelected": "選択を削除 ({n})",
+    "history.cancelSelect": "キャンセル",
+    "history.clearAll": "すべて削除",
+    "history.confirmClearTitle": "翻訳履歴をすべて削除しますか？",
+    "history.confirmClearBody":
+      "{n} 件の履歴を恒久的に削除します。この操作は元に戻せません。",
+    "history.deleteEntry": "この履歴を削除",
   },
 
   ko: {
@@ -610,6 +640,14 @@ export const translations: Record<Language, Messages> = {
     "history.title": "번역 기록",
     "history.empty": "번역 기록이 없습니다",
     "history.close": "번역 기록 닫기",
+    "history.select": "다중 선택",
+    "history.deleteSelected": "선택 항목 삭제 ({n})",
+    "history.cancelSelect": "취소",
+    "history.clearAll": "모두 삭제",
+    "history.confirmClearTitle": "번역 기록을 모두 삭제할까요?",
+    "history.confirmClearBody":
+      "{n}개 항목이 영구적으로 삭제됩니다. 되돌릴 수 없습니다.",
+    "history.deleteEntry": "이 기록 삭제",
   },
 };
 
