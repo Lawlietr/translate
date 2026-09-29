@@ -35,17 +35,49 @@ docker pull ghcr.io/lawlietr/translate:0df78d9
 
 > 拉 `codeberg.org/lawlietr/translate` 需在該站建立帳號並以 `lawlietr:<PAT>` 登入(`docker login codeberg.org`);`ghcr.io` 的公開映像可免登入拉取。
 
-```bash
-docker compose up -d        # 使用 repo 內的 docker-compose.yml
+### Docker Compose 部署
+
+repo 附 `docker-compose.yml`(單容器、無 sidecar、無環境變數)。
+
+```yaml
+services:
+  translate:
+    image: translate:latest
+    build: .
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./certs:/etc/nginx/certs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 ```
+
+```bash
+# 拉映像(二擇一,見上)後,在 compose 檔所在目錄:
+docker compose up -d          # 啟動
+
+# 日常操作
+docker compose ps             # 狀態(應顯示 healthy)
+docker compose logs -f        # 跟 log
+docker compose pull && docker compose up -d   # 更新映像
+docker compose down           # 停止(保留 ./certs)
+docker compose down -v        # 停止並移除 volume
+```
+
+> `image: translate:latest` 對應你拉下來的映像;若想直接用 registry 名稱,改成 `ghcr.io/lawlietr/translate:latest`(並可刪掉 `build: .`,本機沒有源碼時不需要 build)。
 
 | 埠 | 用途 |
 |----|------|
 | `8080` | 一般 HTTP(loopback 使用;LAN 存取會因非安全內容被停用 WebGPU) |
 | `8443` | **自簽 TLS — LAN 使用請走這個**(WebGPU 需要安全內容) |
 
+- **憑證**:`./certs/` 首次啟動時由容器自動產生自簽憑證(SAN 含 `localhost` / `127.0.0.1` / `192.168.1.15`);要換正式憑證就把 `fullchain.pem` + `privkey.pem` 放進 `./certs/`,hook 偵測到已存在就不會再覆蓋
 - LAN 用法:瀏覽器開 `https://<主機 IP>:8443`,對自簽憑證按「繼續」即可,WebGPU 正常可用
-- 要換正式憑證:把 `fullchain.pem` / `privkey.pem` 掛到 `./certs/` 目錄,首啟 hook 偵測到已存在就不會再產生
 - 無環境變數、無 llama-server 容器——推理全部在用戶瀏覽器完成
 
 ## 本機建置
