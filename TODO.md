@@ -6,7 +6,6 @@
 
 | # | Task |
 |---|------|
-| 27 | **Translation history** (owner spec 2026-09-28): left drawer below the translation block (squeeze layout), 100 entries, dedupe + 2,000-char gate + success-only, single/multi-select/clear-all deletion, click-to-restore, Settings → General → **Privacy block above Diagnostics** ("never record" switch + delete-all) — design/history.md |
 | 11 | Docker (D8 — **static**): multi-stage `build:export` + wasm check → `nginx:alpine` (self-signed TLS auto-generation on first boot required) + compose (port mapping, healthcheck, cert volume — no env config, no llama.cpp service) + buildx linux/amd64,arm64 — design/local-deployment.md |
 
 ### P2
@@ -33,5 +32,5 @@
 | Three visual layers (owner 2026-09-28) — header `py-4` + hairline `border-b`; new `AppFooter` pinned to viewport bottom (`min-h-screen` + `flex-1` content wrapper) with **AGPL-3.0 → GNU official** + privacy line (2 i18n keys × 4 locales); redundant in-block "nothing leaves this device" caption removed (5 keys, 94 total); `<html lang>` follows UI language (server default zh-TW, client sync post-hydration); header GitHub icon now links to the repo (`GITHUB_REPO_URL`); timer terminal-value stale-closure bug fixed (local `started` const) — design/ui-ux.md, design/i18n.md |
 | UI refinement: larger translate/cancel buttons (20px, same size both states) + persistent 0.1 s terminal timer (also on cancel) + stale "generating" status bug fixed (`formatDuration` gained `decimals` param, default 0 for download UI) — design/ui-ux.md §Translation button + timer |
 | i18n ja + ko (owner 2026-09-26) — `Language` type + `SUPPORTED_LANGUAGES` + 93 keys × 2 locales; `settings-manager` `UILanguage` now reuses i18n `Language`/normalization (was hard-coded zh-TW/en only, would have silently coerced ja/ko back); verified 7/7 round-trip + persistence + 0 console errors — design/i18n.md |
-| Export-only build (TODO #26, D8) — `next.config.ts` fixed to `output: 'export'`, removed `build`/`start` scripts + `NEXT_STATIC_EXPORT` toggle + dead api-stash logic; verified build + wasm 10M + dev smoke |
+| **Translation history (TODO #27, owner spec 2026-09-28)** — left drawer (squeeze layout, full-height sticky) below the translation block; 100-entry localStorage store with dedupe-by-text+pair + 2,000-char gate + success-only; single/multi-select/clear-all deletion (shared confirm dialog); click-to-restore (text + output + both language selects); Settings → General → Privacy block above Diagnostics ("never record" switch + delete-all with count); drawer open state persists (`translate:historyOpen`, written only in the explicit toggle — StrictMode pitfall); history state refreshes when Settings closes; 12/12 Playwright regression on the production export — design/history.md, design/ui-ux.md |
 

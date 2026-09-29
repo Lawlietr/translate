@@ -112,6 +112,32 @@ interface HistoryEntry {
 - **Drawer + SettingsDialog z-index:** MUI Dialog (settings) must stay above the drawer; drawer is a `Paper` inside the page, not a MUI `Drawer` portal — keep it in normal flow so the squeeze layout works
 - **`min-h-screen flex` chain:** the outer column is already `min-h-screen flex flex-col`; the history row is a NEW flex ROW inside the content wrapper — don't break the sticky footer (footer stays the last column child)
 
+## Implementation status (complete 2026-09-29)
+
+All of A–F implemented and verified (Playwright against the **production static export**, 12/12 restore regression + earlier per-step suites). Commits (independently revertable, matching the rollback plan):
+
+| Step | Commit | Content |
+|------|--------|---------|
+| 1 | `7c695fc` | `history-store.ts` (100-entry cap, dedupe-by-text+pair move-to-top, 2,000-char + success-only gates at the hook, quota retry, strict entry validation) + `historyDisabled` setting (A/B/C/D/E) |
+| 2 | `fa8d554` | History button below the block + left drawer + squeeze layout |
+| — | `c45a784` | Drawer full-height sticky between header and footer (owner: content-aligned height looked half-cut on mac) |
+| 3 | `51fc249` | Deletion trio: hover trash single-delete, multi-select mode + bottom bar, clear-all via shared `HistoryClearDialog` |
+| 4 | `8ab969b` | Settings → General → Privacy block above Diagnostics (never-record switch + delete-all with count, reusing the shared dialog) |
+| — | `a669fe6` | Fix: history state refresh when Settings closes (delete-all in Settings now reflected in the drawer without reload) + drawer open state persistence |
+| 5 | `0e295ae` | Click-to-restore (F): row click fills text + output + syncs both language selects; select-mode click still toggles the checkbox; trash `stopPropagation` |
+
+### Deviations from the original blueprint
+
+- **Drawer is full-height sticky** (not content-height): a flex wrapper spanning from below the header to the footer — owner visual fix after step 2
+- **Drawer open state persists** in `translate:historyOpen` (not in the spec; owner request 2026-09-29)
+- **History state refresh on settings close** (not in the spec; bug fix — Settings delete-all wrote localStorage without notifying the page state)
+
+### New pitfalls discovered during implementation
+
+1. **StrictMode double-mount clobbers a persisted flag:** a write-`on-change` `useEffect` on the drawer open state wrote the initial `false` over the persisted `"1"` during mount-1, then mount-2's read effect saw `"0"` — the drawer silently closed on every reload. Fix: **write only in the explicit toggle handler** (`applyHistoryOpen`), never in an effect. (Caught by Playwright, 2026-09-29.)
+2. **Dev-mode ghost textarea:** the Next 16 dev server leaves a 0-height, unlabelled `<textarea>` in the DOM that breaks index-based Playwright locators (`textarea:nth(1)` is NOT the output field). Production builds don't have it. Verify UI flows against the **production export**, and locate fields by `aria-label`, not index.
+3. **MUI v9 `Typography` rejects the `fontWeight` prop** — dev compiles fine, but `build:export` typecheck fails (TS2769). Use `sx={{ fontWeight: 600 }}`.
+
 ## Rollback plan (owner rule: keep rollback space)
 
 Independent commits, each revertable without touching the others:
