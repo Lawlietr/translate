@@ -1,0 +1,94 @@
+# Translate (WebGPU)
+
+完全在本機瀏覽器運作的翻譯應用程式——把「Google 翻譯」搬到你的 WebGPU 上:輸入文字,小型多語系 LLM(ONNX 格式,經 `@huggingface/transformers`)在**你的 GPU** 上直接翻譯,結果顯示在輸出框。**文字永不離開瀏覽器**——沒有伺服器端處理、沒有追蹤、沒有外部請求(模型下載與自訂 llama-server 連線除外,皆為使用者主動啟用)。
+
+## 功能
+
+- **本機 WebGPU 推理** — 兩個可選模型,下載後完全離線運作
+- **多語系** — UI:繁體中文 / 英文 / 日文 / 韓文;翻譯:英、繁中、簡中、日、韓、法、德、西
+- **翻譯歷史** — 本機 localStorage,左側抽屜 100 筆、單刪/多選/全刪、點擊恢復、可於設定關閉紀錄
+- **自訂 llama-server** — 設定中可填 OpenAI 相容端點,改由你自己的伺服器翻譯(選用)
+- **深色/淺色主題** — 預設深色,右上角切換
+- **活動日誌** — 設定 → 診斷,可看到完整的載入/下載/推理事件
+
+## 模型
+
+| 模型 | 大小 | 說明 |
+|------|------|------|
+| Hy-MT2 1.8B (Q4F16) | ~1.38 GB | 預設,輕量 GPU 也流暢 |
+| TranslateGemma 4B (Q4) | ~3.11 GB | 較強,建議較新 GPU |
+
+模型**僅從設定(推理分頁)**下載(Hugging Face,使用者主動),下載進度可隨時中斷;檔案存在瀏覽器 Cache API,重開分頁不需重下。
+
+## Docker 部署
+
+映像為**多架構**(`linux/amd64` + `linux/arm64`)靜態映像(nginx + 首次啟動自動產生自簽 TLS),同時發佈在 **GitHub** 與 **Codeberg** 兩個 registry,內容完全相同:
+
+```bash
+# 二擇一
+docker pull ghcr.io/lawlietr/translate:latest
+docker pull codeberg.org/lawlietr/translate:latest
+
+# 固定版本(以 commit sha 為 tag)
+docker pull ghcr.io/lawlietr/translate:0df78d9
+```
+
+> 拉 `codeberg.org/lawlietr/translate` 需在該站建立帳號並以 `lawlietr:<PAT>` 登入(`docker login codeberg.org`);`ghcr.io` 的公開映像可免登入拉取。
+
+```bash
+docker compose up -d        # 使用 repo 內的 docker-compose.yml
+```
+
+| 埠 | 用途 |
+|----|------|
+| `8080` | 一般 HTTP(loopback 使用;LAN 存取會因非安全內容被停用 WebGPU) |
+| `8443` | **自簽 TLS — LAN 使用請走這個**(WebGPU 需要安全內容) |
+
+- LAN 用法:瀏覽器開 `https://<主機 IP>:8443`,對自簽憑證按「繼續」即可,WebGPU 正常可用
+- 要換正式憑證:把 `fullchain.pem` / `privkey.pem` 掛到 `./certs/` 目錄,首啟 hook 偵測到已存在就不會再產生
+- 無環境變數、無 llama-server 容器——推理全部在用戶瀏覽器完成
+
+## 本機建置
+
+### 開發模式
+
+```bash
+npm install
+npm run dev -- -H 0.0.0.0 -p 3001
+```
+
+> 注意 `npm run dev` 後的 `--` 不可省,否則 npm 會把 `-H` 當成自己的參數而失敗。
+> 開發機佔用的 3000 埠屬於其他服務,固定用 3001。
+
+WebGPU 需要**安全內容**(`https://` 或 `localhost`):
+
+```bash
+# 從其他機器(LAN IP)測試時,用自簽 HTTPS 代理
+HTTPS_PORT=3443 PROXY_TARGET=127.0.0.1:3001 node scripts/https-test-server.mjs
+# → https://<開發機 LAN IP>:3443
+```
+
+### production 靜態導出(所有部署目標)
+
+```bash
+npm run build:export
+# 產出在 /out,任何靜態伺服器都能 serve(nginx、Caddy、python3 -m http.server …)
+```
+
+導出後**必做檢查**:每個 wasm 檔必須 < 25 MiB(Cloudflare Pages 的單檔上限):
+
+```bash
+find out -name "*.wasm*" -exec du -h {} +
+```
+
+> 切勿升級 `@huggingface/transformers` 的版本——目前是**精確固定在 4.2.0**;4.3.0 會拉進超 25 MiB 的 wasm,build 過但 Cloudflare 上傳會 413。
+
+## 開發
+
+- 分支模型:`DEV` = 日常開發;`main` = 發布分支(push 觸發 GitHub Actions:雙架構 build → 推兩個 registry → 建 Release)
+- `design/` — 每個工作單元的實作細節;`TODO.md` — 待辦與優先順序
+- 瀏覽器自動化驗證:Playwright(production static export 上跑,dev server 有 DOM 殘節會造成誤判)
+
+## 授權
+
+**AGPL-3.0**(見 `LICENSE`)。第三方元件保留各自授權(Next.js / MUI / transformers.js 等為 MIT/Apache,相容)。模型由使用者自行從 Hugging Face 下載,遵守模型自身條款,不隨本專案分發。
