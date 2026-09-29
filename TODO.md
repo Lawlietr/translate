@@ -6,14 +6,14 @@
 
 | # | Task |
 |---|------|
-| 11 | Docker (D8 — **static**): multi-stage `build:export` + wasm check → `nginx:alpine` (self-signed TLS auto-generation on first boot required) + compose (port mapping, healthcheck, cert volume — no env config, no llama.cpp service) + buildx linux/amd64,arm64 — design/local-deployment.md |
+| 12 | Local non-Docker Linux serving (D8 — **static**): `npm run build:export` → serve `/out` (any static server; Caddy/nginx optional TLS): docs + optional `scripts/serve-local.sh` — design/local-deployment.md |
 
 ### P2
 
 | # | Task |
 |---|------|
 | 9+24+25 | **Public static hosts (do together)**: Cloudflare Pages (`scripts/deploy-pages.mjs`, secrets via env, `--branch main`) + GitHub Pages (Actions workflow, decide repo-root vs subpath) + HF Space (Static Space + workflow pushing `/out`) — design/deployment.md, design/local-deployment.md §Target 4 |
-| 13 | Forgejo workflows: docker image build on runner `192.168.1.12` (multi-arch) publishing to **Codeberg registry ONLY — not local Forgejo, not GHCR** (owner reconfirmed 2026-09-26) + GitHub Actions mirror (repo landed 2026-09-26 — `.forgejo/workflows/` and `.github/workflows/` kept in lockstep, GHA pushes to Codeberg too); exe workflow (D5 host settled) — design/ci-build.md |
+| 13 | **GitHub Actions CI/CD (Docker part done 2026-09-29):** `main` push → build amd64+arm64 → publish to **BOTH** `ghcr.io/lawlietr/translate` + `codeberg.org/lawlietr/translate` + GitHub Release; `DEV` push → build-only CI check. **Remaining:** (a) exe workflow (D5, paused with #10); (b) **clean up the 12 runner** (Docker-build role retired — owner to confirm scope); (c) **README (when repo goes public): docker/compose section must state the image is on BOTH GH + Codeberg** — design/ci-build.md |
 | 12 | Local non-Docker Linux serving (D8 — **static**): `npm run build:export` → serve `/out` (any static server; Caddy/nginx optional TLS): docs + optional `scripts/serve-local.sh` — design/local-deployment.md |
 
 ### P3
@@ -28,9 +28,9 @@
 
 | Task |
 |------|
+| **Docker deployment (TODO #11, 2026-09-29)** — multi-stage `Dockerfile` (`build:export` + wasm < 25 MiB gate → `nginx:alpine` + `apk add openssl`), nginx SPA-fallback + dual 80/443, first-boot self-signed cert entrypoint (D3 mode 2), compose (8080/8443 + cert volume + healthcheck); **all builds in GitHub Actions** (runner can't do arm64) → `main` push publishes amd64+arm64 to **both** `ghcr.io` + `codeberg.org` + GitHub Release, `DEV` push = CI check; amd64 verified on runner (HTTP/HTTPS/SPA/wasm/cert); remaining: owner's real-browser WebGPU + GHA `main` run — design/local-deployment.md, design/ci-build.md |
+| **Translation history (TODO #27, owner spec 2026-09-28)** — left drawer (squeeze layout, full-height sticky) below the translation block; 100-entry localStorage store with dedupe-by-text+pair + 2,000-char gate + success-only; single/multi-select/clear-all deletion (shared confirm dialog); click-to-restore (text + output + both language selects); Settings → General → Privacy block above Diagnostics ("never record" switch + delete-all with count); drawer open state persists (`translate:historyOpen`, written only in the explicit toggle — StrictMode pitfall); history state refreshes when Settings closes; 12/12 Playwright regression on the production export — design/history.md, design/ui-ux.md |
 | Activity-log sticky-bottom autoscroll (owner 2026-09-28) — follows new lines while view is at bottom (8 px tolerance), pauses on manual scroll-up, resumes on scroll-to-bottom; `followRef` (no re-render on scroll) + post-render `useEffect` on `lines` — design/ui-ux.md §Diagnostics |
 | Three visual layers (owner 2026-09-28) — header `py-4` + hairline `border-b`; new `AppFooter` pinned to viewport bottom (`min-h-screen` + `flex-1` content wrapper) with **AGPL-3.0 → GNU official** + privacy line (2 i18n keys × 4 locales); redundant in-block "nothing leaves this device" caption removed (5 keys, 94 total); `<html lang>` follows UI language (server default zh-TW, client sync post-hydration); header GitHub icon now links to the repo (`GITHUB_REPO_URL`); timer terminal-value stale-closure bug fixed (local `started` const) — design/ui-ux.md, design/i18n.md |
 | UI refinement: larger translate/cancel buttons (20px, same size both states) + persistent 0.1 s terminal timer (also on cancel) + stale "generating" status bug fixed (`formatDuration` gained `decimals` param, default 0 for download UI) — design/ui-ux.md §Translation button + timer |
-| i18n ja + ko (owner 2026-09-26) — `Language` type + `SUPPORTED_LANGUAGES` + 93 keys × 2 locales; `settings-manager` `UILanguage` now reuses i18n `Language`/normalization (was hard-coded zh-TW/en only, would have silently coerced ja/ko back); verified 7/7 round-trip + persistence + 0 console errors — design/i18n.md |
-| **Translation history (TODO #27, owner spec 2026-09-28)** — left drawer (squeeze layout, full-height sticky) below the translation block; 100-entry localStorage store with dedupe-by-text+pair + 2,000-char gate + success-only; single/multi-select/clear-all deletion (shared confirm dialog); click-to-restore (text + output + both language selects); Settings → General → Privacy block above Diagnostics ("never record" switch + delete-all with count); drawer open state persists (`translate:historyOpen`, written only in the explicit toggle — StrictMode pitfall); history state refreshes when Settings closes; 12/12 Playwright regression on the production export — design/history.md, design/ui-ux.md |
 
