@@ -99,6 +99,10 @@ export interface Messages {
   "general.uiLanguage": string;
   "general.defaultSource": string;
   "general.defaultTarget": string;
+  "general.privacy": string;
+  "general.neverRecord": string;
+  "general.neverRecordHelper": string;
+  "general.deleteAllHistory": string;
   "general.diagnostics": string;
   "general.diagnosticsHelper": string;
 
@@ -241,6 +245,11 @@ export const translations: Record<Language, Messages> = {
     "general.uiLanguage": "UI language",
     "general.defaultSource": "Default source language",
     "general.defaultTarget": "Default target language",
+    "general.privacy": "Privacy",
+    "general.neverRecord": "Never record",
+    "general.neverRecordHelper":
+      "Stops new entries. Existing history stays until you delete it manually.",
+    "general.deleteAllHistory": "Delete all history ({n})",
     "general.diagnostics": "Diagnostics",
     "general.diagnosticsHelper":
       "Show the live activity log (stages, fetches, errors) on the main page",
@@ -372,6 +381,10 @@ export const translations: Record<Language, Messages> = {
     "general.uiLanguage": "介面語言",
     "general.defaultSource": "預設來源語言",
     "general.defaultTarget": "預設目標語言",
+    "general.privacy": "隱私",
+    "general.neverRecord": "永不紀錄",
+    "general.neverRecordHelper": "停止新增紀錄。既有紀錄會保留，直到你手動刪除。",
+    "general.deleteAllHistory": "刪除所有紀錄 ({n})",
     "general.diagnostics": "診斷",
     "general.diagnosticsHelper": "在主頁面顯示即時活動記錄（階段、抓取、錯誤）",
 
@@ -502,6 +515,10 @@ export const translations: Record<Language, Messages> = {
     "general.uiLanguage": "UI 言語",
     "general.defaultSource": "デフォルトの元の言語",
     "general.defaultTarget": "デフォルトの目標言語",
+    "general.privacy": "プライバシー",
+    "general.neverRecord": "記録しない",
+    "general.neverRecordHelper": "新しい履歴の記録を停止します。既存の履歴は手動で削除するまで保持されます。",
+    "general.deleteAllHistory": "全履歴を削除 ({n})",
     "general.diagnostics": "診断",
     "general.diagnosticsHelper": "メインページにライブのアクティビティログ（段階、フェッチ、エラー）を表示",
 
@@ -631,6 +648,10 @@ export const translations: Record<Language, Messages> = {
     "general.uiLanguage": "UI 언어",
     "general.defaultSource": "기본 원래 언어",
     "general.defaultTarget": "기본 목표 언어",
+    "general.privacy": "개인정보",
+    "general.neverRecord": "기록하지 않음",
+    "general.neverRecordHelper": "새 항목 기록을 중단합니다. 기존 기록은 수동으로 삭제할 때까지 유지됩니다.",
+    "general.deleteAllHistory": "모든 기록 삭제 ({n})",
     "general.diagnostics": "진단",
     "general.diagnosticsHelper": "메인 페이지에 실시간 활동 로그(단계, fetch, 오류) 표시",
 

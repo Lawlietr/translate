@@ -37,6 +37,8 @@ import { useAppSettings } from "../hooks/use-app-settings";
 import { useI18n } from "../hooks/useI18n";
 import { SUPPORTED_LANGUAGES } from "../lib/i18n/translations";
 import { fetchAvailableModels } from "../lib/providers/llama-server";
+import { getHistory, clearHistory } from "../lib/history-store";
+import { HistoryClearDialog } from "./history-clear-dialog";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import type { DownloadProgress } from "../lib/types";
@@ -430,6 +432,12 @@ function InferenceTab() {
 function GeneralTab() {
   const { settings, update } = useAppSettings();
   const { t } = useI18n();
+  const [clearOpen, setClearOpen] = useState(false);
+  const [historyCount, setHistoryCount] = useState(0);
+
+  useEffect(() => {
+    setHistoryCount(getHistory().length);
+  }, []);
 
   return (
     <Box className="flex flex-col gap-3">
@@ -478,6 +486,41 @@ function GeneralTab() {
           ))}
         </Select>
       </Box>
+      <Divider />
+      <Box className="flex flex-col gap-2">
+        <Typography variant="subtitle2">{t("general.privacy")}</Typography>
+        <Box className="flex items-center justify-between gap-2">
+          <Box>
+            <Typography variant="body2">{t("general.neverRecord")}</Typography>
+            <Typography variant="caption" sx={{ opacity: 0.6 }}>
+              {t("general.neverRecordHelper")}
+            </Typography>
+          </Box>
+          <Switch
+            checked={settings.historyDisabled}
+            onChange={(e) => update({ historyDisabled: e.target.checked })}
+          />
+        </Box>
+        <Button
+          variant="outlined"
+          color="error"
+          size="small"
+          disabled={historyCount === 0}
+          onClick={() => setClearOpen(true)}
+        >
+          {t("general.deleteAllHistory", { n: historyCount })}
+        </Button>
+      </Box>
+      <HistoryClearDialog
+        open={clearOpen}
+        count={historyCount}
+        onConfirm={() => {
+          clearHistory();
+          setHistoryCount(0);
+          setClearOpen(false);
+        }}
+        onClose={() => setClearOpen(false)}
+      />
       <Divider />
       <Box className="flex items-center justify-between gap-2">
         <Box>
