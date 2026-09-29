@@ -108,7 +108,16 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
 
   useEffect(() => {
     setHistory(getHistory());
+  }, [settingsOpen]);
+
+  useEffect(() => {
+    setHistoryOpen(window.localStorage.getItem("translate:historyOpen") === "1");
   }, []);
+
+  const applyHistoryOpen = (next: boolean) => {
+    setHistoryOpen(next);
+    window.localStorage.setItem("translate:historyOpen", next ? "1" : "0");
+  };
 
   const modelReady = !webgpuBackend || cache === null || cache.cached;
 
@@ -191,7 +200,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
         <HistoryPanel
           entries={history}
           onUpdate={setHistory}
-          onClose={() => setHistoryOpen(false)}
+          onClose={() => applyHistoryOpen(false)}
         />
       )}
       <Box className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 flex flex-col gap-3 min-w-0">
@@ -391,7 +400,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
           variant="outlined"
           size="small"
           startIcon={<HistoryIcon />}
-          onClick={() => setHistoryOpen((v) => !v)}
+          onClick={() => applyHistoryOpen(!historyOpen)}
           aria-expanded={historyOpen}
         >
           {t("history.button")}

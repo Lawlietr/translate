@@ -84,6 +84,8 @@ interface HistoryEntry {
 - In the `.then()` success branch: `if (!settings.historyDisabled && text.length <= 2000) addHistory(...)`
 - Cancel (AbortError) and `.catch` paths: nothing recorded (C)
 - `settings.historyDisabled` read from the same settings object already in scope
+- **State refresh on settings close:** the page keeps `history` in React state (loaded on mount); the load effect also re-runs when `settingsOpen` flips, so a "delete all" done from Settings is reflected in the drawer immediately after the dialog closes (no reload / no next translation needed)
+- **Drawer open state persists** across reloads in `translate:historyOpen` (`"1"`/`"0"`); read post-mount (hydration-safe, same pattern as settings — never in render), written ONLY in the explicit toggle handler (`applyHistoryOpen`). A write-`on-change` effect was tried first and broke under React StrictMode double-mount: mount-1's effect wrote the initial `false` over the persisted `"1"`, then mount-2's read effect saw `"0"` — drawer silently closed (caught 2026-09-29 in Playwright)
 
 ## i18n (new keys × 4 locales, ~14 keys)
 
