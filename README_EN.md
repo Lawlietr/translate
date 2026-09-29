@@ -1,4 +1,6 @@
-# Translate (WebGPU)
+# Translate
+
+[繁體中文](README.md) · [English](README_EN.md)
 
 A translation app that runs **entirely in your browser** — "Google Translate" on your own WebGPU: type text, a small multilingual LLM (ONNX format, via `@huggingface/transformers`) translates it **on your GPU**, and the result appears in the output box. **Your text never leaves the browser** — no server-side processing, no tracking, no external requests (except user-initiated model downloads and an optional custom llama-server connection).
 
