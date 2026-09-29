@@ -1,0 +1,15 @@
+services:
+  translate:
+    image: translate:latest
+    build: .
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./certs:/etc/nginx/certs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
