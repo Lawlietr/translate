@@ -104,6 +104,11 @@ export interface Messages {
 
   "activity.title": string;
   "activity.empty": string;
+
+  "history.button": string;
+  "history.title": string;
+  "history.empty": string;
+  "history.close": string;
 }
 
 export const SUPPORTED_LANGUAGES: Array<{ id: Language; label: string }> = [
@@ -236,6 +241,10 @@ export const translations: Record<Language, Messages> = {
     "activity.title":
       "diagnostics — stages + fetches (requests without a ← line are still pending)",
     "activity.empty": "no entries yet",
+    "history.button": "Translation history",
+    "history.title": "Translation history",
+    "history.empty": "No translation history yet",
+    "history.close": "Close translation history",
   },
 
   "zh-TW": {
@@ -353,6 +362,10 @@ export const translations: Record<Language, Messages> = {
 
     "activity.title": "診斷 — 階段 + 抓取（沒有 ← 列的請求仍在進行中）",
     "activity.empty": "尚無記錄",
+    "history.button": "翻譯紀錄",
+    "history.title": "翻譯紀錄",
+    "history.empty": "尚無翻譯紀錄",
+    "history.close": "關閉翻譯紀錄",
   },
 
   ja: {
@@ -472,6 +485,10 @@ export const translations: Record<Language, Messages> = {
 
     "activity.title": "診断 — 段階 + フェッチ（← 行のないリクエストは保留中）",
     "activity.empty": "まだエントリがありません",
+    "history.button": "翻訳履歴",
+    "history.title": "翻訳履歴",
+    "history.empty": "翻訳履歴はまだありません",
+    "history.close": "翻訳履歴を閉じる",
   },
 
   ko: {
@@ -589,6 +606,10 @@ export const translations: Record<Language, Messages> = {
 
     "activity.title": "진단 — 단계 + fetch (← 행이 없는 요청은 대기 중)",
     "activity.empty": "아직 항목이 없습니다",
+    "history.button": "번역 기록",
+    "history.title": "번역 기록",
+    "history.empty": "번역 기록이 없습니다",
+    "history.close": "번역 기록 닫기",
   },
 };
 

@@ -15,8 +15,16 @@ import {
   Typography,
 } from "@mui/material";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
+import HistoryIcon from "@mui/icons-material/History";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { CopyButton } from "./copy-button";
+import { HistoryPanel } from "./history-panel";
+import {
+  HISTORY_MAX_INPUT_CHARS,
+  addHistory,
+  getHistory,
+  type HistoryEntry,
+} from "../lib/history-store";
 import { SUPPORTED_TRANSLATION_LANGUAGES, languageName } from "../lib/languages";
 import { useAppSettings } from "../hooks/use-app-settings";
 import { useI18n } from "../hooks/useI18n";
@@ -73,6 +81,8 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   const [elapsed, setElapsed] = useState(0);
   const [lastDuration, setLastDuration] = useState(0);
   const [cache, setCache] = useState<CacheStatus | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const acRef = useRef<AbortController | null>(null);
 
   const translating = phase === "translating";
@@ -95,6 +105,10 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   }, [translating, startedAt]);
 
   useEffect(() => () => acRef.current?.abort(), []);
+
+  useEffect(() => {
+    setHistory(getHistory());
+  }, []);
 
   const modelReady = !webgpuBackend || cache === null || cache.cached;
 
@@ -122,7 +136,23 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
         config,
         ac.signal
       )
-      .then((result) => workspace.set({ output: result.text }))
+      .then((result) => {
+        const src = text.trim();
+        workspace.set({ output: result.text });
+        if (src.length <= HISTORY_MAX_INPUT_CHARS) {
+          setHistory(
+            addHistory(
+              {
+                sourceText: src,
+                targetText: result.text,
+                sourceLang: settings.defaultSourceLang,
+                targetLang: settings.defaultTargetLang,
+              },
+              { disabled: settings.historyDisabled }
+            )
+          );
+        }
+      })
       .catch((e: unknown) => {
         if (e instanceof DOMException && e.name === "AbortError") {
           setError(t("page.cancelled"));
@@ -156,7 +186,11 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   };
 
   return (
-    <Box className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 flex flex-col gap-3">
+    <Box className="flex-1 w-full flex">
+      {historyOpen && (
+        <HistoryPanel entries={history} onClose={() => setHistoryOpen(false)} />
+      )}
+      <Box className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 flex flex-col gap-3 min-w-0">
       {webgpuBackend && !gpu.secureContext && (
         <Alert severity="warning">
           {t("page.insecureAlert")}
@@ -348,6 +382,19 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
           )}
         </Box>
       </Box>
+      <Box>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<HistoryIcon />}
+          onClick={() => setHistoryOpen((v) => !v)}
+          aria-expanded={historyOpen}
+        >
+          {t("history.button")}
+        </Button>
+      </Box>
+      </Box>
     </Box>
   );
 }
+
