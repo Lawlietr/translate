@@ -22,6 +22,7 @@ export interface AppSettings {
   language: UILanguage;
   defaultSourceLang: string;
   defaultTargetLang: string;
+  historyDisabled: boolean;
   diagnostics: boolean;
 }
 
@@ -42,6 +43,7 @@ export function defaultSettings(): AppSettings {
     language: "zh-TW",
     defaultSourceLang: "zh-TW",
     defaultTargetLang: "en",
+    historyDisabled: false,
     diagnostics: false,
   };
 }
@@ -91,6 +93,7 @@ export function loadSettings(): AppSettings {
           ? parsed.webgpuSystemPrompt
           : "",
       language: normalizeLanguage(parsed.language),
+      historyDisabled: parsed.historyDisabled === true,
       diagnostics: parsed.diagnostics === true,
       llamaServerConfig: {
         ...defaults.llamaServerConfig,
