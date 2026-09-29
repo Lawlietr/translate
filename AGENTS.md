@@ -112,7 +112,7 @@ HTTPS_PORT=3443 PROXY_TARGET=127.0.0.1:3001 node scripts/https-test-server.mjs  
 
 ## Deployment
 
-All targets serve the **static export** (D1–D8 settled; see `design/local-deployment.md`): **Docker/compose** (nginx + self-signed TLS, linux/amd64 + arm64), **local non-Docker Linux** (serve `/out`), **Windows 11 WebView2 .exe** (C# .NET 8, zip folder + built-in C# HTTP server — D7, **paused**). Public static hosts: **Cloudflare Pages**, **GitHub Pages**, **HF Space**.
+All targets serve the **static export** (D1–D8 settled; see `design/local-deployment.md`): **Docker/compose** (nginx + self-signed TLS, linux/amd64 + arm64), **Windows 11 WebView2 .exe** (C# .NET 8, zip folder + built-in C# HTTP server — D7, **paused**). Local non-Docker Linux (serve `/out`) was **dropped 2026-09-29 (#12)** — covered by dev mode + Docker; `build:export` → serve `/out` stays documented in the README as general knowledge. Public static hosts: **Cloudflare Pages**, **GitHub Pages**, **HF Space**.
 
 Build location (rule 11): **GitHub Actions only** (2026-09-29) — `ubuntu-latest` for Docker images (amd64+arm64), `windows-latest` for the exe (paused). **Branch model:** `DEV` = development; `main` = **release branch** (push → build + publish image to **both** `ghcr.io/lawlietr/translate` and `codeberg.org/lawlietr/translate` + create a GitHub Release; `DEV` push = build-only CI check). — `design/ci-build.md`.
 

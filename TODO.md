@@ -2,19 +2,12 @@
 
 ## Pending
 
-### P1
-
-| # | Task |
-|---|------|
-| 12 | Local non-Docker Linux serving (D8 — **static**): `npm run build:export` → serve `/out` (any static server; Caddy/nginx optional TLS): docs + optional `scripts/serve-local.sh` — design/local-deployment.md |
-
 ### P2
 
 | # | Task |
 |---|------|
 | 9+24+25 | **Public static hosts (do together)**: Cloudflare Pages (`scripts/deploy-pages.mjs`, secrets via env, `--branch main`) + GitHub Pages (Actions workflow, decide repo-root vs subpath) + HF Space (Static Space + workflow pushing `/out`) — design/deployment.md, design/local-deployment.md §Target 4 |
 | 13 | **GitHub Actions CI/CD (Docker part done 2026-09-29):** `main` push → build amd64+arm64 → publish to **BOTH** `ghcr.io/lawlietr/translate` + `codeberg.org/lawlietr/translate` + GitHub Release; `DEV` push → build-only CI check. **Remaining:** (a) exe workflow (D5, paused with #10); (b) **README (when repo goes public): docker/compose section must state the image is on BOTH GH + Codeberg** — design/ci-build.md |
-| 12 | Local non-Docker Linux serving (D8 — **static**): `npm run build:export` → serve `/out` (any static server; Caddy/nginx optional TLS): docs + optional `scripts/serve-local.sh` — design/local-deployment.md |
 
 ### P3
 

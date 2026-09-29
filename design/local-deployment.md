@@ -68,12 +68,19 @@ Implemented in commit `e558ec9` (+ `apk add openssl` Dockerfile fix): `Dockerfil
 
 **Verified on the runner (amd64, 2026-09-29):** compose up healthy; HTTP 8080 → 200 (index.html, zh-TW + dark); SPA fallback `/settings` → 200; HTTPS 8443 → 200 with the generated self-signed cert (SAN: hostname + localhost + 127.0.0.1 + 192.168.1.15); wasm in image 9.3 MiB < 25 MiB; static JS asset → 200. **Owner's real-browser acceptance PASSED (2026-09-29):** LAN WebGPU via `https://192.168.1.12:8443` (self-signed warning, proceed) — "功能正常如預期". Multi-arch publish verified: GHA run pushed `latest` + sha tag to BOTH `codeberg.org/lawlietr/translate` (OCI index: amd64 + arm64 confirmed via API) and GHCR; GitHub Release `v2026.09.29-0df78d9` created. **Runner leftovers cleaned 2026-09-29** (container/images/build-cache/files; forgejo-runner + playwright MCP untouched). arm64 native-serve not tested on an arm64 host (runner can't build it; the GHA-pushed arm64 manifest is the artifact).
 
-## Target 3 — Local non-Docker Linux
+## Target 3 — Local non-Docker Linux — **DROPPED (owner decision 2026-09-29, #12 removed)**
+
+Rationale: covered by the other paths — dev mode (`npm run dev`) for development/testing, Docker (Target 2) for self-hosting on any Linux machine, and the static-export knowledge already in the README for the rare bare-Linux case. No concrete bare-Linux-without-Docker target exists. `build:export` → serve `/out` remains documented in the README (local build section) as general knowledge, not as a tracked task.
+
+<details>
+<summary>Original spec (kept for reference)</summary>
 
 - (D8 — static export) `npm run build:export` → serve `/out` with any static server (`npx serve out`, nginx, Caddy); **Caddy/nginx optional** in front, only for TLS when LAN devices need WebGPU.
 - `http://localhost:<port>` is a secure context → WebGPU works with zero TLS for same-machine use.
 - Optional convenience: `scripts/serve-local.sh` (build if needed, serve `/out`, open browser) — keep minimal, part of this task.
 - Acceptance criteria: documented command sequence works on a clean Debian/Ubuntu machine; WebGPU translation works at `http://localhost:<port>`.
+
+</details>
 
 ## Target 4 — GitHub Pages + HF Space (static public hosts, added 2026-09-26)
 
