@@ -108,6 +108,7 @@ interface HistoryEntry {
 - **Hydration-safe:** read localStorage post-mount only; render empty by default (same pattern as `AppSettingsProvider` — design/ui-ux.md §Implementation notes)
 - **MUI v9:** no Fragment children in Select (not expected here, but same drawer uses Select for nothing — list is plain)
 - **Restore (F) must not trigger a save of the mid-translation state** — workspace persistence is debounced; filling text+output is the same shape `swap()` already produces, so it composes naturally
+- **Restore is click-to-restore (2026-09-29):** in non-select mode a row click calls `onRestore(entry)` → `workspace.set({ text, output })` + `update({ defaultSourceLang, defaultTargetLang })` (language Selects bind to settings, same shape as `swap()`); the hover trash button `stopPropagation`s so it never triggers a restore; in select mode a row click toggles the checkbox (no restore)
 - **Drawer + SettingsDialog z-index:** MUI Dialog (settings) must stay above the drawer; drawer is a `Paper` inside the page, not a MUI `Drawer` portal — keep it in normal flow so the squeeze layout works
 - **`min-h-screen flex` chain:** the outer column is already `min-h-screen flex flex-col`; the history row is a NEW flex ROW inside the content wrapper — don't break the sticky footer (footer stays the last column child)
 

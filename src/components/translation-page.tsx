@@ -194,6 +194,14 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
     });
   };
 
+  const restoreEntry = (entry: HistoryEntry) => {
+    workspace.set({ text: entry.sourceText, output: entry.targetText });
+    update({
+      defaultSourceLang: entry.sourceLang,
+      defaultTargetLang: entry.targetLang,
+    });
+  };
+
   return (
     <Box className="flex-1 w-full flex">
       {historyOpen && (
@@ -201,6 +209,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
           entries={history}
           onUpdate={setHistory}
           onClose={() => applyHistoryOpen(false)}
+          onRestore={restoreEntry}
         />
       )}
       <Box className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 flex flex-col gap-3 min-w-0">

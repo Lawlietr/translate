@@ -26,6 +26,7 @@ interface HistoryPanelProps {
   entries: HistoryEntry[];
   onUpdate: (entries: HistoryEntry[]) => void;
   onClose: () => void;
+  onRestore: (entry: HistoryEntry) => void;
 }
 
 function formatTimestamp(ts: number, locale: string): string {
@@ -37,7 +38,7 @@ function formatTimestamp(ts: number, locale: string): string {
   }).format(ts);
 }
 
-export function HistoryPanel({ entries, onUpdate, onClose }: HistoryPanelProps) {
+export function HistoryPanel({ entries, onUpdate, onClose, onRestore }: HistoryPanelProps) {
   const { t, lang } = useI18n();
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -77,7 +78,7 @@ export function HistoryPanel({ entries, onUpdate, onClose }: HistoryPanelProps) 
       }}
     >
       <Box className="flex items-center justify-between gap-2 px-4 py-3">
-        <Typography variant="subtitle1" fontWeight={600}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
           {t("history.title")}
         </Typography>
         <Box className="flex items-center gap-0.5">
@@ -124,16 +125,16 @@ export function HistoryPanel({ entries, onUpdate, onClose }: HistoryPanelProps) 
               return (
                 <Box
                   key={entry.id}
-                  className={`group flex items-start gap-2 px-4 py-3 ${
-                    selectMode ? "cursor-pointer" : ""
-                  }`}
+                  className={`group flex items-start gap-2 px-4 py-3 cursor-pointer`}
                   sx={{
                     borderBottom: "1px solid",
                     borderColor: "divider",
                     bgcolor: isSelected ? "action.selected" : "transparent",
                   }}
                   onClick={
-                    selectMode ? () => toggleSelect(entry.id) : undefined
+                    selectMode
+                      ? () => toggleSelect(entry.id)
+                      : () => onRestore(entry)
                   }
                 >
                   {selectMode && (
@@ -164,7 +165,10 @@ export function HistoryPanel({ entries, onUpdate, onClose }: HistoryPanelProps) 
                   {!selectMode && (
                     <IconButton
                       size="small"
-                      onClick={() => onUpdate(removeHistory(entry.id))}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdate(removeHistory(entry.id));
+                      }}
                       aria-label={t("history.deleteEntry")}
                       className="opacity-0 group-hover:opacity-100"
                     >
