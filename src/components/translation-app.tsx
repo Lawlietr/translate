@@ -46,7 +46,7 @@ function AppContent() {
             onOpenSettings={() => openSettings("inference")}
           />
         </Box>
-        <Box className="flex-1">
+        <Box className="flex-1 flex">
           <TranslationPage
             onOpenSettings={openSettings}
             settingsOpen={settingsOpen}
