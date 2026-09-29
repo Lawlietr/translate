@@ -49,7 +49,7 @@ Every target below must respect this split.
 - Multi-stage `Dockerfile` (D8 — **static export**, not full build):
   - Stage 1 `node:22-alpine`: `npm ci` → `npm run build:export` → mandatory wasm < 25 MiB check (fails the build otherwise — keep the invariant)
   - Stage 2 `nginx:alpine`: serve `/out` on :80 with self-signed TLS (D3) — one container, no sidecar
-  - All base images are multi-arch → `docker buildx build --platform linux/amd64,linux/arm64 -t registry.codeberg.org/lawlietr/translate:latest .` (Codeberg registry ONLY — ci-build.md: not on local Forgejo, not on GHCR)
+  - All base images are multi-arch → `docker buildx build --platform linux/amd64,linux/arm64 -t codeberg.org/lawlietr/translate:latest .` (Codeberg registry ONLY — ci-build.md: not on local Forgejo, not on GHCR)
 - `docker-compose.yml`: port mapping (host 8080 → nginx 80), healthcheck, `restart: unless-stopped`, TLS cert volume per D3. **No env config, no llama-server service** — inference is the user's browser's job (WebGPU, or the user's own llama-server reached directly from the browser).
 - TLS modes — **D3 decided 2026-09-21: default plain HTTP + optional modes**:
   1. Plain HTTP (loopback users fine; LAN users get the "WebGPU unavailable" notice)
