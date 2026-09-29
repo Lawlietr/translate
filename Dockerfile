@@ -11,6 +11,7 @@ RUN if [ -n "$(find out -name '*.wasm*' -size +25M -print -quit)" ]; then \
     fi
 
 FROM nginx:alpine
+RUN apk add --no-cache openssl
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/entrypoint-selfsigned.sh /docker-entrypoint.d/20-selfsigned.sh
 RUN chmod +x /docker-entrypoint.d/20-selfsigned.sh

@@ -58,6 +58,16 @@ Every target below must respect this split.
 - **D4 decided 2026-09-21 (reconfirmed 2026-09-26):** no internal registry — images are **built on the Forgejo runner `root@192.168.1.12`** (never on the dev machine) via Forgejo workflows, pushed to the **Codeberg registry only** (not local Forgejo, not GHCR); GitHub Actions workflows are build hosts that push to the same Codeberg target. See design/ci-build.md.
 - Acceptance criteria: `docker compose up` on an amd64 host and an arm64 host both serve the app; WebGPU works via localhost; LAN WebGPU works in TLS mode 2.
 
+### Implementation status (2026-09-29)
+
+Implemented in commit `e558ec9` (+ `apk add openssl` Dockerfile fix): `Dockerfile` (multi-stage, wasm < 25 MiB gate in stage 1), `docker/nginx.conf` (dual 80/443 servers, SPA fallback `try_files → /index.html`), `docker/entrypoint-selfsigned.sh` (first-boot cert generation, CN=hostname, SAN = hostname + localhost + 127.0.0.1 + 192.168.1.15, 825 days), `docker-compose.yml` (8080→80, 8443→443, `./certs` volume writable so the hook can generate into it, healthcheck via busybox `wget --spider`), `.dockerignore`.
+
+**Build/verify on the runner (manual — registry automation is #13):** repo synced via rsync (the runner has no forgejo SSH key), `docker buildx build --platform linux/amd64 -t translate:latest --load .` (NOTE: `--load` cannot export multi-arch manifest lists — build per-arch locally; `--push` is what #13's workflow will use for the dual-arch registry image).
+
+**Pitfalls hit:** (1) `nginx:alpine` has NO `openssl` binary — the entrypoint hook dies with `openssl: not found` → container restart loop (exit 127); fixed with `apk add --no-cache openssl` in stage 2. (2) **The runner cannot build arm64 images at all** — it runs inside a nested user namespace (`/proc/self/uid_map` = `0 100000 65536`, so our "root" is host UID 100000), which blocks host-level binfmt registration (`/proc/sys/fs/binfmt_misc/register` is EACCES even for root; the dir is owned by `nobody` because host root isn't mapped in) → QEMU cross-arch emulation is unavailable, arm64 builds die with `exec format error`. No workaround from inside the namespace. arm64 options: build natively on an arm64 host (owner's Mac), or rely on #13's Codeberg CI (Codeberg provides arm64 runners).
+
+**Verified on the runner (amd64, 2026-09-29):** compose up healthy; HTTP 8080 → 200 (index.html, zh-TW + dark); SPA fallback `/settings` → 200; HTTPS 8443 → 200 with the generated self-signed cert (SAN: hostname + localhost + 127.0.0.1 + 192.168.1.15); wasm in image 9.3 MiB < 25 MiB; static JS asset → 200. **Remaining acceptance:** owner's real browser — WebGPU via `http://localhost:8080` and LAN WebGPU via `https://192.168.1.12:8443` (self-signed warning, proceed); arm64 host serve deferred (runner limitation above).
+
 ## Target 3 — Local non-Docker Linux
 
 - (D8 — static export) `npm run build:export` → serve `/out` with any static server (`npx serve out`, nginx, Caddy); **Caddy/nginx optional** in front, only for TLS when LAN devices need WebGPU.
