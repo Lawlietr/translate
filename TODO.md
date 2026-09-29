@@ -6,8 +6,8 @@
 
 | # | Task |
 |---|------|
-| 9+24+25 | **Public static hosts (do together)**: Cloudflare Pages (`scripts/deploy-pages.mjs`, secrets via env, `--branch main`) + GitHub Pages (Actions workflow, decide repo-root vs subpath) + HF Space (Static Space + workflow pushing `/out`) — design/deployment.md, design/local-deployment.md §Target 4 |
-| 13 | **GitHub Actions CI/CD (Docker part done 2026-09-29):** `main` push → build amd64+arm64 → publish to **BOTH** `ghcr.io/lawlietr/translate` + `codeberg.org/lawlietr/translate` + GitHub Release; `DEV` push → build-only CI check. **Remaining:** (a) exe workflow (D5, paused with #10); (b) **README (when repo goes public): docker/compose section must state the image is on BOTH GH + Codeberg** — design/ci-build.md |
+| 9+24+25 | **Public static hosts — CF Pages + GH Pages done (2026-09-29); HF Space deferred.** CF: `scripts/deploy-pages.mjs` (TEST default, `--prod` for `translate.avpclub.eu.org`); GH: `pages.yml` workflow (`basePath=/translate`, `build_type: workflow`). **Remaining:** HF Space (needs owner's HF account + token; plan in design/deployment.md §HF Space) — design/deployment.md |
+| 13 | **GitHub Actions CI/CD (Docker + Pages done 2026-09-29):** `main` push → Docker (amd64+arm64 → GHCR + Codeberg + Release) + GH Pages (static export → `lawlietr.github.io/translate/`); `DEV` push → Docker CI check. **Remaining:** exe workflow (D5, paused with #10) — design/ci-build.md |
 
 ### P3
 

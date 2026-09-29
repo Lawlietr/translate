@@ -24,16 +24,31 @@ And `package.json` pins `@huggingface/transformers` to an exact version (no `^`)
 - **No credentials in the repo.** wrangler reads `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` from the environment; the script refuses to run if either is missing and never prints their values. No `wrangler login`.
 - One command: build static export → verify `/out` (incl. wasm size check) → create project if missing → `wrangler pages deploy out --project-name <name> --branch main` → ensure custom domain.
 - **`--branch main` is required**: without it, deploying from a non-`main` local branch (e.g. `DEV`) creates a PREVIEW deployment that the custom domain never serves.
-- Custom-domain step (only if the domain sits in a zone proxied through Cloudflare): `POST /accounts/{acct}/pages/projects/{project}/domains` with body `{"name": "<domain>"}` (field is `name`, NOT `domain`); delete with `DELETE …/domains/{domain-name}` (the NAME, not the UUID). CNAME points at the owning project's `*.pages.dev` alias; TLS auto-issued; all steps idempotent.
+- **Wrangler 4.x `--force` flag**: `wrangler pages project create` in 4.x delegates to Cloudflare Workers (OpenNext) by default, which breaks static-export apps. Pass `--force` to use the legacy static Pages directly. Only needed on first create; subsequent `deploy` commands work without it. The flag must NOT be passed to `pages deploy`.
+- Custom-domain step (only if the domain sits in a zone proxied through Cloudflare): `POST /accounts/{acct}/pages/projects/{project}/domains` with body `{"name": "<domain>"}` (field is `name`, NOT `domain`); delete with `DELETE …/domains/{domain-name}` (the NAME, not the UUID). CNAME points at the owning project's `*.pages.dev` alias; TLS auto-issued (Google CA, 5–30 min); all steps idempotent.
+- **CNAME is a separate one-time step**: after adding the domain to the Pages project, a CNAME DNS record must exist in the zone pointing `<subdomain>` → `<project>.<suffix>.pages.dev`. Create via `POST /zones/{zone_id}/dns_records` with `{"type":"CNAME","name":"<subdomain>","content":"<pages-alias>","ttl":1}`. The Pages domain status stays `pending` until the CNAME is detected + TLS cert is issued.
 - If a local `next start` is running, restart it after the deploy (the script prints a warning).
 
 ## Two-project policy (owner decision, carried over)
 
 - TEST project and PRODUCTION project are SEPARATE (a Pages deployment updates every domain on its project, so routine deploys can never touch production).
 - **Default runs deploy to TEST only. Production only on explicit owner request (`--prod`).**
-- Custom domains TBD (owner to provide) — do not guess.
+- Production custom domain: `translate.avpclub.eu.org` (zone `avpclub.eu.org`, CNAME → `translate-4j9.pages.dev`).
+
+## GitHub Pages (implemented 2026-09-29)
+
+- Repo must be **public** (private repos need a paid plan for Pages).
+- Enable via API: `POST /repos/{owner}/{repo}/pages` with `{"build_type":"workflow"}` — one-time; subsequent deploys go through the Actions workflow.
+- Workflow (`.github/workflows/pages.yml`): `NEXT_BASE_PATH=/translate` → `npm run build:export` → wasm check → `actions/upload-pages-artifact@v3` → `actions/deploy-pages@v4`.
+- `basePath` is env-driven in `next.config.ts` (`process.env.NEXT_BASE_PATH || ""`) — empty for Docker/CF/local, `/translate` for GH Pages only.
+- URL: `https://lawlietr.github.io/translate/`.
+
+## HF Space (deferred — owner has not set up HF account/token yet)
+
+- Static Space (free, no hardware). Plan: `hf auth login` (device-flow, no token) → `hf repos create Lawlietr/translate --type space --space-sdk static --public` → push `/out` contents + README frontmatter (`sdk: static`, `app_file: index.html`).
+- Optional CI/CD: GitHub Actions workflow with `HF_TOKEN` secret (fine-grained, single-repo Space write).
 
 ## Git
 
-- Remotes: `origin` = `ssh://fg/lawliet/translate.git` (Forgejo 192.168.1.124:222, SSH alias `fg`); `codeberg` = `ssh://git@codeberg.org/Lawlietr/translate.git`; `github` = `git@github.com:Lawlietr/translate.git` (**private** for now — owner will make it public when the project is ready, alongside creating the `main` branch + README; routine work on `DEV`). GitHub also gets Actions workflows (design/ci-build.md). Carried-over policy: every commit pushed to ALL configured remotes, whichever branch (routine work on `DEV`).
+- Remotes: `origin` = `ssh://fg/lawliet/translate.git` (Forgejo 192.168.1.124:222, SSH alias `fg`); `codeberg` = `ssh://git@codeberg.org/Lawlietr/translate.git`; `github` = `git@github.com:Lawlietr/translate.git` (**public** as of 2026-09-29). Carried-over policy: every commit pushed to ALL configured remotes, whichever branch (routine work on `DEV`).
 - Builds: Forgejo runner `root@192.168.1.12` (token in that machine's `~/.zshrc`, never in this repo) — docker images now; Windows exe needs a Windows build host (D5, design/ci-build.md). Never build/package on the dev machine (AGENTS rule 11).
