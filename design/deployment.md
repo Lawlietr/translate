@@ -43,10 +43,14 @@ And `package.json` pins `@huggingface/transformers` to an exact version (no `^`)
 - `basePath` is env-driven in `next.config.ts` (`process.env.NEXT_BASE_PATH || ""`) — empty for Docker/CF/local, `/translate` for GH Pages only.
 - URL: `https://lawlietr.github.io/translate/`.
 
-## HF Space (deferred — owner has not set up HF account/token yet)
+## HF Space (implemented 2026-09-29)
 
-- Static Space (free, no hardware). Plan: `hf auth login` (device-flow, no token) → `hf repos create Lawlietr/translate --type space --space-sdk static --public` → push `/out` contents + README frontmatter (`sdk: static`, `app_file: index.html`).
-- Optional CI/CD: GitHub Actions workflow with `HF_TOKEN` secret (fine-grained, single-repo Space write).
+- **Live:** `https://huggingface.co/spaces/lawlietr/translate` (host `lawlietr-translate.static.hf.space`) — public Static Space, free, no hardware.
+- Deploy: `hf` CLI (v2.0.0, official install script; `hf update` to upgrade) → `hf repos create lawlietr/translate --type space --space-sdk static --public --exist-ok` → `npm run build:export` → drop a `README.md` with frontmatter into `out/` → `hf upload lawlietr/translate out/. --repo-type space`.
+- **README frontmatter rules:** `sdk: static` + `app_file: index.html`; do NOT set `app_build_command` (files are pre-built; a build command would fail on the Space). The root 302 → `/index.html` is the static SDK's normal `app_file` redirect. Big files (wasm) serve through the HF xet CDN (302 → signed CDN URL) — expected.
+- **CLI notes (2.0.0):** commands differ from older docs — `hf spaces info` (not `status`), `hf spaces list <id>` (files; `-R` recursive), `hf spaces wait` (block until running), `hf repos create` (not `hf spaces create`). `hf upload` defaults to *model* repos — `--repo-type space` is mandatory.
+- Models download from `huggingface.co` — **same-origin** on the Space, no CORS issues.
+- Optional CI/CD (not built): a workflow with `HF_TOKEN` secret (fine-grained, single-repo Space write) running the same build+upload on `main` push.
 
 ## Git
 
