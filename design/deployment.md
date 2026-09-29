@@ -6,6 +6,8 @@ Cloudflare Pages (one of the static hosts — GitHub Pages / HF Space / Docker /
 
 Cloudflare Pages rejects any single uploaded file ≥ 25 MiB (413, upload fails per-file). transformers.js bundles onnxruntime wasm chunks — the known-good baseline is **transformers.js 4.2.0 → `ort-wasm-simd-threaded.jsep-ft.wasm` 17.82 MiB**; the 4.3.0 bump ships a 25.6 MiB wasm and breaks the upload.
 
+**Platform hard limit, not a bug (verified 2026-09):** the cap comes from Pages' underlying KV limits; paid plans do NOT raise it (CF community + docs). All other hosts are unaffected — HF Space serves the wasm through the xet CDN (22.48 MiB verified), GH Pages / Docker / local have no such cap.
+
 Mandatory pre-deploy check (scripted into the deploy):
 
 ```bash
@@ -14,6 +16,15 @@ du -sh out/_next/static/chunks/*.wasm*   # every file must be < 25 MiB
 ```
 
 And `package.json` pins `@huggingface/transformers` to an exact version (no `^`) — see AGENTS.md rule 1.
+
+### If a future transformers.js bump exceeds the cap (options, simple → complex)
+
+1. **Stay on 4.2.0** (current policy) — zero cost; only revisit if 4.3+ ships a critical fix we need.
+2. **R2 + Pages Functions** (CF-native): put the > 25 MiB file in an R2 bucket (no per-object cap), serve it through a Pages Function proxy; the app's wasm fetch base URL points at the function. Official tutorial: developers.cloudflare.com/pages/tutorials/use-r2-as-static-asset-storage-for-pages/.
+3. **Dedicated Worker** (512 MB cap): serve the big file from a Worker, app fetches from the Worker URL.
+4. **Accept CF Pages lags**: keep CF Pages on the last working transformers.js while the other four hosts move forward. Ugly; last resort.
+
+Decision 2026-09 (owner): stay on 4.2.0 for now; if the upgrade ever becomes necessary, option 2 is the preferred path.
 
 ## Build modes
 
@@ -50,7 +61,7 @@ And `package.json` pins `@huggingface/transformers` to an exact version (no `^`)
 - **README frontmatter rules:** `sdk: static` + `app_file: index.html`; do NOT set `app_build_command` (files are pre-built; a build command would fail on the Space). The root 302 → `/index.html` is the static SDK's normal `app_file` redirect. Big files (wasm) serve through the HF xet CDN (302 → signed CDN URL) — expected.
 - **CLI notes (2.0.0):** commands differ from older docs — `hf spaces info` (not `status`), `hf spaces list <id>` (files; `-R` recursive), `hf spaces wait` (block until running), `hf repos create` (not `hf spaces create`). `hf upload` defaults to *model* repos — `--repo-type space` is mandatory.
 - Models download from `huggingface.co` — **same-origin** on the Space, no CORS issues.
-- Optional CI/CD (not built): a workflow with `HF_TOKEN` secret (fine-grained, single-repo Space write) running the same build+upload on `main` push.
+- CI/CD (optional, not built yet): a workflow with `HF_TOKEN` secret running the same build+upload on `main` push. **`HF_TOKEN` is already in the GitHub repo secrets** (2026-09-29; fine-grained **CI/CD preset** — HF's 2026-07 token UI replaced manual per-permission checkboxes with presets: Read-Only / Inference / Write / CI/CD / Full Access; the CI/CD preset covers repo read+write+create, which is exactly what `hf upload` needs; can be narrowed to the single Space repo via the token's Edit permissions).
 
 ## Git
 

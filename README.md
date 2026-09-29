@@ -2,6 +2,14 @@
 
 完全在本機瀏覽器運作的翻譯應用程式——把「Google 翻譯」搬到你的 WebGPU 上:輸入文字,小型多語系 LLM(ONNX 格式,經 `@huggingface/transformers`)在**你的 GPU** 上直接翻譯,結果顯示在輸出框。**文字永不離開瀏覽器**——沒有伺服器端處理、沒有追蹤、沒有外部請求(模型下載與自訂 llama-server 連線除外,皆為使用者主動啟用)。
 
+## 線上演示
+
+- **Cloudflare Pages**: [translate.avpclub.eu.org](https://translate.avpclub.eu.org)
+- **Hugging Face Space**: [huggingface.co/spaces/lawlietr/translate](https://huggingface.co/spaces/lawlietr/translate)
+- **GitHub Pages**: [lawlietr.github.io/translate](https://lawlietr.github.io/translate/)
+
+首次使用請到「設定 → 推理」下載模型(約 1.38 GB 或 3.11 GB),之後完全離線運作。
+
 ## 功能
 
 - **本機 WebGPU 推理** — 兩個可選模型,下載後完全離線運作

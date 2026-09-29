@@ -116,6 +116,8 @@ All targets serve the **static export** (D1–D8 settled; see `design/local-depl
 
 Build location (rule 11): **GitHub Actions only** (2026-09-29) — `ubuntu-latest` for Docker images (amd64+arm64), `windows-latest` for the exe (paused). **Branch model:** `DEV` = development; `main` = **release branch** (push → build + publish image to **both** `ghcr.io/lawlietr/translate` and `codeberg.org/lawlietr/translate` + create a GitHub Release; `DEV` push = build-only CI check). — `design/ci-build.md`.
 
+**Live URLs (2026-09-29):** `https://translate.avpclub.eu.org` (CF PROD custom domain) · `https://translate-4j9.pages.dev` / `https://translate-test-9u0.pages.dev` (CF PROD/TEST) · `https://lawlietr.github.io/translate/` (GH Pages) · `https://huggingface.co/spaces/lawlietr/translate` (HF Space). HF Space deploys with the `hf` CLI (v2.0.0; `hf upload … --repo-type space` is mandatory — default is model repos); `HF_TOKEN` (fine-grained CI/CD preset) is in the GitHub repo secrets for future Space CI/CD. The CF 25 MiB per-file cap is a **platform hard limit** (KV-based, paid plans don't raise it) — if a future transformers.js wasm exceeds it, the preferred path is R2 + Pages Functions (options in `design/deployment.md` §25 MiB).
+
 Cloudflare deploy policy — `design/deployment.md` for the deploy-script pattern + secrets policy (no credentials in repo; `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` from env):
 
 - **Default runs deploy to the TEST project only.** Production gets `--prod` only on explicit owner request.
