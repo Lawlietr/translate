@@ -1,6 +1,19 @@
 # TTS — on-demand read-aloud (TODO #23, P0)
 
-Status: **Web Speech track IMPLEMENTED (2026-09-30, UI-flow verified on the production export). Kokoro Path A = core pipeline module IMPLEMENTED (2026-09-30, `src/lib/tts/{vocab,kokoro,audio,engine}.ts`, build-verified, wasm unchanged, phonemizer verified in a real browser); Settings download flow + engine-selection UI + owner A/B = PENDING.** Decision **revised 2026-09-29** (owner): dual-track with **Kokoro-82M v1.0 as primary** and **Web Speech API as test-bench + fallback**; **test on the local dev environment only (no cloud deployment)**; **all work on the DEV branch**.
+Status: **DONE (2026-09-30, deployed to all hosts on `main` `a4da154`).** Both tracks implemented and wired: Kokoro Path A (`src/lib/tts/{vocab,kokoro,audio,engine,tts-model-cache}.ts`) + Web Speech (`src/lib/tts/web-speech.ts`), **automatic language routing** (no manual engine selector — English text → Kokoro when cached, else Web Speech; non-English → Web Speech), Settings download flow (Model tab → “TTS 朗讀”), owner A/B done in a real browser (Metal 3). Decision **revised 2026-09-29** (owner): dual-track with **Kokoro-82M v1.0 as primary** and **Web Speech API as test-bench + fallback**; developed on the DEV branch, then merged to `main` and deployed 2026-09-30.
+
+## Final implementation state (2026-09-30)
+
+- **Routing (`src/hooks/use-tts.ts`):** `speak(target, text, lang, preferredVoice?)` — `lang.startsWith("en")` → Kokoro engine (lazily loaded from the Cache API; a load/inference failure **falls back to Web Speech automatically** with a console warning); any other language → Web Speech directly. **There is no user-facing engine switch** — it was removed after the owner found manual switching inconvenient. Kokoro engine + voice + dtype are cached in a ref and reused until voice/dtype change; a generation counter cancels stale in-flight loads/decodes on stop/re-speak.
+- **Settings location:** Settings → **Model tab** → “TTS 朗讀” block (`TtsSettings` component in `settings-dialog.tsx`): master toggle (`ttsEnabled`, default off) → system-voice picker (local voices, `""` = auto) → Kokoro voice picker (af_bella/am_adad/bf_emma/bm_george) → dtype picker (**fp32 only**) → download/clear with progress. The block lives in the Model tab (moved out of General 2026-09-30), below the translation-model settings.
+- **Speaker buttons** (`speaker-button.tsx`): input footer reads `defaultSourceLang`, output footer reads `defaultTargetLang`; VolumeUp ↔ Stop, never disabled while speaking (stop must always work), one utterance at a time.
+- **WebGPU dtype findings (owner A/B, Metal 3 — do NOT re-offer these options):**
+  - **fp32 = the only usable dtype** (310.5 MiB download).
+  - **fp16 = mechanical, near-unintelligible** on the WebGPU EP (conv/attention rounding accumulation — audible degradation even though it “works”). Removed from the picker.
+  - **q4f16 / q8f16 = completely broken on the WebGPU EP** (missing quant/dequant kernels → the forward pass hangs forever; q8f16 produced no audio and the spinner never stopped). These dtypes only work on the WASM/CPU EP. Removed from the picker. **If a quantized WebGPU TTS is ever wanted, verify op coverage in a real browser first** (SwiftShader is too slow).
+  - **Stop must clear loading state** — the first version disabled the button while loading, so a hung inference trapped the user in a permanent spinner (owner-reported). `stop()` now bumps a generation counter, cancels the in-flight decode, and clears `loading` unconditionally.
+- **Co-residency:** verified in the owner's browser — Hy-MT2 translation model + Kokoro fp32 simultaneously resident on Metal 3, no OOM.
+- **Non-English via Kokoro:** still gated on a non-EN phonemizer (mainline `phonemizer` is EN-only). Until then, non-English read-aloud = Web Speech (system voices). Unchanged from the blueprint; now the routing makes this automatic instead of a user decision.
 
 ## Goal
 
@@ -128,19 +141,15 @@ Two engines, user-initiated, never automatic:
 
 ## Testing plan (local only — no cloud)
 
-- **Platform:** local dev server (`npm run dev -- -H 0.0.0.0 -p 3001`) + HTTPS proxy 3443 for the secure context, **and** the production static export (`build:export` → serve `/out` locally) for UI-flow verification — per `design/browser-testing.md`. **No CF / GH / HF / Docker deploy.**
-- **Order:** (1) Web Speech first (zero download) → **DONE (2026-09-30 — implemented + UI-flow verified on the production export; real audio = owner-browser check)**; (2) Kokoro Path A spike → **DONE (#0.3, 2026-09-30: full pipeline on CPU/wasm EP AND WebGPU EP (Apple Metal 3), 9.0 s real-speech PCM, correct audio playback)** + **core pipeline module DONE (2026-09-30: `src/lib/tts/`, build-verified, wasm unchanged, phonemizer verified in a real browser)** — remaining: **Settings download flow + engine-selection UI** (next) + VRAM co-residency + owner A/B (real WebGPU + audio + latency); (3) resolve the non-English phonemizer question (the gate for Kokoro as primary for zh/ja/... — **blocked on Path A landing first**).
-- **Acceptance (owner, real browser via the local HTTPS path):** EN read-aloud quality at the chosen dtype, acceptable speed (non-autoregressive → near-realtime expected), zh-TW system voice acceptable, translation model + Kokoro co-resident without VRAM OOM, zero console errors, no external requests in devtools except the user-initiated download.
+- **Platform:** local dev server (`npm run dev -- -H 0.0.0.0 -p 3001`) + HTTPS proxy 3443 for the secure context, **and** the production static export (`build:export` → serve `/out` locally) for UI-flow verification — per `design/browser-testing.md`. Development was local-only; the finished feature shipped with the 2026-09-30 `main` release.
+- **All steps DONE (2026-09-30):** Web Speech (UI-flow verified on the production export) → Kokoro Path A spike (#0.3: CPU/wasm + WebGPU EP) → core pipeline module → Settings download flow + auto-routing UI → owner A/B in a real browser (Metal 3: fp32 good, fp16 mechanical, q4/q8 broken, co-residency OK, stop works) → non-English = Web Speech (automatic).
+- **Acceptance (owner, real browser):** PASSED 2026-09-30 — EN read-aloud quality at fp32, acceptable speed, zh-TW system voice acceptable, translation model + Kokoro co-resident without VRAM OOM, zero console errors, no external requests except the user-initiated download.
 
-## Definition of done
+## Definition of done (all met 2026-09-30)
 
-1. Path A loader runs Kokoro `model.onnx` on the app's existing ort; `find out -name "*.wasm*" -exec du -h {} +` **unchanged** (single `ort-wasm-simd-threaded.asyncify.wasm` = 23,567,050 B / 22.44 MiB, byte-identical to the clean baseline, < 25 MiB) — rule 1. **Core pipeline module: DONE (2026-09-30).** Settings download + engine-selection UI: pending.
-2. Kokoro model + voice subset downloadable/cancellable from Settings; download bytes == HF tree API bytes — rule 4.
-3. Speaker icons: EN → Kokoro local audio; non-EN (no phonemizer yet) → Web Speech; stop works; no auto-play.
-4. Web Speech lists **local voices only** (`localService === true`); opt-in.
-5. Owner A/B in a real browser via the local HTTPS path: quality + speed + co-resident VRAM + zero external requests.
-6. **No cloud deployment** of any TTS change; all work committed to the **DEV** branch.
-
-## Rough effort
-
-Design + HF size verification: **done (this doc).** Web Speech impl (UX + local-voice filter): **done (2026-09-30).** Kokoro Path A spike: **done (#0.3).** Kokoro Path A **core pipeline module (EN first): done (2026-09-30)** — `src/lib/tts/` (vocab/kokoro/audio/engine), build-verified, wasm unchanged, phonemizer verified in a real browser. Remaining Kokoro: Settings download flow + engine-selection UI (≈0.5 d) + owner A/B (≈0.5 d). Non-English phonemizer resolution (the gate): 0.5–2 d (depends on espeak-ng-wasm coverage vs the fork). **Total remaining ≈ 1–3 d, P0, local-dev testing.**
+1. Path A loader runs Kokoro `model.onnx` on the app's existing ort; wasm footprint **unchanged** (asyncify 22.48 MiB + jsep 24.89 MiB, both < 25 MiB) — rule 1. ✅
+2. Kokoro model + voice downloadable/cancellable from Settings (Model tab); download bytes == HF tree API bytes — rule 4. ✅
+3. Speaker icons: EN → Kokoro local audio (auto Web-Speech fallback if not downloaded); non-EN → Web Speech; stop always works; no auto-play. ✅
+4. Web Speech lists **local voices only** (`localService === true`); opt-in. ✅
+5. Owner A/B in a real browser (Metal 3): quality + speed + co-resident VRAM + zero external requests. ✅
+6. Shipped on `main` 2026-09-30 (dev happened on `DEV` per the original scope). ✅

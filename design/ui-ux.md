@@ -23,6 +23,8 @@ Single page, **dark mode by default (light mode toggleable)**, MUI v9 + Tailwind
 
 Three visual layers (owner 2026-09-28): **header** (`py-4` + `border-b` hairline, theme `divider` color) / **content** (`flex-1`) / **footer** (AGPL-3.0 license link → GNU official + privacy line, `text-xs` muted). The header previously had only `pt-4` and touched the translation block.
 
+**Locked viewport (owner 2026-09-30):** the page is `100vh` / `min-h-0` / `overflow-hidden` — header and footer are fixed, the middle row is `flex-1`, and **each column scrolls independently** (`overflow-y-auto`): input box, output box, and the history drawer (the drawer previously pushed the whole page to grow and scroll as one — fixed by giving it its own scroll).
+
 
 ## Header right cluster (owner spec, 2026-09-21)
 
@@ -47,12 +49,12 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 
 ## Settings dialog
 
-**Implemented 2026-09-22** — `settings-dialog.tsx` (opened from the header ⚙, Material close/X icon with `aria-label`) + `use-app-settings.tsx` (context over `settings-manager.ts`, so every pane re-renders on change). **Every change applies and persists to localStorage immediately** (no Apply button, no draft state) — tab switch keeps both tabs mounted (`display: none`) so in-flight download progress and test results survive. Tab bar = Inference | General.
+**Implemented 2026-09-22** — `settings-dialog.tsx` (opened from the header ⚙, Material close/X icon with `aria-label`) + `use-app-settings.tsx` (context over `settings-manager.ts`, so every pane re-renders on change). **Every change applies and persists to localStorage immediately** (no Apply button, no draft state) — tab switch keeps both tabs mounted (`display: none`) so in-flight download progress and test results survive. **Tab bar = `General | Model`** (renamed from `Inference | General` on 2026-09-30, owner: General left, Model right). The last-opened tab is persisted (`translate:settingsTab`); first-ever open defaults to General.
 
-- **Inference tab:** backend selector (WebGPU [default] / llama-server — `ProviderSelector` pattern) + the active backend's config block:
+- **Model tab** (former Inference): backend selector (WebGPU [default] / llama-server — `ProviderSelector` pattern) + the active backend's config block + **the TTS read-aloud block** (toggle + system-voice picker + Kokoro voice/dtype pickers + download/clear — design/tts.md; moved here from General 2026-09-30):
   - WebGPU block: current model card, "Manage models" (download dialog: per-model size, per-file progress, speed, cancel — see design/webgpu-knowledge.md §2), model switch (downloaded → instant), clear cache, WebGPU support warnings (1:1 port of what-do-you-see `WebGPUSettings.tsx`)
   - llama-server block: baseUrl (`/v1` auto), **model = `Autocomplete` (freeSolo)** — dropdown auto-fetches `GET {baseUrl}/models` on open + explicit "Detect models" button, free typing kept (1:1 port of what-do-you-see ModelField), optional apiKey; **connection test button** → success lists detected models, failure shows reason incl. the **`--cors-origins '*'`** hint (owner-corrected 2026-09-22 — the old "without `--no-cors`" hint was wrong; design/inference-providers.md)
-- General tab: UI language (zh-TW / en), default source/target languages, **Privacy block (TODO #27, above Diagnostics)**, **Diagnostics toggle** (switch, **off by default**)
+- General tab: **Privacy block (TODO #27, above Diagnostics)** + **Diagnostics toggle** (switch, **off by default**). (UI language moved to the header cluster; default source/target live in the main page's language pickers — removed from Settings 2026-09-30.)
   - Privacy block: **"Never record" switch** (binds `settings.historyDisabled`, default OFF = recording on; helper text: stops NEW entries, existing history stays until manually deleted) + **"Delete all history (N)" button** (red outlined, disabled at 0, opens the shared `HistoryClearDialog` with the live count). N is read from `getHistory().length` on mount; the main page's drawer re-reads localStorage when the Settings dialog closes, so a delete-all here is reflected immediately without a reload (design/history.md)
   - Diagnostics on → the main page (`/`) shows the live activity log panel (translate stages, model load, fetches with status/timing, window errors) — the same logger the `/dev` harness uses, extracted to a shared module (`src/lib/activity-log.ts`) so both pages write to one log; the log panel reuses the harness's 100-line capped view
   - **Sticky-bottom autoscroll (owner 2026-09-28):** while the view is at the bottom (within 8px), new lines auto-scroll it to the latest entry; scrolling up manually pauses following (`followRef` flips false via `onScroll`), scrolling back to the bottom resumes it. Implemented in `activity-log-panel.tsx` as a post-render `useEffect` on `lines` (deterministic, runs after commit) — not `requestAnimationFrame` inside the poll tick
