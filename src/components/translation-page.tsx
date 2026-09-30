@@ -213,7 +213,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   };
 
   return (
-    <Box className="flex-1 w-full flex">
+    <Box className="flex-1 w-full flex min-h-0">
       {historyOpen && (
         <HistoryPanel
           entries={history}
@@ -222,7 +222,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
           onRestore={restoreEntry}
         />
       )}
-      <Box className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 flex flex-col gap-3 min-w-0">
+      <Box className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 flex flex-col gap-3 min-w-0 overflow-y-auto">
       {webgpuBackend && !gpu.secureContext && (
         <Alert severity="warning">
           {t("page.insecureAlert")}

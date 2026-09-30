@@ -47,7 +47,7 @@ function AppContent() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box className="min-h-screen flex flex-col">
+      <Box className="h-screen flex flex-col overflow-hidden">
         <Box className="mx-auto w-full max-w-5xl px-4 py-4 border-b" sx={{ borderColor: "divider" }}>
           <AppHeader
             themeMode={mode}
@@ -55,7 +55,7 @@ function AppContent() {
             onOpenSettings={() => openSettings()}
           />
         </Box>
-        <Box className="flex-1 flex">
+        <Box className="flex-1 flex min-h-0">
           <TranslationPage
             onOpenSettings={openSettings}
             settingsOpen={settingsOpen}
