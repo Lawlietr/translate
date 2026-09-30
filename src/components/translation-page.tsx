@@ -43,7 +43,7 @@ import { ActivityLogPanel } from "./activity-log-panel";
 type Phase = "idle" | "translating";
 
 interface TranslationPageProps {
-  onOpenSettings: (tab?: "inference" | "general") => void;
+  onOpenSettings: (tab?: "model" | "general") => void;
   settingsOpen: boolean;
 }
 
@@ -342,7 +342,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
               <Button
                 variant="outlined"
                 size="small"
-                onClick={() => onOpenSettings("inference")}
+                onClick={() => onOpenSettings("model")}
               >
                 {t("page.chooseModel")}
               </Button>

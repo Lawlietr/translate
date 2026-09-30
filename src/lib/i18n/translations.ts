@@ -60,7 +60,7 @@ export interface Messages {
 
   "settings.title": string;
   "settings.closeAria": string;
-  "settings.tabInference": string;
+  "settings.tabModel": string;
   "settings.tabGeneral": string;
   "settings.backend": string;
   "settings.backendWebgpu": string;
@@ -217,7 +217,7 @@ export const translations: Record<Language, Messages> = {
 
     "settings.title": "Settings",
     "settings.closeAria": "Close settings",
-    "settings.tabInference": "Inference",
+    "settings.tabModel": "Model",
     "settings.tabGeneral": "General",
     "settings.backend": "Backend",
     "settings.backendWebgpu": "WebGPU (in-browser)",
@@ -272,7 +272,7 @@ export const translations: Record<Language, Messages> = {
     "general.diagnosticsHelper":
       "Show the live activity log (stages, fetches, errors) on the main page",
 
-    "tts.title": "Read-aloud",
+    "tts.title": "TTS Read-aloud",
     "tts.toggle": "Enable read-aloud",
     "tts.toggleHelper":
       "Speaks the input or output using voices built into your device or a local AI model. Audio never leaves your device.",
@@ -377,7 +377,7 @@ export const translations: Record<Language, Messages> = {
 
     "settings.title": "設定",
     "settings.closeAria": "關閉設定",
-    "settings.tabInference": "推理",
+    "settings.tabModel": "模型",
     "settings.tabGeneral": "一般",
     "settings.backend": "後端",
     "settings.backendWebgpu": "WebGPU（瀏覽器內）",
@@ -425,7 +425,7 @@ export const translations: Record<Language, Messages> = {
     "general.diagnostics": "診斷",
     "general.diagnosticsHelper": "在主頁面顯示即時活動記錄（階段、抓取、錯誤）",
 
-    "tts.title": "朗讀",
+    "tts.title": "TTS 朗讀",
     "tts.toggle": "啟用朗讀",
     "tts.toggleHelper":
       "使用裝置內建語音或本地 AI 模型朗讀輸入或輸出內容。音訊不會離開你的裝置。",
@@ -528,7 +528,7 @@ export const translations: Record<Language, Messages> = {
 
     "settings.title": "設定",
     "settings.closeAria": "設定を閉じる",
-    "settings.tabInference": "推論",
+    "settings.tabModel": "モデル",
     "settings.tabGeneral": "一般",
     "settings.backend": "バックエンド",
     "settings.backendWebgpu": "WebGPU（ブラウザ内）",
@@ -578,7 +578,7 @@ export const translations: Record<Language, Messages> = {
     "general.diagnostics": "診断",
     "general.diagnosticsHelper": "メインページにライブのアクティビティログ（段階、フェッチ、エラー）を表示",
 
-    "tts.title": "読み上げ",
+    "tts.title": "TTS 読み上げ",
     "tts.toggle": "読み上げを有効にする",
     "tts.toggleHelper":
       "デバイス内蔵の音声またはローカルAIモデルで入力や出力を読み上げます。音声はデバイス外に送信されません。",
@@ -682,7 +682,7 @@ export const translations: Record<Language, Messages> = {
 
     "settings.title": "설정",
     "settings.closeAria": "설정 닫기",
-    "settings.tabInference": "추론",
+    "settings.tabModel": "모델",
     "settings.tabGeneral": "일반",
     "settings.backend": "백엔드",
     "settings.backendWebgpu": "WebGPU (브라우저 내)",
@@ -730,7 +730,7 @@ export const translations: Record<Language, Messages> = {
     "general.diagnostics": "진단",
     "general.diagnosticsHelper": "메인 페이지에 실시간 활동 로그(단계, fetch, 오류) 표시",
 
-    "tts.title": "읽어주기",
+    "tts.title": "TTS 읽어주기",
     "tts.toggle": "읽어주기 사용",
     "tts.toggleHelper":
       "장치에 내장된 음성 또는 로컬 AI 모델로 입력 또는 출력을 읽어 줍니다. 오디오는 장치 밖으로 나가지 않습니다.",

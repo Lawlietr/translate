@@ -16,7 +16,11 @@ function AppContent() {
   const { lang } = useI18n();
   const { settings } = useAppSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<"inference" | "general">("inference");
+  const [settingsTab, setSettingsTab] = useState<"model" | "general">(() => {
+    if (typeof window === "undefined") return "general";
+    const saved = window.localStorage.getItem("translate:settingsTab");
+    return saved === "model" || saved === "general" ? saved : "general";
+  });
   const theme = createTheme({ palette: { mode } });
 
   useEffect(() => {
@@ -31,7 +35,7 @@ function AppContent() {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const openSettings = (tab: "inference" | "general" = "inference") => {
+  const openSettings = (tab: "model" | "general" = "general") => {
     setSettingsTab(tab);
     setSettingsOpen(true);
   };
@@ -43,7 +47,7 @@ function AppContent() {
           <AppHeader
             themeMode={mode}
             onToggleTheme={toggle}
-            onOpenSettings={() => openSettings("inference")}
+            onOpenSettings={() => openSettings()}
           />
         </Box>
         <Box className="flex-1 flex">

@@ -47,7 +47,7 @@ import { KOKORO_VOICES, KOKORO_DTYPES } from "../lib/tts/kokoro";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import type { DownloadProgress } from "../lib/types";
-type TabId = "inference" | "general";
+type TabId = "model" | "general";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -67,6 +67,10 @@ function SettingsBody({ initialTab, onClose }: { initialTab: TabId; onClose: () 
   const { t } = useI18n();
   const [tab, setTab] = useState<TabId>(initialTab);
 
+  useEffect(() => {
+    window.localStorage.setItem("translate:settingsTab", tab);
+  }, [tab]);
+
   return (
     <>
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -77,21 +81,21 @@ function SettingsBody({ initialTab, onClose }: { initialTab: TabId; onClose: () 
       </DialogTitle>
       <DialogContent dividers>
         <Tabs value={tab} onChange={(_, value) => setTab(value as TabId)} sx={{ mb: 3 }}>
-          <Tab value="inference" label={t("settings.tabInference")} />
           <Tab value="general" label={t("settings.tabGeneral")} />
+          <Tab value="model" label={t("settings.tabModel")} />
         </Tabs>
-        <Box sx={{ display: tab === "inference" ? "block" : "none" }}>
-          <InferenceTab />
-        </Box>
         <Box sx={{ display: tab === "general" ? "block" : "none" }}>
           <GeneralTab />
+        </Box>
+        <Box sx={{ display: tab === "model" ? "block" : "none" }}>
+          <ModelTab />
         </Box>
       </DialogContent>
     </>
   );
 }
 
-function InferenceTab() {
+function ModelTab() {
   const { settings, update, updateLlama } = useAppSettings();
   const { t } = useI18n();
   const modelId = settings.webgpuModelId;
@@ -428,24 +432,22 @@ function InferenceTab() {
           )}
         </Box>
       )}
+
+      <Divider />
+
+      <TtsSettings />
     </Box>
   );
 }
 
-function GeneralTab() {
+function TtsSettings() {
   const { settings, update } = useAppSettings();
   const { t } = useI18n();
   const voices = useLocalVoices();
-  const [clearOpen, setClearOpen] = useState(false);
-  const [historyCount, setHistoryCount] = useState(0);
   const [kokoroCache, setKokoroCache] = useState<{ cached: boolean; bytes: number } | null>(null);
   const [kokoroDownloading, setKokoroDownloading] = useState(false);
   const [kokoroProgress, setKokoroProgress] = useState(0);
   const kokoroAbortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    setHistoryCount(getHistory().length);
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -486,6 +488,134 @@ function GeneralTab() {
   }, []);
 
   return (
+    <Box className="flex flex-col gap-2">
+      <Typography variant="subtitle2">{t("tts.title")}</Typography>
+      <Box className="flex items-center justify-between gap-2">
+        <Box>
+          <Typography variant="body2">{t("tts.toggle")}</Typography>
+          <Typography variant="caption" sx={{ opacity: 0.6 }}>
+            {t("tts.toggleHelper")}
+          </Typography>
+        </Box>
+        <Switch
+          checked={settings.ttsEnabled}
+          onChange={(e) => update({ ttsEnabled: e.target.checked })}
+        />
+      </Box>
+      {settings.ttsEnabled && (
+        <>
+          {voices.length > 0 ? (
+            <Box className="flex items-center justify-between gap-2">
+              <Typography variant="body2">{t("tts.voice")}</Typography>
+              <Select
+                size="small"
+                value={settings.ttsVoiceName}
+                onChange={(e) => update({ ttsVoiceName: e.target.value })}
+                sx={{ minWidth: 240 }}
+              >
+                <MenuItem value="">{t("tts.voiceAuto")}</MenuItem>
+                {voices.map((v) => (
+                  <MenuItem key={v.name + v.lang} value={v.name}>
+                    {v.name} ({v.lang})
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+          ) : (
+            <Typography variant="caption" sx={{ opacity: 0.6 }}>
+              {t("tts.noVoices")}
+            </Typography>
+          )}
+          <Box className="flex flex-col gap-2">
+            <Box className="flex items-center justify-between gap-2">
+              <Typography variant="body2">{t("tts.kokoroVoice")}</Typography>
+              <Select
+                size="small"
+                value={settings.ttsKokoroVoice}
+                onChange={(e) => update({ ttsKokoroVoice: e.target.value })}
+                sx={{ minWidth: 160 }}
+              >
+                {KOKORO_VOICES.map((v) => (
+                  <MenuItem key={v.id} value={v.id}>
+                    {v.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+            <Box className="flex items-center justify-between gap-2">
+              <Typography variant="body2">Dtype</Typography>
+              <Select
+                size="small"
+                value={settings.ttsKokoroDtype}
+                onChange={(e) =>
+                  update({ ttsKokoroDtype: e.target.value as typeof settings.ttsKokoroDtype })
+                }
+                sx={{ minWidth: 100 }}
+              >
+                {KOKORO_DTYPES.filter((d) => d.id === "fp32").map((d) => (
+                  <MenuItem key={d.id} value={d.id}>
+                    {d.id} ({formatBytes(d.sizeBytes)})
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+            {kokoroCache?.cached ? (
+              <Box className="flex items-center gap-2">
+                <Chip
+                  label={`${t("tts.kokoroDownloaded")} · ${formatBytes(kokoroCache.bytes)}`}
+                  size="small"
+                  color="success"
+                />
+                <Button size="small" color="error" onClick={() => void doClearKokoroCache()}>
+                  {t("tts.kokoroClear")}
+                </Button>
+              </Box>
+            ) : kokoroDownloading ? (
+              <Box className="flex flex-col gap-1">
+                <LinearProgress
+                  variant="determinate"
+                  value={kokoroProgress}
+                  sx={{ height: 6, borderRadius: 3 }}
+                />
+                <Box className="flex items-center justify-between">
+                  <Typography variant="caption" sx={{ opacity: 0.6 }}>
+                    {Math.round(kokoroProgress)}%
+                  </Typography>
+                  <Button size="small" color="inherit" onClick={cancelKokoroDownload}>
+                    {t("common.cancel")}
+                  </Button>
+                </Box>
+              </Box>
+            ) : (
+              <Box className="flex items-center gap-2">
+                <Chip label={t("tts.kokoroNotDownloaded")} size="small" color="default" />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => void startKokoroDownload()}
+                >
+                  {t("tts.kokoroDownload")}
+                </Button>
+              </Box>
+            )}
+          </Box>
+        </>
+      )}
+    </Box>
+  );
+}
+
+function GeneralTab() {
+  const { settings, update } = useAppSettings();
+  const { t } = useI18n();
+  const [clearOpen, setClearOpen] = useState(false);
+  const [historyCount, setHistoryCount] = useState(0);
+
+  useEffect(() => {
+    setHistoryCount(getHistory().length);
+  }, []);
+
+  return (
     <Box className="flex flex-col gap-3">
       <Divider />
       <Box className="flex flex-col gap-2">
@@ -522,121 +652,6 @@ function GeneralTab() {
         }}
         onClose={() => setClearOpen(false)}
       />
-      <Divider />
-      <Box className="flex flex-col gap-2">
-        <Typography variant="subtitle2">{t("tts.title")}</Typography>
-        <Box className="flex items-center justify-between gap-2">
-          <Box>
-            <Typography variant="body2">{t("tts.toggle")}</Typography>
-            <Typography variant="caption" sx={{ opacity: 0.6 }}>
-              {t("tts.toggleHelper")}
-            </Typography>
-          </Box>
-          <Switch
-            checked={settings.ttsEnabled}
-            onChange={(e) => update({ ttsEnabled: e.target.checked })}
-          />
-        </Box>
-        {settings.ttsEnabled && (
-          <>
-            {voices.length > 0 ? (
-              <Box className="flex items-center justify-between gap-2">
-                <Typography variant="body2">{t("tts.voice")}</Typography>
-                <Select
-                  size="small"
-                  value={settings.ttsVoiceName}
-                  onChange={(e) => update({ ttsVoiceName: e.target.value })}
-                  sx={{ minWidth: 240 }}
-                >
-                  <MenuItem value="">{t("tts.voiceAuto")}</MenuItem>
-                  {voices.map((v) => (
-                    <MenuItem key={v.name + v.lang} value={v.name}>
-                      {v.name} ({v.lang})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
-            ) : (
-              <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                {t("tts.noVoices")}
-              </Typography>
-            )}
-            <Box className="flex flex-col gap-2">
-                <Box className="flex items-center justify-between gap-2">
-                  <Typography variant="body2">{t("tts.kokoroVoice")}</Typography>
-                  <Select
-                    size="small"
-                    value={settings.ttsKokoroVoice}
-                    onChange={(e) => update({ ttsKokoroVoice: e.target.value })}
-                    sx={{ minWidth: 160 }}
-                  >
-                    {KOKORO_VOICES.map((v) => (
-                      <MenuItem key={v.id} value={v.id}>
-                        {v.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </Box>
-                <Box className="flex items-center justify-between gap-2">
-                  <Typography variant="body2">Dtype</Typography>
-                  <Select
-                    size="small"
-                    value={settings.ttsKokoroDtype}
-                    onChange={(e) =>
-                      update({ ttsKokoroDtype: e.target.value as typeof settings.ttsKokoroDtype })
-                    }
-                    sx={{ minWidth: 100 }}
-                  >
-                    {KOKORO_DTYPES.filter((d) => d.id === "fp32").map((d) => (
-                      <MenuItem key={d.id} value={d.id}>
-                        {d.id} ({formatBytes(d.sizeBytes)})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </Box>
-                {kokoroCache?.cached ? (
-                  <Box className="flex items-center gap-2">
-                    <Chip
-                      label={`${t("tts.kokoroDownloaded")} · ${formatBytes(kokoroCache.bytes)}`}
-                      size="small"
-                      color="success"
-                    />
-                    <Button size="small" color="error" onClick={() => void doClearKokoroCache()}>
-                      {t("tts.kokoroClear")}
-                    </Button>
-                  </Box>
-                ) : kokoroDownloading ? (
-                  <Box className="flex flex-col gap-1">
-                    <LinearProgress
-                      variant="determinate"
-                      value={kokoroProgress}
-                      sx={{ height: 6, borderRadius: 3 }}
-                    />
-                    <Box className="flex items-center justify-between">
-                      <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                        {Math.round(kokoroProgress)}%
-                      </Typography>
-                      <Button size="small" color="inherit" onClick={cancelKokoroDownload}>
-                        {t("common.cancel")}
-                      </Button>
-                    </Box>
-                  </Box>
-                ) : (
-                  <Box className="flex items-center gap-2">
-                    <Chip label={t("tts.kokoroNotDownloaded")} size="small" color="default" />
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => void startKokoroDownload()}
-                    >
-                      {t("tts.kokoroDownload")}
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-          </>
-        )}
-      </Box>
       <Divider />
       <Box className="flex items-center justify-between gap-2">
         <Box>
