@@ -2,6 +2,12 @@
 
 ## Pending
 
+### P0
+
+| # | Task |
+|---|------|
+| 23 | TTS on-demand read-aloud (input + output, user-initiated, never auto) — **dual-track, Kokoro-82M v1.0 PRIMARY** (single ONNX, 8-language weights, non-autoregressive; **Path A** = run on the app's existing transformers.js 4.2.0 + ort, self-written flow-matching pipeline, **NOT** kokoro-js) + **Web Speech API as test-bench/fallback** (local voices only). **Local dev testing only (no cloud deploy); DEV branch.** Non-EN output gated on a phonemizer (#1 spike). Qwen3-TTS + MeloTTS rejected — design/tts.md |
+
 ### P2
 
 | # | Task |
@@ -13,7 +19,6 @@
 | # | Task |
 |---|------|
 | 18 | vLLM provider (reserved — **do NOT implement before WebGPU + llama-server are verified working in a real browser**): thin reuse of the llama-server client + same prompt profiles; verify vLLM browser CORS behavior first — design/inference-providers.md |
-| 23 | TTS on-demand read-aloud (input + output text, user-initiated, never auto): **A** local Kokoro-82M ONNX (kokoro-js, English-only in mainline) + **B** Web Speech API (Chinese, opt-in, OS-dependent) — design/tts.md; **C** / **D** = optional evaluation only; ZeroGPU excluded |
 | 10a–10d | **PAUSED (owner 2026-09-26; blueprint stands)** — Windows 11 WebView2 wrapper (10a skeleton → 10b static server → 10c CI → 10d integration test) — design/local-deployment.md §Target 1, design/ci-build.md |
 
 ## Completed (most recent 5; older history lives in git log)

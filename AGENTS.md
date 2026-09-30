@@ -10,6 +10,8 @@ A local, privacy-first translation web app — a **"Google Translate" clone that
 
 **Translation history (TODO #27, done 2026-09-29):** a local-only history (localStorage, never leaves the device) — left drawer with 100 entries, single/multi-select/clear-all deletion, click-to-restore, and a Settings → General → Privacy block ("never record" + delete-all). Full spec + implementation status + pitfalls: `design/history.md`.
 
+**TTS read-aloud (TODO #23, P0, blueprint 2026-09-29, not implemented):** on-demand speaker icons (input + output, **never auto**) — dual-track with **Kokoro-82M v1.0 as PRIMARY** (single ONNX, 8-language weights, non-autoregressive; run on the app's existing `transformers.js` 4.2.0 + ort via a self-written flow-matching pipeline — **NOT `kokoro-js`**, which would pull a second transformers.js + a second wasm) and **Web Speech API as test-bench/fallback** (local voices only, `SpeechSynthesisVoice.localService === true`, to stay rule-10 clean). Non-EN output is gated on a phonemizer (English is out of the box). **Local dev testing only (no cloud deploy); work on the DEV branch.** Qwen3-TTS (1.5 GiB int4 floor) + MeloTTS rejected — `design/tts.md`.
+
 **This project inherits hard-won WebGPU knowledge from the sibling project `what-do-you-see` (same host, photo-privacy analyzer).** Every non-obvious rule in this file and in `design/` comes from a production bug we already hit and fixed there — read `design/webgpu-knowledge.md` before touching model loading, downloads, or inference code. Do NOT re-derive those pitfalls from scratch.
 
 ## Tech Stack
