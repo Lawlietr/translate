@@ -10,6 +10,7 @@ _(none — #23 TTS done 2026-09-30, see Completed)_
 
 | # | Task |
 |---|------|
+| 28 | **First-run model landing (design done 2026-09-30, not implemented):** full-screen gate when no WebGPU translation model is cached (TTS excluded) — gradient title + info cards + primary download button (per-file progress, cancel/resume) + in-place warm-up phase + secondary buttons (`Use llama-server instead` → Settings Model tab, `Choose model` inline picker); amends rule 2 — design/model-landing.md |
 | 13 | **GitHub Actions CI/CD (Docker + GH Pages done 2026-09-29):** `main` push → Docker (amd64+arm64 → GHCR + Codeberg + Release) + GH Pages (static export → `lawlietr.github.io/translate/`); `DEV` push → Docker CI check. **Remaining:** exe workflow (D5, paused with #10); optional — auto-deploy CF Pages (`scripts/deploy-pages.mjs` exists; needs CF token in secrets) + HF Space (build+`hf upload`, `HF_TOKEN` **already in the repo secrets** 2026-09-29) on `main` push — design/ci-build.md, design/deployment.md |
 
 ### P3
