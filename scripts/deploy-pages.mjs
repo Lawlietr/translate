@@ -55,13 +55,14 @@ console.log(`\n[3/5] Ensuring Pages project exists...`);
 const createResult = spawnSync(
   "npx",
   ["--yes", "wrangler", "pages", "project", "create", projectName, "--production-branch", "main", "--force"],
-  { stdio: "inherit", cwd: root },
+  { stdio: ["inherit", "inherit", "pipe"], cwd: root },
 );
 if (createResult.status !== 0) {
   const stderr = createResult.stderr?.toString() || "";
   if (stderr.includes("already exists") || stderr.includes("Already exists")) {
     console.log(`  Project ${projectName} already exists.`);
   } else {
+    if (stderr) process.stderr.write(stderr);
     console.error(`Failed to create project: ${stderr}`);
     process.exit(1);
   }
