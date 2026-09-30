@@ -70,7 +70,7 @@ export function HistoryPanel({ entries, onUpdate, onClose, onRestore }: HistoryP
 
   return (
     <Box
-      className="fixed inset-0 z-40 flex flex-col sm:static sm:z-auto sm:sticky sm:top-0 sm:shrink-0 sm:w-[360px]"
+      className="fixed inset-0 z-40 flex flex-col sm:static sm:z-auto sm:sticky sm:top-0 sm:max-h-screen sm:shrink-0 sm:w-[360px]"
       sx={{
         bgcolor: "background.default",
         borderRight: { xs: "none", sm: "1px solid" },

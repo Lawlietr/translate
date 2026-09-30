@@ -35,8 +35,13 @@ function AppContent() {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const openSettings = (tab: "model" | "general" = "general") => {
-    setSettingsTab(tab);
+  const openSettings = (tab?: "model" | "general") => {
+    if (tab) {
+      setSettingsTab(tab);
+    } else {
+      const saved = window.localStorage.getItem("translate:settingsTab");
+      setSettingsTab(saved === "model" || saved === "general" ? saved : "general");
+    }
     setSettingsOpen(true);
   };
 
