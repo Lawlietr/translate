@@ -5,6 +5,7 @@ export interface TtsAudio {
 
 export interface AudioPlayback {
   stop: () => void;
+  ended: Promise<void>;
 }
 
 export function playPcm(pcm: Float32Array, sampleRate: number): AudioPlayback {
@@ -17,6 +18,17 @@ export function playPcm(pcm: Float32Array, sampleRate: number): AudioPlayback {
   const source = ctx.createBufferSource();
   source.buffer = buffer;
   source.connect(ctx.destination);
+
+  let resolveEnded: () => void;
+  const ended = new Promise<void>((resolve) => {
+    resolveEnded = resolve;
+  });
+
+  source.onended = () => {
+    resolveEnded();
+    void ctx.close().catch(() => {});
+  };
+
   source.start();
   let stopped = false;
   return {
@@ -28,7 +40,7 @@ export function playPcm(pcm: Float32Array, sampleRate: number): AudioPlayback {
       } catch {
         // already stopped
       }
-      void ctx.close().catch(() => {});
     },
+    ended,
   };
 }

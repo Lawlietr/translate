@@ -1,6 +1,7 @@
 import { normalizeLanguage as normalizeUILanguage, type Language } from "./i18n/translations";
 import { DEFAULT_WEBGPU_MODEL, WEBGPU_MODELS } from "./model-catalog";
 import { normalizeModelPreset, type ModelPreset } from "./prompt-profiles";
+import { KOKORO_DTYPES, type KokoroDtype } from "./tts/kokoro";
 
 export type Backend = "webgpu" | "llama-server";
 
@@ -26,6 +27,9 @@ export interface AppSettings {
   diagnostics: boolean;
   ttsEnabled: boolean;
   ttsVoiceName: string;
+  ttsEngine: "web-speech" | "kokoro";
+  ttsKokoroVoice: string;
+  ttsKokoroDtype: KokoroDtype;
 }
 
 const STORAGE_KEY = "translate:settings";
@@ -49,6 +53,9 @@ export function defaultSettings(): AppSettings {
     diagnostics: false,
     ttsEnabled: false,
     ttsVoiceName: "",
+    ttsEngine: "web-speech",
+    ttsKokoroVoice: "af_bella",
+    ttsKokoroDtype: "fp16",
   };
 }
 
@@ -62,6 +69,23 @@ function normalizeLanguage(value: unknown): UILanguage {
 
 function normalizeModelId(value: unknown): string {
   return WEBGPU_MODELS.some((m) => m.id === value) ? (value as string) : DEFAULT_WEBGPU_MODEL;
+}
+
+function normalizeTtsEngine(value: unknown): "web-speech" | "kokoro" {
+  return value === "kokoro" ? "kokoro" : "web-speech";
+}
+
+function normalizeKokoroVoice(value: unknown): string {
+  const valid = ["af_bella", "am_adam", "bf_emma", "bm_george"];
+  return typeof value === "string" && valid.includes(value)
+    ? value
+    : "af_bella";
+}
+
+function normalizeKokoroDtype(value: unknown): KokoroDtype {
+  return KOKORO_DTYPES.some((d) => d.id === value)
+    ? (value as KokoroDtype)
+    : "fp16";
 }
 
 function normalizeLlamaServerConfig(
@@ -102,6 +126,9 @@ export function loadSettings(): AppSettings {
       ttsEnabled: parsed.ttsEnabled === true,
       ttsVoiceName:
         typeof parsed.ttsVoiceName === "string" ? parsed.ttsVoiceName : "",
+      ttsEngine: normalizeTtsEngine(parsed.ttsEngine),
+      ttsKokoroVoice: normalizeKokoroVoice(parsed.ttsKokoroVoice),
+      ttsKokoroDtype: normalizeKokoroDtype(parsed.ttsKokoroDtype),
       llamaServerConfig: {
         ...defaults.llamaServerConfig,
         ...normalizeLlamaServerConfig(parsed.llamaServerConfig),

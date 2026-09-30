@@ -40,6 +40,12 @@ import { SUPPORTED_LANGUAGES } from "../lib/i18n/translations";
 import { fetchAvailableModels } from "../lib/providers/llama-server";
 import { getHistory, clearHistory } from "../lib/history-store";
 import { HistoryClearDialog } from "./history-clear-dialog";
+import {
+  kokoroCacheState,
+  prefetchKokoroModel,
+  clearKokoroCache,
+} from "../lib/tts/tts-model-cache";
+import { KOKORO_VOICES, KOKORO_DTYPES } from "../lib/tts/kokoro";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import type { DownloadProgress } from "../lib/types";
@@ -436,9 +442,52 @@ function GeneralTab() {
   const voices = useLocalVoices();
   const [clearOpen, setClearOpen] = useState(false);
   const [historyCount, setHistoryCount] = useState(0);
+  const [kokoroCache, setKokoroCache] = useState<{ cached: boolean; bytes: number } | null>(null);
+  const [kokoroDownloading, setKokoroDownloading] = useState(false);
+  const [kokoroProgress, setKokoroProgress] = useState(0);
+  const kokoroAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setHistoryCount(getHistory().length);
+  }, []);
+
+  useEffect(() => {
+    if (settings.ttsEngine !== "kokoro") return;
+    let active = true;
+    void kokoroCacheState(settings.ttsKokoroDtype, settings.ttsKokoroVoice).then((s) => {
+      if (active) setKokoroCache(s);
+    });
+    return () => { active = false; };
+  }, [settings.ttsEngine, settings.ttsKokoroDtype, settings.ttsKokoroVoice]);
+
+  const startKokoroDownload = useCallback(async () => {
+    setKokoroDownloading(true);
+    setKokoroProgress(0);
+    const ac = new AbortController();
+    kokoroAbortRef.current = ac;
+    try {
+      await prefetchKokoroModel(settings.ttsKokoroDtype, settings.ttsKokoroVoice, {
+        onProgress: (p) => setKokoroProgress(p.percent),
+        signal: ac.signal,
+      });
+      const s = await kokoroCacheState(settings.ttsKokoroDtype, settings.ttsKokoroVoice);
+      setKokoroCache(s);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      console.error("Kokoro download failed", e);
+    } finally {
+      setKokoroDownloading(false);
+      kokoroAbortRef.current = null;
+    }
+  }, [settings.ttsKokoroDtype, settings.ttsKokoroVoice]);
+
+  const cancelKokoroDownload = useCallback(() => {
+    kokoroAbortRef.current?.abort();
+  }, []);
+
+  const doClearKokoroCache = useCallback(async () => {
+    await clearKokoroCache();
+    setKokoroCache({ cached: false, bytes: 0 });
   }, []);
 
   return (
@@ -551,29 +600,122 @@ function GeneralTab() {
             onChange={(e) => update({ ttsEnabled: e.target.checked })}
           />
         </Box>
-        {settings.ttsEnabled &&
-          (voices.length > 0 ? (
+        {settings.ttsEnabled && (
+          <>
             <Box className="flex items-center justify-between gap-2">
-              <Typography variant="body2">{t("tts.voice")}</Typography>
+              <Typography variant="body2">{t("tts.engine")}</Typography>
               <Select
                 size="small"
-                value={settings.ttsVoiceName}
-                onChange={(e) => update({ ttsVoiceName: e.target.value })}
-                sx={{ minWidth: 240 }}
+                value={settings.ttsEngine}
+                onChange={(e) =>
+                  update({ ttsEngine: e.target.value as "web-speech" | "kokoro" })
+                }
+                sx={{ minWidth: 180 }}
               >
-                <MenuItem value="">{t("tts.voiceAuto")}</MenuItem>
-                {voices.map((v) => (
-                  <MenuItem key={v.name + v.lang} value={v.name}>
-                    {v.name} ({v.lang})
-                  </MenuItem>
-                ))}
+                <MenuItem value="web-speech">{t("tts.engineWebSpeech")}</MenuItem>
+                <MenuItem value="kokoro">{t("tts.engineKokoro")}</MenuItem>
               </Select>
             </Box>
-          ) : (
-            <Typography variant="caption" sx={{ opacity: 0.6 }}>
-              {t("tts.noVoices")}
-            </Typography>
-          ))}
+            {settings.ttsEngine === "web-speech" &&
+              (voices.length > 0 ? (
+                <Box className="flex items-center justify-between gap-2">
+                  <Typography variant="body2">{t("tts.voice")}</Typography>
+                  <Select
+                    size="small"
+                    value={settings.ttsVoiceName}
+                    onChange={(e) => update({ ttsVoiceName: e.target.value })}
+                    sx={{ minWidth: 240 }}
+                  >
+                    <MenuItem value="">{t("tts.voiceAuto")}</MenuItem>
+                    {voices.map((v) => (
+                      <MenuItem key={v.name + v.lang} value={v.name}>
+                        {v.name} ({v.lang})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+              ) : (
+                <Typography variant="caption" sx={{ opacity: 0.6 }}>
+                  {t("tts.noVoices")}
+                </Typography>
+              ))}
+            {settings.ttsEngine === "kokoro" && (
+              <Box className="flex flex-col gap-2">
+                <Box className="flex items-center justify-between gap-2">
+                  <Typography variant="body2">{t("tts.kokoroVoice")}</Typography>
+                  <Select
+                    size="small"
+                    value={settings.ttsKokoroVoice}
+                    onChange={(e) => update({ ttsKokoroVoice: e.target.value })}
+                    sx={{ minWidth: 160 }}
+                  >
+                    {KOKORO_VOICES.map((v) => (
+                      <MenuItem key={v.id} value={v.id}>
+                        {v.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+                <Box className="flex items-center justify-between gap-2">
+                  <Typography variant="body2">Dtype</Typography>
+                  <Select
+                    size="small"
+                    value={settings.ttsKokoroDtype}
+                    onChange={(e) =>
+                      update({ ttsKokoroDtype: e.target.value as typeof settings.ttsKokoroDtype })
+                    }
+                    sx={{ minWidth: 100 }}
+                  >
+                    {KOKORO_DTYPES.map((d) => (
+                      <MenuItem key={d.id} value={d.id}>
+                        {d.id} ({formatBytes(d.sizeBytes)})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+                {kokoroCache?.cached ? (
+                  <Box className="flex items-center gap-2">
+                    <Chip
+                      label={`${t("tts.kokoroDownloaded")} · ${formatBytes(kokoroCache.bytes)}`}
+                      size="small"
+                      color="success"
+                    />
+                    <Button size="small" color="error" onClick={() => void doClearKokoroCache()}>
+                      {t("tts.kokoroClear")}
+                    </Button>
+                  </Box>
+                ) : kokoroDownloading ? (
+                  <Box className="flex flex-col gap-1">
+                    <LinearProgress
+                      variant="determinate"
+                      value={kokoroProgress}
+                      sx={{ height: 6, borderRadius: 3 }}
+                    />
+                    <Box className="flex items-center justify-between">
+                      <Typography variant="caption" sx={{ opacity: 0.6 }}>
+                        {Math.round(kokoroProgress)}%
+                      </Typography>
+                      <Button size="small" color="inherit" onClick={cancelKokoroDownload}>
+                        {t("common.cancel")}
+                      </Button>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box className="flex items-center gap-2">
+                    <Chip label={t("tts.kokoroNotDownloaded")} size="small" color="default" />
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => void startKokoroDownload()}
+                    >
+                      {t("tts.kokoroDownload")}
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            )}
+          </>
+        )}
       </Box>
     </Box>
   );

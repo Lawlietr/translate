@@ -8,6 +8,7 @@ export interface TtsSynthesizeOptions {
 
 export interface TtsPlayback {
   stop: () => void;
+  ended: Promise<void>;
 }
 
 export interface TtsEngine {

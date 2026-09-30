@@ -1,11 +1,12 @@
 "use client";
 
-import { IconButton, Tooltip } from "@mui/material";
+import { CircularProgress, IconButton, Tooltip } from "@mui/material";
 import StopIcon from "@mui/icons-material/Stop";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 
 interface SpeakerButtonProps {
   speaking: boolean;
+  loading?: boolean;
   disabled?: boolean;
   label: string;
   stopLabel: string;
@@ -14,23 +15,30 @@ interface SpeakerButtonProps {
 
 export function SpeakerButton({
   speaking,
+  loading,
   disabled,
   label,
   stopLabel,
   onClick,
 }: SpeakerButtonProps) {
-  const title = speaking ? stopLabel : label;
+  const title = speaking ? stopLabel : loading ? "…" : label;
   return (
     <Tooltip title={title}>
       <span>
         <IconButton
           size="small"
           onClick={onClick}
-          disabled={disabled}
+          disabled={disabled || loading}
           aria-label={title}
           aria-pressed={speaking}
         >
-          {speaking ? <StopIcon /> : <VolumeUpIcon />}
+          {loading ? (
+            <CircularProgress size={16} />
+          ) : speaking ? (
+            <StopIcon />
+          ) : (
+            <VolumeUpIcon />
+          )}
         </IconButton>
       </span>
     </Tooltip>

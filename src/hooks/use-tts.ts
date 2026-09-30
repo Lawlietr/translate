@@ -6,6 +6,8 @@ import {
   listLocalVoices,
   pickVoice,
 } from "../lib/tts/web-speech";
+import type { TtsEngine, TtsPlayback } from "../lib/tts/engine";
+import { useAppSettings } from "./use-app-settings";
 
 export type TtsTarget = "input" | "output";
 
@@ -24,8 +26,24 @@ export function useLocalVoices(): SpeechSynthesisVoice[] {
   return voices;
 }
 
+interface KokoroEngineCache {
+  engine: TtsEngine;
+  voice: string;
+  dtype: string;
+}
+
 export function useTts() {
+  const { settings } = useAppSettings();
   const [speaking, setSpeaking] = useState<TtsTarget | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const useKokoro = settings.ttsEngine === "kokoro";
+
+  const kokoroCacheRef = useRef<KokoroEngineCache | null>(null);
+  const kokoroLoadingRef = useRef<Promise<TtsEngine> | null>(null);
+  const playbackRef = useRef<TtsPlayback | null>(null);
+
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resumeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -46,20 +64,66 @@ export function useTts() {
   const stop = useCallback(() => {
     clearStartTimer();
     clearResumeTimer();
+    if (playbackRef.current) {
+      playbackRef.current.stop();
+      playbackRef.current = null;
+    }
     if (isSpeechSynthesisAvailable()) window.speechSynthesis.cancel();
     setSpeaking(null);
   }, [clearStartTimer, clearResumeTimer]);
 
-  const speak = useCallback(
-    (target: TtsTarget, text: string, lang: string, preferredVoice: string) => {
-      if (!isSpeechSynthesisAvailable() || !text.trim()) return;
+  const loadKokoroEngine = useCallback(async (): Promise<TtsEngine> => {
+    const cached = kokoroCacheRef.current;
+    if (
+      cached &&
+      cached.voice === settings.ttsKokoroVoice &&
+      cached.dtype === settings.ttsKokoroDtype
+    ) {
+      return cached.engine;
+    }
+    if (kokoroLoadingRef.current) return kokoroLoadingRef.current;
+
+    kokoroLoadingRef.current = (async () => {
+      const [
+        { phonemize },
+        { loadKokoroFromCache },
+        { createKokoroEngine },
+      ] = await Promise.all([
+        import("phonemizer"),
+        import("../lib/tts/kokoro"),
+        import("../lib/tts/engine"),
+      ]);
+
+      const { session, voiceFloats } = await loadKokoroFromCache({
+        dtype: settings.ttsKokoroDtype,
+        voice: settings.ttsKokoroVoice,
+        useWebGpu: true,
+      });
+
+      return createKokoroEngine({ session, voiceFloats, phonemize });
+    })().finally(() => {
+      kokoroLoadingRef.current = null;
+    });
+
+    const engine = await kokoroLoadingRef.current;
+    kokoroCacheRef.current = {
+      engine,
+      voice: settings.ttsKokoroVoice,
+      dtype: settings.ttsKokoroDtype,
+    };
+    return engine;
+  }, [settings.ttsKokoroVoice, settings.ttsKokoroDtype]);
+
+  const speakWebSpeech = useCallback(
+    (target: TtsTarget, text: string, lang: string, preferredVoice?: string) => {
+      if (!isSpeechSynthesisAvailable()) return;
       const synth = window.speechSynthesis;
       synth.cancel();
       clearStartTimer();
       clearResumeTimer();
       startTimerRef.current = setTimeout(() => {
         startTimerRef.current = null;
-        const voice = pickVoice(synth.getVoices(), lang, preferredVoice);
+        const voice = pickVoice(synth.getVoices(), lang, preferredVoice ?? "");
         const utterance = new SpeechSynthesisUtterance(text);
         if (voice) {
           utterance.voice = voice;
@@ -85,14 +149,61 @@ export function useTts() {
     [clearResumeTimer, clearStartTimer]
   );
 
+  const speak = useCallback(
+    async (
+      target: TtsTarget,
+      text: string,
+      lang: string,
+      preferredVoice?: string,
+    ) => {
+      if (!text.trim()) return;
+      stop();
+      setError(null);
+
+      if (useKokoro) {
+        setLoading(true);
+        setSpeaking(target);
+        try {
+          const engine = await loadKokoroEngine();
+          const playback = await engine.speak(text);
+          playbackRef.current = playback;
+          void playback.ended.then(() => {
+            if (playbackRef.current === playback) {
+              playbackRef.current = null;
+              setSpeaking(null);
+            }
+          });
+        } catch (e) {
+          playbackRef.current = null;
+          setSpeaking(null);
+          const msg = e instanceof Error ? e.message : String(e);
+          setError(msg);
+          if (isSpeechSynthesisAvailable()) {
+            speakWebSpeech(target, text, lang, preferredVoice);
+          }
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
+      speakWebSpeech(target, text, lang, preferredVoice);
+    },
+    [stop, useKokoro, loadKokoroEngine, speakWebSpeech]
+  );
+
   useEffect(
     () => () => {
       clearStartTimer();
       clearResumeTimer();
+      if (playbackRef.current) playbackRef.current.stop();
       if (isSpeechSynthesisAvailable()) window.speechSynthesis.cancel();
     },
     [clearResumeTimer, clearStartTimer]
   );
 
-  return { speaking, speak, stop };
+  const available =
+    settings.ttsEnabled && (useKokoro || isSpeechSynthesisAvailable());
+
+  return { speaking, loading, error, speak, stop, available };
 }

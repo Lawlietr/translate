@@ -21,7 +21,7 @@ import { CopyButton } from "./copy-button";
 import { HistoryPanel } from "./history-panel";
 import { SpeakerButton } from "./speaker-button";
 import { useTts } from "../hooks/use-tts";
-import { isSpeechSynthesisAvailable } from "../lib/tts/web-speech";
+
 import {
   HISTORY_MAX_INPUT_CHARS,
   addHistory,
@@ -79,7 +79,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   const output = workspace.output;
   const tts = useTts();
   const { stop: ttsStop } = tts;
-  const ttsAvailable = settings.ttsEnabled && isSpeechSynthesisAvailable();
+  const ttsAvailable = tts.available;
   const [phase, setPhase] = useState<Phase>("idle");
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -277,13 +277,14 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
               {ttsAvailable && (
                 <SpeakerButton
                   speaking={tts.speaking === "input"}
+                  loading={tts.loading}
                   disabled={!text.trim()}
                   label={t("page.speakInput")}
                   stopLabel={t("page.stopSpeak")}
                   onClick={() =>
                     tts.speaking === "input"
                       ? tts.stop()
-                      : tts.speak(
+                      : void tts.speak(
                           "input",
                           text,
                           settings.defaultSourceLang,
@@ -355,13 +356,14 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
               {ttsAvailable && (
                 <SpeakerButton
                   speaking={tts.speaking === "output"}
+                  loading={tts.loading}
                   disabled={!output.trim()}
                   label={t("page.speakOutput")}
                   stopLabel={t("page.stopSpeak")}
                   onClick={() =>
                     tts.speaking === "output"
                       ? tts.stop()
-                      : tts.speak(
+                      : void tts.speak(
                           "output",
                           output,
                           settings.defaultTargetLang,
