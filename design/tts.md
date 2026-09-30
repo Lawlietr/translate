@@ -69,7 +69,15 @@ Two engines, user-initiated, never automatic:
   - `phonemize("Life is like a box of chocolates...")` → **71 tokens, 0 unknown** (344 ms in Node; the eSpeak NG worker runs fine headless).
   - Model load (fp32 310.5 MiB) → session in **~1.4 s**; `inputNames = ['input_ids','style','speed']`, `outputNames = ['waveform']` — **matches the #0.2 signature exactly**.
   - Single forward → **216 000 samples = 9.000 s @ 24 kHz**, amplitude min -0.73 / max 1.01, **84.1% non-zero**, RMS shows a clear speech rhythm (peaks 50 / dips 2.9 / tail 0.0) → **real speech, not noise or zeros**.
-  - CPU/wasm latency: **~11.1 s** for the 9 s utterance (≈1.2× slower than realtime on this dev CPU; WebGPU is expected to be much faster — owner verifies in a real browser).
+  - CPU/wasm latency: **~11.1 s** for the 9 s utterance (≈1.2× slower than realtime on this dev CPU).
+
+  **WebGPU browser spike (verified #0.3, 2026-09-30, owner's real browser):** the same 71-token sequence was run on **WebGPU EP** (Apple Metal 3 adapter) via a standalone spike page (`/tmp/tts-spike-browser/`, served over HTTPS on port 3443). `onnxruntime-web` bundle `ort.all.bundle.min.mjs` (839 KB) + `ort-wasm-simd-threaded.jsep.mjs` (46 KB) + `ort-wasm-simd-threaded.jsep.wasm` (26.1 MiB) — the WebGPU EP dynamically imports the **JSEP** loader+wasm pair (not the plain `ort-wasm-simd-threaded.wasm`). Results:
+  - Session creation on WebGPU: **success** (no op-coverage fallback needed for this model's op set).
+  - Forward pass: **success**, produced a real-speech waveform.
+  - Audio playback: **correct** — af_bella voice, recognizable English speech, not noise.
+  - WebGPU latency: owner confirmed faster than the CPU 1.2× baseline (exact realtime factor not captured in the log; the spike page displays it in the stats card).
+
+  **WebGPU serving pitfall:** the WebGPU EP in `ort.all.bundle.min.mjs` does a **dynamic `import()` of `ort-wasm-simd-threaded.jsep.mjs`** at session-creation time. If that file (or the companion `.jsep.wasm`) is not served at `wasmPaths`, the EP throws `no available backend found` even though the adapter is present. Both files must be co-located and served with correct MIME types (`text/javascript` / `application/wasm`).
 
   **Integration pitfalls found in the spike (do NOT re-derive):**
   1. **`input_ids` must be int64** — the model rejects int32 (`expected: tensor(int64)`), and onnxruntime does **not** auto-cast int32→int64. In the wasm sandbox the `Int64Array` global is shadowed (`Int64Array is not defined`), so construct the tensor from a plain **`number[]`** and let `ort.Tensor('int64', arr, shape)` do the cast: `new ort.Tensor('int64', [0, ...ids, 0], [1, len])`.
@@ -77,7 +85,7 @@ Two engines, user-initiated, never automatic:
   3. **Voice `.bin` = 510 rows × 256** for `af_bella` (130 560 floats). Pick `style = rows[len(phonemeTokens)]` (clamped to the last row). Style shape `(1, 256)`, speed shape `(1,)` = `[1.0]`.
   4. **The `phonemizer` web worker keeps a Node process alive / can throw an uncaught error** after `phonemize()` resolves — in a headless spike, run the model test in a **separate script** (or `process.exit(0)` at the end). In the browser this is a non-issue.
 
-  **Boundary:** the spike proves the **pipeline logic** (phonemize → tokenize → int64/style/speed → single forward → PCM) is correct on the app's exact runtime. What remains **owner-only in a real browser**: the **WebGPU EP** executing this model's flow-matching ops (wasm-EP success ≠ guaranteed WebGPU-EP success, though these are standard ops), **real `AudioContext` playback**, and **WebGPU latency / VRAM** with the translation model co-resident.
+  **Boundary:** the spike proves the **full pipeline** (phonemize → tokenize → int64/style/speed → single forward → PCM → `AudioContext` playback) is correct on the app's exact runtime, on **both** the CPU/wasm EP (dev box) and the **WebGPU EP** (owner's real browser, Apple Metal 3). What remains for **Path A integration**: VRAM co-residency with the translation model (Hy-MT2 1.29 GiB + Kokoro ≈0.3 GiB ≈ 1.6 GiB), the phonemizer worker bundling under Next.js static export, and the Settings download flow.
 - **Coexistence with the translation model (no one-model-at-a-time limit):** `src/lib/providers/webgpu.ts` already keeps loaded models in a `Map<string, Promise<Pipeline>>` keyed by model id — **multiple models co-resident by design**. Kokoro is a separate entry; both share the single wasm. **The real constraint is VRAM:** Hy-MT2 (1.29 GiB) + Kokoro (≈0.3 GiB) ≈ **1.6 GiB** resident — fine on 4 GiB+ discrete GPUs, watch low-end / iGPU. Kokoro's footprint is just its weights (no growing KV-cache; it's non-autoregressive).
 - **Download:** reuse the Settings "Manage models" flow (rules 2/3): the TTS block lists model + voice subset with `filePatterns` for exactly the chosen files; streamed + cancellable; verified-complete cache gate before inference.
 
@@ -111,7 +119,7 @@ Two engines, user-initiated, never automatic:
 ## Testing plan (local only — no cloud)
 
 - **Platform:** local dev server (`npm run dev -- -H 0.0.0.0 -p 3001`) + HTTPS proxy 3443 for the secure context, **and** the production static export (`build:export` → serve `/out` locally) for UI-flow verification — per `design/browser-testing.md`. **No CF / GH / HF / Docker deploy.**
-- **Order:** (1) Web Speech first (zero download) → validate the read-aloud UX end-to-end; (2) Kokoro Path A spike → **CPU/wasm pipeline spike DONE (#0.3, 2026-09-30: phonemize→tokenize→int64/style/speed→single forward→9.0 s real-speech PCM, ~11 s latency)** — the **WebGPU-EP + playback + latency/VRAM** half remains owner-only in a real browser, at the chosen dtype + speed, with the translation model co-resident; (3) resolve the non-English phonemizer question (the gate for Kokoro as primary for zh/ja/...).
+- **Order:** (1) Web Speech first (zero download) → validate the read-aloud UX end-to-end; (2) Kokoro Path A spike → **CPU/wasm + WebGPU browser spikes both DONE (#0.3, 2026-09-30: full pipeline on CPU/wasm EP AND WebGPU EP (Apple Metal 3), 9.0 s real-speech PCM, correct audio playback)** — remaining: VRAM co-residency with the translation model + Next.js worker bundling + Settings download flow (Path A integration); (3) resolve the non-English phonemizer question (the gate for Kokoro as primary for zh/ja/...).
 - **Acceptance (owner, real browser via the local HTTPS path):** EN read-aloud quality at the chosen dtype, acceptable speed (non-autoregressive → near-realtime expected), zh-TW system voice acceptable, translation model + Kokoro co-resident without VRAM OOM, zero console errors, no external requests in devtools except the user-initiated download.
 
 ## Definition of done
