@@ -44,7 +44,26 @@ Two engines, user-initiated, never automatic:
   - `onnx/model.onnx` — **fp32 310.5 MiB** (the file that ships to the client; the `onnx/` dir carries fp32/fp16/q8/q8f16/q4f16 variants summing to ~1.35 GiB — we only ever download **one** dtype). **Pick the dtype after the owner A/B's it in a real browser** (quality vs 4× size). **Size is a client-download / UX concern, NOT a CF 25 MiB concern** — the model is fetched to the Cache API at runtime, exactly like the 1.29 GiB Hy-MT2 translation model; it never enters `out/`.
   - `voices/` — one `.bin` per voice, ~522 KB each. Ship a **subset** (e.g. 2 voices per needed language ≈ a few MB), never all ~58.
 - **Loader:** new `loadTtsPipeline()` in a `src/lib/tts/` module — `InferenceSession` on `model.onnx`, sharing the app's single ort WebGPU device (the existing `preferHighPerformanceGpu()` in `src/lib/providers/webgpu.ts` applies). **Not** `AutoModelForCausalLM` (that's for the causal translation LMs; Kokoro is flow-matching).
-- **Pipeline:** text → phonemize (per-language; English out of the box) → embedding lookup → single flow-matching forward on `model.onnx` → Float32 PCM @ 24 kHz → `AudioContext` playback. No WAV written to disk.
+- **Pipeline:** text → phonemize (per-language; English out of the box) → map IPA to token IDs → single flow-matching forward on `model.onnx` → Float32 PCM @ 24 kHz → `AudioContext` playback. No WAV written to disk.
+
+  **ONNX Signature (verified #0.2, 2026-09-30):**
+
+  | Tensor | Shape | Type | Notes |
+  |--------|-------|------|-------|
+  | `input_ids` | `(1, ≤512)` | int64/int32 | Phoneme token IDs from the 115-entry vocab (`tokenizer.json`). Padded with `0` (`$` = pad/unk) on both ends; actual phonemes ≤ 510. |
+  | `style` | `(1, 256)` | float32 | Voice style vector. Each voice `.bin` is a `float32` array reshaped to `(N, 1, 256)` where N = number of length-bucketed vectors; index by `len(phoneme_tokens)` → pick the row matching the utterance length. |
+  | `speed` | `(1,)` | float32 | Speed multiplier. `1.0` = normal. Expose as a user setting later. |
+  | **output** | `(1, N)` | float32 | Raw PCM waveform @ **24 kHz**. N = sample count (proportional to utterance length × speed). Feed directly to `AudioContext`. |
+
+  **Key constants** (from `config.json` + `tokenizer_config.json`):
+  - `model_type`: `"style_text_to_speech_2"`
+  - `model_max_length`: 512
+  - `pad_token`: `"$"` (ID 0)
+  - Phoneme vocab: **115 entries** (IPA phones + punctuation + prosody symbols `ˈ ˌ ː ʰ ʲ` + tone arrows `↓ → ↗ ↘`), full mapping in `tokenizer.json`.
+
+  **Voice `.bin` structure:** each file is a flat `float32` array of size `N × 256` (N varies per voice, typically ~512 length buckets × 256-dim). In JS: `new Float32Array(buffer).reshape([N, 1, 256])` (or manual slice), then `style = rows[len(phonemeTokens)]`.
+
+  **Forward pass is a single `InferenceSession.run()`** — no autoregressive loop, no KV-cache, no multi-stage pipeline. Significantly simpler than the `CausalLM` pipeline used by the translation models.
 - **Coexistence with the translation model (no one-model-at-a-time limit):** `src/lib/providers/webgpu.ts` already keeps loaded models in a `Map<string, Promise<Pipeline>>` keyed by model id — **multiple models co-resident by design**. Kokoro is a separate entry; both share the single wasm. **The real constraint is VRAM:** Hy-MT2 (1.29 GiB) + Kokoro (≈0.3 GiB) ≈ **1.6 GiB** resident — fine on 4 GiB+ discrete GPUs, watch low-end / iGPU. Kokoro's footprint is just its weights (no growing KV-cache; it's non-autoregressive).
 - **Download:** reuse the Settings "Manage models" flow (rules 2/3): the TTS block lists model + voice subset with `filePatterns` for exactly the chosen files; streamed + cancellable; verified-complete cache gate before inference.
 
