@@ -35,6 +35,7 @@ import { SUPPORTED_TRANSLATION_LANGUAGES, languageName } from "../lib/languages"
 import { getPromptProfile, resolveProfile } from "../lib/prompt-profiles";
 import { useAppSettings } from "../hooks/use-app-settings";
 import { useI18n } from "../hooks/useI18n";
+import { useLocalVoices } from "../hooks/use-tts";
 import { SUPPORTED_LANGUAGES } from "../lib/i18n/translations";
 import { fetchAvailableModels } from "../lib/providers/llama-server";
 import { getHistory, clearHistory } from "../lib/history-store";
@@ -432,6 +433,7 @@ function InferenceTab() {
 function GeneralTab() {
   const { settings, update } = useAppSettings();
   const { t } = useI18n();
+  const voices = useLocalVoices();
   const [clearOpen, setClearOpen] = useState(false);
   const [historyCount, setHistoryCount] = useState(0);
 
@@ -533,6 +535,45 @@ function GeneralTab() {
           checked={settings.diagnostics}
           onChange={(e) => update({ diagnostics: e.target.checked })}
         />
+      </Box>
+      <Divider />
+      <Box className="flex flex-col gap-2">
+        <Typography variant="subtitle2">{t("tts.title")}</Typography>
+        <Box className="flex items-center justify-between gap-2">
+          <Box>
+            <Typography variant="body2">{t("tts.toggle")}</Typography>
+            <Typography variant="caption" sx={{ opacity: 0.6 }}>
+              {t("tts.toggleHelper")}
+            </Typography>
+          </Box>
+          <Switch
+            checked={settings.ttsEnabled}
+            onChange={(e) => update({ ttsEnabled: e.target.checked })}
+          />
+        </Box>
+        {settings.ttsEnabled &&
+          (voices.length > 0 ? (
+            <Box className="flex items-center justify-between gap-2">
+              <Typography variant="body2">{t("tts.voice")}</Typography>
+              <Select
+                size="small"
+                value={settings.ttsVoiceName}
+                onChange={(e) => update({ ttsVoiceName: e.target.value })}
+                sx={{ minWidth: 240 }}
+              >
+                <MenuItem value="">{t("tts.voiceAuto")}</MenuItem>
+                {voices.map((v) => (
+                  <MenuItem key={v.name + v.lang} value={v.name}>
+                    {v.name} ({v.lang})
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+          ) : (
+            <Typography variant="caption" sx={{ opacity: 0.6 }}>
+              {t("tts.noVoices")}
+            </Typography>
+          ))}
       </Box>
     </Box>
   );

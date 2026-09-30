@@ -1,6 +1,6 @@
 # TTS — on-demand read-aloud (TODO #23, P0)
 
-Status: **blueprint, not implemented.** Decision **revised 2026-09-29** (owner): dual-track with **Kokoro-82M v1.0 as primary** and **Web Speech API as test-bench + fallback**; **test on the local dev environment only (no cloud deployment)**; **all work on the DEV branch**.
+Status: **Web Speech track IMPLEMENTED (2026-09-30, UI-flow verified on the production export); Kokoro track = blueprint + verified spikes (#0.1–#0.3 done, Path A integration pending).** Decision **revised 2026-09-29** (owner): dual-track with **Kokoro-82M v1.0 as primary** and **Web Speech API as test-bench + fallback**; **test on the local dev environment only (no cloud deployment)**; **all work on the DEV branch**.
 
 ## Goal
 
@@ -96,6 +96,16 @@ Two engines, user-initiated, never automatic:
 - Opt-in toggle + voice picker in Settings. No model download, no cache entries.
 - Role: (1) the **first thing built** (zero download → validate the read-aloud UX: icon placement, audio playback, language switch, progress states) before the Kokoro pipeline is ready; (2) the **runtime fallback** for languages Kokoro can't phonemize, or before the user has downloaded Kokoro.
 
+**Implemented (2026-09-30):**
+
+- `src/lib/tts/web-speech.ts` (pure): `isSpeechSynthesisAvailable`, `listLocalVoices` (localService filter + `voiceschanged` race handling with 1.5 s timeout), `pickVoice` (settings preference → exact lang match → lang-prefix match → first local; returns `null` → utterance gets `lang` only, system default voice).
+- `src/hooks/use-tts.ts`: `useTts` (idle → speaking state machine; `speak` cancels any current utterance — one at a time — 60 ms delay after `cancel()` (Chrome swallow-utterance quirk), `onend`/`onerror` → idle; 12 s `resume()` interval = Chrome long-utterance stall workaround; unmount cleanup cancels) + `useLocalVoices`.
+- `src/components/speaker-button.tsx`: VolumeUp ↔ Stop IconButton, `aria-pressed`, Tooltip (span-wrapped so the tooltip fires when disabled).
+- `src/lib/settings-manager.ts`: `ttsEnabled` (default `false` — opt-in) + `ttsVoiceName` (default `""` = auto) in `AppSettings`/defaults/`loadSettings` normalization.
+- Settings → General → **"朗讀（系統語音）"** section: toggle + voice picker (auto option + local voices as `name (lang)`; "no local voices" caption when the list is empty). i18n keys `tts.*` + `page.speakInput/speakOutput/stopSpeak` in all 4 locales.
+- `translation-page.tsx`: speaker button in the input footer (reads `defaultSourceLang`) + output footer (reads `defaultTargetLang`); rendered only when `ttsEnabled && speechSynthesis` exists; disabling the toggle mid-utterance stops playback (effect on a stable `stop` callback).
+- **Verified (production export + headless Chromium, 2026-09-30):** zero console errors on load; buttons hidden by default; toggle → section + both buttons appear; headless no-voice path degrades gracefully (`onerror` → idle, "no local voices" caption); with a stubbed `speak`, idle → Stop (`aria-pressed`) → idle state machine works; `ttsEnabled`/`ttsVoiceName` persist to `translate:settings`. **Real audio playback is owner-browser verification** (headless has no audio device/voices).
+
 ## Excluded (with reason)
 
 - **Qwen3-TTS-12Hz-0.6B** (every ONNX port: `onnx-community` + `elbruno` / `romara-labs` / `tonythethompson`): the "0.6B" is **only** the `talker` LLM (~550 MiB at int4). The full pipeline is **~1.5 GiB at int4 minimum** (int4 is the floor — no int8; codec encoder+decoder ~652 MiB + talker ~550 MiB + text_embed ~194 MiB + code_predictor ~87 MiB + vocoder ~437 MiB + ...). It is a **13-stage autoregressive** pipeline (needs a custom multi-ONNX JS pipeline, not `transformers.js`'s `from_pretrained`), CPU-slow (autoregressive → ~5–20 s per sentence), and **5× the size of Kokoro** for no browser benefit. **Rejected.** (The GGUF-only port `dsh0416/...-QTS` would force a llama.cpp backend — out of scope for in-browser TTS.)
@@ -119,7 +129,7 @@ Two engines, user-initiated, never automatic:
 ## Testing plan (local only — no cloud)
 
 - **Platform:** local dev server (`npm run dev -- -H 0.0.0.0 -p 3001`) + HTTPS proxy 3443 for the secure context, **and** the production static export (`build:export` → serve `/out` locally) for UI-flow verification — per `design/browser-testing.md`. **No CF / GH / HF / Docker deploy.**
-- **Order:** (1) Web Speech first (zero download) → validate the read-aloud UX end-to-end; (2) Kokoro Path A spike → **CPU/wasm + WebGPU browser spikes both DONE (#0.3, 2026-09-30: full pipeline on CPU/wasm EP AND WebGPU EP (Apple Metal 3), 9.0 s real-speech PCM, correct audio playback)** — remaining: VRAM co-residency with the translation model + Next.js worker bundling + Settings download flow (Path A integration); (3) resolve the non-English phonemizer question (the gate for Kokoro as primary for zh/ja/...).
+- **Order:** (1) Web Speech first (zero download) → **DONE (2026-09-30 — implemented + UI-flow verified on the production export; real audio = owner-browser check)**; (2) Kokoro Path A spike → **CPU/wasm + WebGPU browser spikes both DONE (#0.3, 2026-09-30: full pipeline on CPU/wasm EP AND WebGPU EP (Apple Metal 3), 9.0 s real-speech PCM, correct audio playback)** — remaining: VRAM co-residency with the translation model + Next.js worker bundling + Settings download flow (Path A integration); (3) resolve the non-English phonemizer question (the gate for Kokoro as primary for zh/ja/...).
 - **Acceptance (owner, real browser via the local HTTPS path):** EN read-aloud quality at the chosen dtype, acceptable speed (non-autoregressive → near-realtime expected), zh-TW system voice acceptable, translation model + Kokoro co-resident without VRAM OOM, zero console errors, no external requests in devtools except the user-initiated download.
 
 ## Definition of done
@@ -133,4 +143,4 @@ Two engines, user-initiated, never automatic:
 
 ## Rough effort
 
-Design + HF size verification: **done (this doc).** Web Speech impl (UX + local-voice filter): ~0.5–1 d. Kokoro Path A spike + loader + pipeline (EN first): 1–1.5 d. Non-English phonemizer resolution (the gate): 0.5–2 d (depends on espeak-ng-wasm coverage vs the fork). Owner A/B: 0.5 d. **Total ≈ 3–5 d, P0, local-dev testing.**
+Design + HF size verification: **done (this doc).** Web Speech impl (UX + local-voice filter): **done (2026-09-30).** Kokoro Path A spike + loader + pipeline (EN first): 1–1.5 d. Non-English phonemizer resolution (the gate): 0.5–2 d (depends on espeak-ng-wasm coverage vs the fork). Owner A/B: 0.5 d. **Total ≈ 3–5 d, P0, local-dev testing.**

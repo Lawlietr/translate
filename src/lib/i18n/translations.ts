@@ -106,6 +106,16 @@ export interface Messages {
   "general.diagnostics": string;
   "general.diagnosticsHelper": string;
 
+  "tts.title": string;
+  "tts.toggle": string;
+  "tts.toggleHelper": string;
+  "tts.voice": string;
+  "tts.voiceAuto": string;
+  "tts.noVoices": string;
+  "page.speakInput": string;
+  "page.speakOutput": string;
+  "page.stopSpeak": string;
+
   "activity.title": string;
   "activity.empty": string;
 
@@ -254,6 +264,17 @@ export const translations: Record<Language, Messages> = {
     "general.diagnosticsHelper":
       "Show the live activity log (stages, fetches, errors) on the main page",
 
+    "tts.title": "Read-aloud (system voices)",
+    "tts.toggle": "Enable read-aloud with system voices",
+    "tts.toggleHelper":
+      "Speaks the input or output using voices built into your device. Only local voices are listed; audio never leaves your device. Voice availability and quality depend on your platform.",
+    "tts.voice": "Voice",
+    "tts.voiceAuto": "Automatic (match text language)",
+    "tts.noVoices": "No local voices found on this system.",
+    "page.speakInput": "Read input aloud",
+    "page.speakOutput": "Read output aloud",
+    "page.stopSpeak": "Stop read-aloud",
+
     "activity.title":
       "diagnostics — stages + fetches (requests without a ← line are still pending)",
     "activity.empty": "no entries yet",
@@ -387,6 +408,17 @@ export const translations: Record<Language, Messages> = {
     "general.deleteAllHistory": "刪除所有紀錄 ({n})",
     "general.diagnostics": "診斷",
     "general.diagnosticsHelper": "在主頁面顯示即時活動記錄（階段、抓取、錯誤）",
+
+    "tts.title": "朗讀（系統語音）",
+    "tts.toggle": "啟用系統語音朗讀",
+    "tts.toggleHelper":
+      "使用你裝置內建的語音朗讀輸入或輸出內容。僅列出本地語音，音訊不會離開你的裝置。可用語音與品質因平台而異。",
+    "tts.voice": "語音",
+    "tts.voiceAuto": "自動（依文字語言）",
+    "tts.noVoices": "此系統找不到本地語音。",
+    "page.speakInput": "朗讀輸入內容",
+    "page.speakOutput": "朗讀輸出內容",
+    "page.stopSpeak": "停止朗讀",
 
     "activity.title": "診斷 — 階段 + 抓取（沒有 ← 列的請求仍在進行中）",
     "activity.empty": "尚無記錄",
@@ -522,6 +554,17 @@ export const translations: Record<Language, Messages> = {
     "general.diagnostics": "診断",
     "general.diagnosticsHelper": "メインページにライブのアクティビティログ（段階、フェッチ、エラー）を表示",
 
+    "tts.title": "読み上げ（システム音声）",
+    "tts.toggle": "システム音声での読み上げを有効にする",
+    "tts.toggleHelper":
+      "デバイス内蔵の音声で入力や出力を読み上げます。ローカル音声のみ一覧に表示され、音声はデバイス外に送信されません。利用可能な音声と品質はプラットフォームによって異なります。",
+    "tts.voice": "音声",
+    "tts.voiceAuto": "自動（テキストの言語に合わせる）",
+    "tts.noVoices": "このシステムにローカル音声が見つかりません。",
+    "page.speakInput": "入力を読み上げる",
+    "page.speakOutput": "出力を読み上げる",
+    "page.stopSpeak": "読み上げを停止",
+
     "activity.title": "診断 — 段階 + フェッチ（← 行のないリクエストは保留中）",
     "activity.empty": "まだエントリがありません",
     "history.button": "翻訳履歴",
@@ -654,6 +697,17 @@ export const translations: Record<Language, Messages> = {
     "general.deleteAllHistory": "모든 기록 삭제 ({n})",
     "general.diagnostics": "진단",
     "general.diagnosticsHelper": "메인 페이지에 실시간 활동 로그(단계, fetch, 오류) 표시",
+
+    "tts.title": "읽어주기(시스템 음성)",
+    "tts.toggle": "시스템 음성 읽어주기 사용",
+    "tts.toggleHelper":
+      "장치에 내장된 음성으로 입력 또는 출력을 읽어 줍니다. 로컬 음성만 목록에 표시되며, 오디오는 장치 밖으로 나가지 않습니다. 사용 가능한 음성과 품질은 플랫폼에 따라 다릅니다.",
+    "tts.voice": "음성",
+    "tts.voiceAuto": "자동(텍스트 언어에 맞춤)",
+    "tts.noVoices": "이 시스템에서 로컬 음성을 찾을 수 없습니다.",
+    "page.speakInput": "입력 읽어 주기",
+    "page.speakOutput": "출력 읽어 주기",
+    "page.stopSpeak": "읽어 주기 중지",
 
     "activity.title": "진단 — 단계 + fetch (← 행이 없는 요청은 대기 중)",
     "activity.empty": "아직 항목이 없습니다",

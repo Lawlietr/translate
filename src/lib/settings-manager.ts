@@ -24,6 +24,8 @@ export interface AppSettings {
   defaultTargetLang: string;
   historyDisabled: boolean;
   diagnostics: boolean;
+  ttsEnabled: boolean;
+  ttsVoiceName: string;
 }
 
 const STORAGE_KEY = "translate:settings";
@@ -45,6 +47,8 @@ export function defaultSettings(): AppSettings {
     defaultTargetLang: "en",
     historyDisabled: false,
     diagnostics: false,
+    ttsEnabled: false,
+    ttsVoiceName: "",
   };
 }
 
@@ -95,6 +99,9 @@ export function loadSettings(): AppSettings {
       language: normalizeLanguage(parsed.language),
       historyDisabled: parsed.historyDisabled === true,
       diagnostics: parsed.diagnostics === true,
+      ttsEnabled: parsed.ttsEnabled === true,
+      ttsVoiceName:
+        typeof parsed.ttsVoiceName === "string" ? parsed.ttsVoiceName : "",
       llamaServerConfig: {
         ...defaults.llamaServerConfig,
         ...normalizeLlamaServerConfig(parsed.llamaServerConfig),

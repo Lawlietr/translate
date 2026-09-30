@@ -19,6 +19,9 @@ import HistoryIcon from "@mui/icons-material/History";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { CopyButton } from "./copy-button";
 import { HistoryPanel } from "./history-panel";
+import { SpeakerButton } from "./speaker-button";
+import { useTts } from "../hooks/use-tts";
+import { isSpeechSynthesisAvailable } from "../lib/tts/web-speech";
 import {
   HISTORY_MAX_INPUT_CHARS,
   addHistory,
@@ -74,6 +77,9 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   const workspace = useWorkspace();
   const text = workspace.text;
   const output = workspace.output;
+  const tts = useTts();
+  const { stop: ttsStop } = tts;
+  const ttsAvailable = settings.ttsEnabled && isSpeechSynthesisAvailable();
   const [phase, setPhase] = useState<Phase>("idle");
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +111,10 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   }, [translating, startedAt]);
 
   useEffect(() => () => acRef.current?.abort(), []);
+
+  useEffect(() => {
+    if (!ttsAvailable) ttsStop();
+  }, [ttsAvailable, ttsStop]);
 
   useEffect(() => {
     setHistory(getHistory());
@@ -264,6 +274,24 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
               {t("common.chars", { n: text.length.toLocaleString() })}
             </Typography>
             <Box className="flex items-center gap-1">
+              {ttsAvailable && (
+                <SpeakerButton
+                  speaking={tts.speaking === "input"}
+                  disabled={!text.trim()}
+                  label={t("page.speakInput")}
+                  stopLabel={t("page.stopSpeak")}
+                  onClick={() =>
+                    tts.speaking === "input"
+                      ? tts.stop()
+                      : tts.speak(
+                          "input",
+                          text,
+                          settings.defaultSourceLang,
+                          settings.ttsVoiceName
+                        )
+                  }
+                />
+              )}
               <CopyButton value={text} label={t("page.copySource")} />
               <Tooltip title={t("page.clearAria")}>
                 <IconButton size="small" onClick={clear} aria-label={t("page.clearAria")}>
@@ -323,7 +351,27 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
             <Typography variant="caption" sx={{ opacity: 0.6 }}>
               {t("common.chars", { n: output.length.toLocaleString() })}
             </Typography>
-            <CopyButton value={output} label={t("page.copyOutput")} />
+            <Box className="flex items-center gap-1">
+              {ttsAvailable && (
+                <SpeakerButton
+                  speaking={tts.speaking === "output"}
+                  disabled={!output.trim()}
+                  label={t("page.speakOutput")}
+                  stopLabel={t("page.stopSpeak")}
+                  onClick={() =>
+                    tts.speaking === "output"
+                      ? tts.stop()
+                      : tts.speak(
+                          "output",
+                          output,
+                          settings.defaultTargetLang,
+                          settings.ttsVoiceName
+                        )
+                  }
+                />
+              )}
+              <CopyButton value={output} label={t("page.copyOutput")} />
+            </Box>
           </Box>
         </Box>
       </Box>
