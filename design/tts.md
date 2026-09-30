@@ -64,6 +64,20 @@ Two engines, user-initiated, never automatic:
   **Voice `.bin` structure:** each file is a flat `float32` array of size `N × 256` (N varies per voice, typically ~512 length buckets × 256-dim). In JS: `new Float32Array(buffer).reshape([N, 1, 256])` (or manual slice), then `style = rows[len(phonemeTokens)]`.
 
   **Forward pass is a single `InferenceSession.run()`** — no autoregressive loop, no KV-cache, no multi-stage pipeline. Significantly simpler than the `CausalLM` pipeline used by the translation models.
+
+  **Local feasibility spike (verified #0.3, 2026-09-30, CPU/wasm):** the full pipeline was run end-to-end in an isolated `/tmp` dir (NOT the app's `node_modules` — `onnxruntime-web@1.26.0-dev.20260416-b7804b056c`, the app's exact version, **wasm/CPU EP**). Results:
+  - `phonemize("Life is like a box of chocolates...")` → **71 tokens, 0 unknown** (344 ms in Node; the eSpeak NG worker runs fine headless).
+  - Model load (fp32 310.5 MiB) → session in **~1.4 s**; `inputNames = ['input_ids','style','speed']`, `outputNames = ['waveform']` — **matches the #0.2 signature exactly**.
+  - Single forward → **216 000 samples = 9.000 s @ 24 kHz**, amplitude min -0.73 / max 1.01, **84.1% non-zero**, RMS shows a clear speech rhythm (peaks 50 / dips 2.9 / tail 0.0) → **real speech, not noise or zeros**.
+  - CPU/wasm latency: **~11.1 s** for the 9 s utterance (≈1.2× slower than realtime on this dev CPU; WebGPU is expected to be much faster — owner verifies in a real browser).
+
+  **Integration pitfalls found in the spike (do NOT re-derive):**
+  1. **`input_ids` must be int64** — the model rejects int32 (`expected: tensor(int64)`), and onnxruntime does **not** auto-cast int32→int64. In the wasm sandbox the `Int64Array` global is shadowed (`Int64Array is not defined`), so construct the tensor from a plain **`number[]`** and let `ort.Tensor('int64', arr, shape)` do the cast: `new ort.Tensor('int64', [0, ...ids, 0], [1, len])`.
+  2. **Read the voice `.bin` out of Node's shared Buffer pool** with `new Float32Array(new Uint8Array(buf).buffer)` — `new Float32Array(buf.buffer, buf.byteOffset, …)` gives `Invalid typed array length` because Node Buffers share a 5 MB pool. (Browser `fetch` → `ArrayBuffer` has no pool, so this is Node-only; the browser path can use `new Float32Array(arrayBuffer)` directly.)
+  3. **Voice `.bin` = 510 rows × 256** for `af_bella` (130 560 floats). Pick `style = rows[len(phonemeTokens)]` (clamped to the last row). Style shape `(1, 256)`, speed shape `(1,)` = `[1.0]`.
+  4. **The `phonemizer` web worker keeps a Node process alive / can throw an uncaught error** after `phonemize()` resolves — in a headless spike, run the model test in a **separate script** (or `process.exit(0)` at the end). In the browser this is a non-issue.
+
+  **Boundary:** the spike proves the **pipeline logic** (phonemize → tokenize → int64/style/speed → single forward → PCM) is correct on the app's exact runtime. What remains **owner-only in a real browser**: the **WebGPU EP** executing this model's flow-matching ops (wasm-EP success ≠ guaranteed WebGPU-EP success, though these are standard ops), **real `AudioContext` playback**, and **WebGPU latency / VRAM** with the translation model co-resident.
 - **Coexistence with the translation model (no one-model-at-a-time limit):** `src/lib/providers/webgpu.ts` already keeps loaded models in a `Map<string, Promise<Pipeline>>` keyed by model id — **multiple models co-resident by design**. Kokoro is a separate entry; both share the single wasm. **The real constraint is VRAM:** Hy-MT2 (1.29 GiB) + Kokoro (≈0.3 GiB) ≈ **1.6 GiB** resident — fine on 4 GiB+ discrete GPUs, watch low-end / iGPU. Kokoro's footprint is just its weights (no growing KV-cache; it's non-autoregressive).
 - **Download:** reuse the Settings "Manage models" flow (rules 2/3): the TTS block lists model + voice subset with `filePatterns` for exactly the chosen files; streamed + cancellable; verified-complete cache gate before inference.
 
@@ -97,7 +111,7 @@ Two engines, user-initiated, never automatic:
 ## Testing plan (local only — no cloud)
 
 - **Platform:** local dev server (`npm run dev -- -H 0.0.0.0 -p 3001`) + HTTPS proxy 3443 for the secure context, **and** the production static export (`build:export` → serve `/out` locally) for UI-flow verification — per `design/browser-testing.md`. **No CF / GH / HF / Docker deploy.**
-- **Order:** (1) Web Speech first (zero download) → validate the read-aloud UX end-to-end; (2) Kokoro Path A spike → EN quality at the chosen dtype + speed, and confirm VRAM headroom with the translation model co-resident; (3) resolve the non-English phonemizer question (the gate for Kokoro as primary for zh/ja/...).
+- **Order:** (1) Web Speech first (zero download) → validate the read-aloud UX end-to-end; (2) Kokoro Path A spike → **CPU/wasm pipeline spike DONE (#0.3, 2026-09-30: phonemize→tokenize→int64/style/speed→single forward→9.0 s real-speech PCM, ~11 s latency)** — the **WebGPU-EP + playback + latency/VRAM** half remains owner-only in a real browser, at the chosen dtype + speed, with the translation model co-resident; (3) resolve the non-English phonemizer question (the gate for Kokoro as primary for zh/ja/...).
 - **Acceptance (owner, real browser via the local HTTPS path):** EN read-aloud quality at the chosen dtype, acceptable speed (non-autoregressive → near-realtime expected), zh-TW system voice acceptable, translation model + Kokoro co-resident without VRAM OOM, zero console errors, no external requests in devtools except the user-initiated download.
 
 ## Definition of done
