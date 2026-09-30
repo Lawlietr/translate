@@ -31,7 +31,6 @@ import {
   prefetchModel,
   type CacheStatus,
 } from "../lib/model-cache";
-import { SUPPORTED_TRANSLATION_LANGUAGES, languageName } from "../lib/languages";
 import { getPromptProfile, resolveProfile } from "../lib/prompt-profiles";
 import { useAppSettings } from "../hooks/use-app-settings";
 import { useI18n } from "../hooks/useI18n";
@@ -449,13 +448,12 @@ function GeneralTab() {
   }, []);
 
   useEffect(() => {
-    if (settings.ttsEngine !== "kokoro") return;
     let active = true;
     void kokoroCacheState(settings.ttsKokoroDtype, settings.ttsKokoroVoice).then((s) => {
       if (active) setKokoroCache(s);
     });
     return () => { active = false; };
-  }, [settings.ttsEngine, settings.ttsKokoroDtype, settings.ttsKokoroVoice]);
+  }, [settings.ttsKokoroDtype, settings.ttsKokoroVoice]);
 
   const startKokoroDownload = useCallback(async () => {
     setKokoroDownloading(true);
@@ -489,36 +487,6 @@ function GeneralTab() {
 
   return (
     <Box className="flex flex-col gap-3">
-      <Box className="flex items-center justify-between gap-2">
-        <Typography variant="body2">{t("general.defaultSource")}</Typography>
-        <Select
-          size="small"
-          value={settings.defaultSourceLang}
-          onChange={(e) => update({ defaultSourceLang: e.target.value })}
-          sx={{ minWidth: 160 }}
-        >
-          {SUPPORTED_TRANSLATION_LANGUAGES.map((l) => (
-            <MenuItem key={l.id} value={l.id}>
-              {languageName(l.id)}
-            </MenuItem>
-          ))}
-        </Select>
-      </Box>
-      <Box className="flex items-center justify-between gap-2">
-        <Typography variant="body2">{t("general.defaultTarget")}</Typography>
-        <Select
-          size="small"
-          value={settings.defaultTargetLang}
-          onChange={(e) => update({ defaultTargetLang: e.target.value })}
-          sx={{ minWidth: 160 }}
-        >
-          {SUPPORTED_TRANSLATION_LANGUAGES.map((l) => (
-            <MenuItem key={l.id} value={l.id}>
-              {languageName(l.id)}
-            </MenuItem>
-          ))}
-        </Select>
-      </Box>
       <Divider />
       <Box className="flex flex-col gap-2">
         <Typography variant="subtitle2">{t("general.privacy")}</Typography>
@@ -571,45 +539,29 @@ function GeneralTab() {
         </Box>
         {settings.ttsEnabled && (
           <>
-            <Box className="flex items-center justify-between gap-2">
-              <Typography variant="body2">{t("tts.engine")}</Typography>
-              <Select
-                size="small"
-                value={settings.ttsEngine}
-                onChange={(e) =>
-                  update({ ttsEngine: e.target.value as "web-speech" | "kokoro" })
-                }
-                sx={{ minWidth: 180 }}
-              >
-                <MenuItem value="web-speech">{t("tts.engineWebSpeech")}</MenuItem>
-                <MenuItem value="kokoro">{t("tts.engineKokoro")}</MenuItem>
-              </Select>
-            </Box>
-            {settings.ttsEngine === "web-speech" &&
-              (voices.length > 0 ? (
-                <Box className="flex items-center justify-between gap-2">
-                  <Typography variant="body2">{t("tts.voice")}</Typography>
-                  <Select
-                    size="small"
-                    value={settings.ttsVoiceName}
-                    onChange={(e) => update({ ttsVoiceName: e.target.value })}
-                    sx={{ minWidth: 240 }}
-                  >
-                    <MenuItem value="">{t("tts.voiceAuto")}</MenuItem>
-                    {voices.map((v) => (
-                      <MenuItem key={v.name + v.lang} value={v.name}>
-                        {v.name} ({v.lang})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </Box>
-              ) : (
-                <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                  {t("tts.noVoices")}
-                </Typography>
-              ))}
-            {settings.ttsEngine === "kokoro" && (
-              <Box className="flex flex-col gap-2">
+            {voices.length > 0 ? (
+              <Box className="flex items-center justify-between gap-2">
+                <Typography variant="body2">{t("tts.voice")}</Typography>
+                <Select
+                  size="small"
+                  value={settings.ttsVoiceName}
+                  onChange={(e) => update({ ttsVoiceName: e.target.value })}
+                  sx={{ minWidth: 240 }}
+                >
+                  <MenuItem value="">{t("tts.voiceAuto")}</MenuItem>
+                  {voices.map((v) => (
+                    <MenuItem key={v.name + v.lang} value={v.name}>
+                      {v.name} ({v.lang})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+            ) : (
+              <Typography variant="caption" sx={{ opacity: 0.6 }}>
+                {t("tts.noVoices")}
+              </Typography>
+            )}
+            <Box className="flex flex-col gap-2">
                 <Box className="flex items-center justify-between gap-2">
                   <Typography variant="body2">{t("tts.kokoroVoice")}</Typography>
                   <Select
@@ -635,7 +587,7 @@ function GeneralTab() {
                     }
                     sx={{ minWidth: 100 }}
                   >
-                    {KOKORO_DTYPES.filter((d) => d.id === "fp32" || d.id === "fp16").map((d) => (
+                    {KOKORO_DTYPES.filter((d) => d.id === "fp32").map((d) => (
                       <MenuItem key={d.id} value={d.id}>
                         {d.id} ({formatBytes(d.sizeBytes)})
                       </MenuItem>
@@ -682,7 +634,6 @@ function GeneralTab() {
                   </Box>
                 )}
               </Box>
-            )}
           </>
         )}
       </Box>

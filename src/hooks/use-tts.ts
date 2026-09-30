@@ -38,8 +38,6 @@ export function useTts() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const useKokoro = settings.ttsEngine === "kokoro";
-
   const kokoroCacheRef = useRef<KokoroEngineCache | null>(null);
   const kokoroLoadingRef = useRef<Promise<TtsEngine> | null>(null);
   const playbackRef = useRef<TtsPlayback | null>(null);
@@ -163,7 +161,9 @@ export function useTts() {
       stop();
       setError(null);
 
-      if (useKokoro) {
+      const isEnglish = lang.startsWith("en");
+
+      if (isEnglish) {
         const gen = speakGenRef.current;
         setLoading(true);
         setSpeaking(target);
@@ -184,7 +184,7 @@ export function useTts() {
           playbackRef.current = null;
           setSpeaking(null);
           const msg = e instanceof Error ? e.message : String(e);
-          setError(msg);
+          console.warn(`Kokoro unavailable, falling back to Web Speech: ${msg}`);
           if (isSpeechSynthesisAvailable()) {
             speakWebSpeech(target, text, lang, preferredVoice);
           }
@@ -198,7 +198,7 @@ export function useTts() {
 
       speakWebSpeech(target, text, lang, preferredVoice);
     },
-    [stop, useKokoro, loadKokoroEngine, speakWebSpeech]
+    [stop, loadKokoroEngine, speakWebSpeech]
   );
 
   useEffect(
@@ -211,8 +211,7 @@ export function useTts() {
     [clearResumeTimer, clearStartTimer]
   );
 
-  const available =
-    settings.ttsEnabled && (useKokoro || isSpeechSynthesisAvailable());
+  const available = settings.ttsEnabled && isSpeechSynthesisAvailable();
 
   return { speaking, loading, error, speak, stop, available };
 }
