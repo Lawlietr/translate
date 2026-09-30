@@ -230,7 +230,7 @@ function ModelTab() {
   return (
     <Box className="flex flex-col gap-3">
       <Box className="flex items-center justify-between gap-2">
-        <Typography variant="body2">{t("settings.backend")}</Typography>
+        <Typography variant="body1">{t("settings.backend")}</Typography>
         <Select
           size="small"
           value={settings.backend}
@@ -261,7 +261,7 @@ function ModelTab() {
                 </MenuItem>
               ))}
             </Select>
-            <Typography variant="body2" sx={{ opacity: 0.7 }}>
+            <Typography variant="body1" sx={{ opacity: 0.7 }}>
               {formatBytes(model.sizeBytes)}
             </Typography>
           </Box>
@@ -382,7 +382,7 @@ function ModelTab() {
             placeholder={t("provider.apiKeyPlaceholder")}
           />
           <Box className="flex items-center justify-between gap-2">
-            <Typography variant="body2">{t("provider.preset")}</Typography>
+            <Typography variant="body1">{t("provider.preset")}</Typography>
             <Select
               size="small"
               value={settings.llamaServerConfig.modelPreset}
@@ -489,10 +489,10 @@ function TtsSettings() {
 
   return (
     <Box className="flex flex-col gap-2">
-      <Typography variant="subtitle2">{t("tts.title")}</Typography>
+      <Typography variant="body1" sx={{ fontWeight: 600 }}>{t("tts.title")}</Typography>
       <Box className="flex items-center justify-between gap-2">
         <Box>
-          <Typography variant="body2">{t("tts.toggle")}</Typography>
+          <Typography variant="body1">{t("tts.toggle")}</Typography>
           <Typography variant="caption" sx={{ opacity: 0.6 }}>
             {t("tts.toggleHelper")}
           </Typography>
@@ -506,7 +506,7 @@ function TtsSettings() {
         <>
           {voices.length > 0 ? (
             <Box className="flex items-center justify-between gap-2">
-              <Typography variant="body2">{t("tts.voice")}</Typography>
+              <Typography variant="body1">{t("tts.voice")}</Typography>
               <Select
                 size="small"
                 value={settings.ttsVoiceName}
@@ -528,7 +528,7 @@ function TtsSettings() {
           )}
           <Box className="flex flex-col gap-2">
             <Box className="flex items-center justify-between gap-2">
-              <Typography variant="body2">{t("tts.kokoroVoice")}</Typography>
+              <Typography variant="body1">{t("tts.kokoroVoice")}</Typography>
               <Select
                 size="small"
                 value={settings.ttsKokoroVoice}
@@ -543,7 +543,7 @@ function TtsSettings() {
               </Select>
             </Box>
             <Box className="flex items-center justify-between gap-2">
-              <Typography variant="body2">Dtype</Typography>
+              <Typography variant="body1">Dtype</Typography>
               <Select
                 size="small"
                 value={settings.ttsKokoroDtype}
@@ -619,10 +619,10 @@ function GeneralTab() {
     <Box className="flex flex-col gap-3">
       <Divider />
       <Box className="flex flex-col gap-2">
-        <Typography variant="subtitle2">{t("general.privacy")}</Typography>
+        <Typography variant="body1" sx={{ fontWeight: 600 }}>{t("general.privacy")}</Typography>
         <Box className="flex items-center justify-between gap-2">
           <Box>
-            <Typography variant="body2">{t("general.neverRecord")}</Typography>
+            <Typography variant="body1">{t("general.neverRecord")}</Typography>
             <Typography variant="caption" sx={{ opacity: 0.6 }}>
               {t("general.neverRecordHelper")}
             </Typography>
@@ -655,7 +655,7 @@ function GeneralTab() {
       <Divider />
       <Box className="flex items-center justify-between gap-2">
         <Box>
-          <Typography variant="body2">{t("general.diagnostics")}</Typography>
+          <Typography variant="body1">{t("general.diagnostics")}</Typography>
           <Typography variant="caption" sx={{ opacity: 0.6 }}>
             {t("general.diagnosticsHelper")}
           </Typography>
