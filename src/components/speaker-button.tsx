@@ -28,7 +28,7 @@ export function SpeakerButton({
         <IconButton
           size="small"
           onClick={onClick}
-          disabled={disabled || loading}
+          disabled={disabled}
           aria-label={title}
           aria-pressed={speaking}
         >

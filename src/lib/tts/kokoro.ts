@@ -24,7 +24,7 @@ export const KOKORO_DTYPES: KokoroDtypeOption[] = [
   { id: "q8f16", file: "onnx/model_q8f16.onnx", sizeBytes: 86033585 },
 ];
 
-export const KOKORO_DEFAULT_DTYPE: KokoroDtype = "fp16";
+export const KOKORO_DEFAULT_DTYPE: KokoroDtype = "fp32";
 
 // Small EN voice subset (af_/am_/bf_/bm_ = American/British female/male),
 // ~522 KB each. Never ship all ~58 voices.

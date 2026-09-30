@@ -43,6 +43,7 @@ export function useTts() {
   const kokoroCacheRef = useRef<KokoroEngineCache | null>(null);
   const kokoroLoadingRef = useRef<Promise<TtsEngine> | null>(null);
   const playbackRef = useRef<TtsPlayback | null>(null);
+  const speakGenRef = useRef(0);
 
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resumeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -62,6 +63,7 @@ export function useTts() {
   }, []);
 
   const stop = useCallback(() => {
+    speakGenRef.current++;
     clearStartTimer();
     clearResumeTimer();
     if (playbackRef.current) {
@@ -70,6 +72,7 @@ export function useTts() {
     }
     if (isSpeechSynthesisAvailable()) window.speechSynthesis.cancel();
     setSpeaking(null);
+    setLoading(false);
   }, [clearStartTimer, clearResumeTimer]);
 
   const loadKokoroEngine = useCallback(async (): Promise<TtsEngine> => {
@@ -161,11 +164,14 @@ export function useTts() {
       setError(null);
 
       if (useKokoro) {
+        const gen = speakGenRef.current;
         setLoading(true);
         setSpeaking(target);
         try {
           const engine = await loadKokoroEngine();
+          if (speakGenRef.current !== gen) return;
           const playback = await engine.speak(text);
+          if (speakGenRef.current !== gen) return;
           playbackRef.current = playback;
           void playback.ended.then(() => {
             if (playbackRef.current === playback) {
@@ -174,6 +180,7 @@ export function useTts() {
             }
           });
         } catch (e) {
+          if (speakGenRef.current !== gen) return;
           playbackRef.current = null;
           setSpeaking(null);
           const msg = e instanceof Error ? e.message : String(e);
@@ -182,7 +189,9 @@ export function useTts() {
             speakWebSpeech(target, text, lang, preferredVoice);
           }
         } finally {
-          setLoading(false);
+          if (speakGenRef.current === gen) {
+            setLoading(false);
+          }
         }
         return;
       }

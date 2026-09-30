@@ -36,7 +36,6 @@ import { getPromptProfile, resolveProfile } from "../lib/prompt-profiles";
 import { useAppSettings } from "../hooks/use-app-settings";
 import { useI18n } from "../hooks/useI18n";
 import { useLocalVoices } from "../hooks/use-tts";
-import { SUPPORTED_LANGUAGES } from "../lib/i18n/translations";
 import { fetchAvailableModels } from "../lib/providers/llama-server";
 import { getHistory, clearHistory } from "../lib/history-store";
 import { HistoryClearDialog } from "./history-clear-dialog";
@@ -49,8 +48,6 @@ import { KOKORO_VOICES, KOKORO_DTYPES } from "../lib/tts/kokoro";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import type { DownloadProgress } from "../lib/types";
-import type { UILanguage } from "../lib/settings-manager";
-
 type TabId = "inference" | "general";
 
 interface SettingsDialogProps {
@@ -493,21 +490,6 @@ function GeneralTab() {
   return (
     <Box className="flex flex-col gap-3">
       <Box className="flex items-center justify-between gap-2">
-        <Typography variant="body2">{t("general.uiLanguage")}</Typography>
-        <Select
-          size="small"
-          value={settings.language}
-          onChange={(e) => update({ language: e.target.value as UILanguage })}
-          sx={{ minWidth: 130 }}
-        >
-          {SUPPORTED_LANGUAGES.map((l) => (
-            <MenuItem key={l.id} value={l.id}>
-              {l.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </Box>
-      <Box className="flex items-center justify-between gap-2">
         <Typography variant="body2">{t("general.defaultSource")}</Typography>
         <Select
           size="small"
@@ -572,19 +554,6 @@ function GeneralTab() {
         }}
         onClose={() => setClearOpen(false)}
       />
-      <Divider />
-      <Box className="flex items-center justify-between gap-2">
-        <Box>
-          <Typography variant="body2">{t("general.diagnostics")}</Typography>
-          <Typography variant="caption" sx={{ opacity: 0.6 }}>
-            {t("general.diagnosticsHelper")}
-          </Typography>
-        </Box>
-        <Switch
-          checked={settings.diagnostics}
-          onChange={(e) => update({ diagnostics: e.target.checked })}
-        />
-      </Box>
       <Divider />
       <Box className="flex flex-col gap-2">
         <Typography variant="subtitle2">{t("tts.title")}</Typography>
@@ -666,7 +635,7 @@ function GeneralTab() {
                     }
                     sx={{ minWidth: 100 }}
                   >
-                    {KOKORO_DTYPES.map((d) => (
+                    {KOKORO_DTYPES.filter((d) => d.id === "fp32" || d.id === "fp16").map((d) => (
                       <MenuItem key={d.id} value={d.id}>
                         {d.id} ({formatBytes(d.sizeBytes)})
                       </MenuItem>
@@ -716,6 +685,19 @@ function GeneralTab() {
             )}
           </>
         )}
+      </Box>
+      <Divider />
+      <Box className="flex items-center justify-between gap-2">
+        <Box>
+          <Typography variant="body2">{t("general.diagnostics")}</Typography>
+          <Typography variant="caption" sx={{ opacity: 0.6 }}>
+            {t("general.diagnosticsHelper")}
+          </Typography>
+        </Box>
+        <Switch
+          checked={settings.diagnostics}
+          onChange={(e) => update({ diagnostics: e.target.checked })}
+        />
       </Box>
     </Box>
   );
