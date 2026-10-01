@@ -22,6 +22,7 @@ export interface Messages {
   "common.clear": string;
   "common.chars": string;
   "common.autoDetect": string;
+  "common.retry": string;
 
   "page.insecureAlert": string;
   "page.unsupportedAlert": string;
@@ -138,6 +139,24 @@ export interface Messages {
   "history.confirmClearTitle": string;
   "history.confirmClearBody": string;
   "history.deleteEntry": string;
+
+  "landing.checking": string;
+  "landing.tagline": string;
+  "landing.title": string;
+  "landing.subtitle": string;
+  "landing.cardModel": string;
+  "landing.cardSize": string;
+  "landing.cardPrivacy": string;
+  "landing.privacyValue": string;
+  "landing.download": string;
+  "landing.downloading": string;
+  "landing.done": string;
+  "landing.warming": string;
+  "landing.useLlamaServer": string;
+  "landing.chooseModel": string;
+  "landing.webgpuUnavailable": string;
+  "landing.footerWeights": string;
+  "landing.footerBuiltWith": string;
 }
 
 export const SUPPORTED_LANGUAGES: Array<{ id: Language; label: string }> = [
@@ -170,6 +189,7 @@ export const translations: Record<Language, Messages> = {
     "common.clear": "Clear",
     "common.chars": "{n} chars",
     "common.autoDetect": "auto-detect",
+    "common.retry": "Retry",
 
     "page.insecureAlert":
       "WebGPU needs a secure context — open over https:// or http://localhost.",
@@ -306,6 +326,26 @@ export const translations: Record<Language, Messages> = {
     "history.confirmClearBody":
       "This will permanently delete {n} entries. This cannot be undone.",
     "history.deleteEntry": "Delete this entry",
+
+    "landing.checking": "Checking…",
+    "landing.tagline": "RUNS ON YOUR GPU · NOTHING IS SENT TO A SERVER",
+    "landing.title": "Translate",
+    "landing.subtitle":
+      "A multilingual translator that runs entirely in your browser — nothing you type ever leaves.",
+    "landing.cardModel": "Model",
+    "landing.cardSize": "Size",
+    "landing.cardPrivacy": "Privacy",
+    "landing.privacyValue": "100% local",
+    "landing.download": "Download model ({size})",
+    "landing.downloading": "Downloading…",
+    "landing.done": "done",
+    "landing.warming": "Warming up…",
+    "landing.useLlamaServer": "Use llama-server instead",
+    "landing.chooseModel": "Choose model",
+    "landing.webgpuUnavailable":
+      "This browser does not support WebGPU (or the page is not served over HTTPS) — model download is disabled. You can use llama-server instead.",
+    "landing.footerWeights": "Weights:",
+    "landing.footerBuiltWith": "Built with Transformers.js",
   },
 
   "zh-TW": {
@@ -330,6 +370,7 @@ export const translations: Record<Language, Messages> = {
     "common.clear": "清除",
     "common.chars": "{n} 字元",
     "common.autoDetect": "自動偵測",
+    "common.retry": "重試",
 
     "page.insecureAlert":
       "WebGPU 需要安全情境——請以 https:// 或 http://localhost 開啟。",
@@ -457,6 +498,25 @@ export const translations: Record<Language, Messages> = {
     "history.confirmClearTitle": "刪除所有翻譯紀錄？",
     "history.confirmClearBody": "將永久刪除 {n} 條紀錄，此動作無法復原。",
     "history.deleteEntry": "刪除這條紀錄",
+
+    "landing.checking": "檢查中…",
+    "landing.tagline": "在你的 GPU 上執行 · 沒有任何內容送往伺服器",
+    "landing.title": "Translate",
+    "landing.subtitle": "多語系翻譯器,完全在你的瀏覽器內執行——你輸入的內容絕不會離開此裝置。",
+    "landing.cardModel": "模型",
+    "landing.cardSize": "大小",
+    "landing.cardPrivacy": "隱私",
+    "landing.privacyValue": "100% 本機",
+    "landing.download": "下載模型({size})",
+    "landing.downloading": "下載中…",
+    "landing.done": "完成",
+    "landing.warming": "暖機中…",
+    "landing.useLlamaServer": "改用 llama-server",
+    "landing.chooseModel": "選取模型",
+    "landing.webgpuUnavailable":
+      "此瀏覽器不支援 WebGPU(或頁面未透過 HTTPS 提供)——模型下載已停用。可改用 llama-server。",
+    "landing.footerWeights": "權重:",
+    "landing.footerBuiltWith": "使用 Transformers.js 打造",
   },
 
   ja: {
@@ -481,6 +541,7 @@ export const translations: Record<Language, Messages> = {
     "common.clear": "クリア",
     "common.chars": "{n} 文字",
     "common.autoDetect": "自動検出",
+    "common.retry": "再試行",
 
     "page.insecureAlert":
       "WebGPU はセキュアなコンテキストが必要です — https:// または http://localhost で開いてください。",
@@ -611,6 +672,25 @@ export const translations: Record<Language, Messages> = {
     "history.confirmClearBody":
       "{n} 件の履歴を恒久的に削除します。この操作は元に戻せません。",
     "history.deleteEntry": "この履歴を削除",
+
+    "landing.checking": "確認中…",
+    "landing.tagline": "あなたのGPUで動作 · サーバーに送信されるのは何もない",
+    "landing.title": "Translate",
+    "landing.subtitle": "ブラウザ内で完全に動作する多言語翻訳ツール——入力した内容は一切外部に送信されません。",
+    "landing.cardModel": "モデル",
+    "landing.cardSize": "サイズ",
+    "landing.cardPrivacy": "プライバシー",
+    "landing.privacyValue": "100% ローカル",
+    "landing.download": "モデルをダウンロード({size})",
+    "landing.downloading": "ダウンロード中…",
+    "landing.done": "完了",
+    "landing.warming": "ウォームアップ中…",
+    "landing.useLlamaServer": "llama-server を使う",
+    "landing.chooseModel": "モデルを選択",
+    "landing.webgpuUnavailable":
+      "このブラウザはWebGPUに対応していません(またはページがHTTPS経由で提供されていません)——モデルのダウンロードは無効です。llama-serverを使うことができます。",
+    "landing.footerWeights": "重み:",
+    "landing.footerBuiltWith": "Transformers.js で構築",
   },
 
   ko: {
@@ -635,6 +715,7 @@ export const translations: Record<Language, Messages> = {
     "common.clear": "지우기",
     "common.chars": "{n}자",
     "common.autoDetect": "자동 감지",
+    "common.retry": "다시 시도",
 
     "page.insecureAlert":
       "WebGPU는 보안 컨텍스트가 필요합니다 — https:// 또는 http://localhost 로 여세요.",
@@ -763,6 +844,25 @@ export const translations: Record<Language, Messages> = {
     "history.confirmClearBody":
       "{n}개 항목이 영구적으로 삭제됩니다. 되돌릴 수 없습니다.",
     "history.deleteEntry": "이 기록 삭제",
+
+    "landing.checking": "확인 중…",
+    "landing.tagline": "내 GPU에서 실행 · 서버로 전송되는 것은 아무것도 없음",
+    "landing.title": "Translate",
+    "landing.subtitle": "브라우저 안에서 완전히 동작하는 다국어 번역기 — 입력한 내용은 절대 외부로 나가지 않습니다.",
+    "landing.cardModel": "모델",
+    "landing.cardSize": "크기",
+    "landing.cardPrivacy": "프라이버시",
+    "landing.privacyValue": "100% 로컬",
+    "landing.download": "모델 다운로드({size})",
+    "landing.downloading": "다운로드 중…",
+    "landing.done": "완료",
+    "landing.warming": "워밍업 중…",
+    "landing.useLlamaServer": "llama-server 사용",
+    "landing.chooseModel": "모델 선택",
+    "landing.webgpuUnavailable":
+      "이 브라우저는 WebGPU를 지원하지 않거나(또는 페이지가 HTTPS로 제공되지 않음) 모델 다운로드가 비활성화되었습니다 — llama-server를 대신 사용할 수 있습니다.",
+    "landing.footerWeights": "가중치:",
+    "landing.footerBuiltWith": "Transformers.js로 작성",
   },
 };
 

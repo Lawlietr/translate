@@ -111,6 +111,13 @@ async function loadPipeline(
   return promise;
 }
 
+export async function warmUpWebGpuModel(
+  modelId: string,
+  onStatus?: (status: string) => void
+): Promise<void> {
+  await loadPipeline(modelId, onStatus);
+}
+
 function planMaxNewTokens(srcTokens: number): number {
   return Math.min(MAX_NEW_TOKENS_CAP, Math.ceil(srcTokens * 1.5) + 32);
 }

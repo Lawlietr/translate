@@ -1,6 +1,6 @@
 # First-run model landing (TODO #28)
 
-Status: **design only — not implemented** (owner 2026-09-30)
+Status: **implemented** (2026-10-01) — render/gate/build/Playwright (29/29) verified; per-file download progress + warm-up phase pending owner's real-browser pass (Metal 3)
 
 A full-screen first-run gate: before any WebGPU translation model is fully cached, the app shows a landing page (big gradient title + one prominent download button) instead of the translation UI. Modeled on `Mako987/MiniCPM5-2B-WebGPU-Chat` (screenshots in `/tmp/translate/`), adapted to this project's two-backend design.
 
@@ -113,11 +113,11 @@ After the last file lands, the landing does NOT exit — it warms up in place:
 
 ## DoD
 
-- [ ] First run (no cache, webgpu backend): landing shows; tagline/title/cards/both secondary buttons render in all 4 locales + both themes
-- [ ] Download: per-file rows track correctly (incl. instant-skip of cached files), speed + ETA sane, cancel works, resume after refresh works
-- [ ] Warm-up: runs in place after download, main UI appears only after load succeeds; first translation reuses the warm pipeline (no second load)
-- [ ] Gate: llama-server backend → no landing; cached model → no landing; TTS model state never affects the gate
-- [ ] WebGPU-unsupported + non-secure-context states render the disabled-download message
-- [ ] `build:export` clean; wasm check unchanged (no new runtime deps)
-- [ ] Playwright regression on the production export (landing visible with empty cache; hidden with seeded cache)
+- [x] First run (no cache, webgpu backend): landing shows; tagline/title/cards/both secondary buttons render in all 4 locales + both themes (Playwright A1–A9, D, E)
+- [ ] Download: per-file rows track correctly (incl. instant-skip of cached files), speed + ETA sane, cancel works, resume after refresh works — **pending owner's real browser** (1.3 GB download not feasible headless)
+- [ ] Warm-up: runs in place after download, main UI appears only after load succeeds; first translation reuses the warm pipeline (no second load) — **pending owner's real browser**
+- [x] Gate: llama-server backend → no landing (G1); cached model → no landing (F1–F3); TTS model state never affects the gate
+- [x] WebGPU-unsupported + non-secure-context states render the disabled-download message (A8)
+- [x] `build:export` clean; wasm check unchanged (no new runtime deps)
+- [x] Playwright regression on the production export (landing visible with empty cache; hidden with seeded cache) — 29/29
 - [ ] Owner's real browser: full idle → download → warm → translate pass (Metal 3)
