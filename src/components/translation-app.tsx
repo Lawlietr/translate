@@ -27,7 +27,12 @@ function AppContent() {
     return saved === "model" || saved === "general" ? saved : "general";
   });
   const blockRef = useRef<HTMLDivElement | null>(null);
-  const theme = createTheme({ palette: { mode } });
+  const theme = createTheme({
+    palette: {
+      mode,
+      primary: { main: mode === "dark" ? "#ff6b57" : "#d64530" },
+    },
+  });
 
   useEffect(() => {
     installActivityLogPatches();

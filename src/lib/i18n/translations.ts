@@ -158,7 +158,8 @@ export interface Messages {
   "landing.chooseModel": string;
   "landing.webgpuUnavailable": string;
   "landing.footerWeights": string;
-  "landing.footerBuiltWith": string;
+  "landing.footerBuiltWithPrefix": string;
+  "landing.footerBuiltWithSuffix": string;
 }
 
 export const SUPPORTED_LANGUAGES: Array<{ id: Language; label: string }> = [
@@ -349,7 +350,8 @@ export const translations: Record<Language, Messages> = {
     "landing.webgpuUnavailable":
       "This browser does not support WebGPU (or the page is not served over HTTPS) — model download is disabled. You can use llama-server instead.",
     "landing.footerWeights": "Weights:",
-    "landing.footerBuiltWith": "Built with Transformers.js",
+    "landing.footerBuiltWithPrefix": "Built with ",
+    "landing.footerBuiltWithSuffix": "",
   },
 
   "zh-TW": {
@@ -522,7 +524,8 @@ export const translations: Record<Language, Messages> = {
     "landing.webgpuUnavailable":
       "此瀏覽器不支援 WebGPU(或頁面未透過 HTTPS 提供)——模型下載已停用。可改用 llama-server。",
     "landing.footerWeights": "權重:",
-    "landing.footerBuiltWith": "使用 Transformers.js 打造",
+    "landing.footerBuiltWithPrefix": "使用 ",
+    "landing.footerBuiltWithSuffix": " 打造",
   },
 
   ja: {
@@ -698,7 +701,8 @@ export const translations: Record<Language, Messages> = {
     "landing.webgpuUnavailable":
       "このブラウザはWebGPUに対応していません(またはページがHTTPS経由で提供されていません)——モデルのダウンロードは無効です。llama-serverを使うことができます。",
     "landing.footerWeights": "重み:",
-    "landing.footerBuiltWith": "Transformers.js で構築",
+    "landing.footerBuiltWithPrefix": "",
+    "landing.footerBuiltWithSuffix": " で構築",
   },
 
   ko: {
@@ -872,7 +876,8 @@ export const translations: Record<Language, Messages> = {
     "landing.webgpuUnavailable":
       "이 브라우저는 WebGPU를 지원하지 않거나(또는 페이지가 HTTPS로 제공되지 않음) 모델 다운로드가 비활성화되었습니다 — llama-server를 대신 사용할 수 있습니다.",
     "landing.footerWeights": "가중치:",
-    "landing.footerBuiltWith": "Transformers.js로 작성",
+    "landing.footerBuiltWithPrefix": "",
+    "landing.footerBuiltWithSuffix": "로 작성",
   },
 };
 

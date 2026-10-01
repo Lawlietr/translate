@@ -88,6 +88,20 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 - **Stale status bug (fixed 2026-09-26):** `status` was only cleared at the start of a new translation, so the last provider stage ("generating · token N") stayed on screen after completion. The `.finally()` of the translate call now clears `status` — finished state = button + terminal timer only.
 - **Stale-closure pitfall in `.finally()` (fixed 2026-09-28):** the terminal value originally read `startedAt` **from state inside the `.finally()` closure** — the closure captured the pre-click render, where it was always `null`, so the terminal timer silently never appeared (the live ticker worked because its interval closure is recreated by the effect). Fix: capture `const started = Date.now()` locally in `startTranslate` and use it in `.finally()`. General rule: anything a long-running promise's callbacks need must come from a **local const, not state** — state inside an un-updated closure is the value from the render that created the closure, forever.
 
+## Brand color system (owner decision 2026-10-01)
+
+Single source of truth for the app accent, derived from the landing title gradient (`#ff6b57 → #ffd9a0 → #7ed9a2` dark / `#d64530 → #b97a1e → #1f8a55` light):
+
+| Element | Color |
+|---------|-------|
+| MUI theme `primary.main` (TRANSLATE button, settings switches, history select mode, focus rings — everything using `primary`) | gradient **first** stop: dark `#ff6b57` / light `#d64530` — set in `translation-app.tsx` `createTheme`, 2026-10-01 ("Plan A": one theme line recolors the whole app; landing gradient CTA stays the only gradient) |
+| Landing primary button (Download/Load model) | full title gradient as `backgroundImage`, white text, `&:hover` = `brightness(1.08)`, disabled = neutral gray fill (no gradient) |
+| Landing secondary text buttons (Choose model / Use llama-server) | gradient **middle** stop: dark `#ffd9a0` / light `#b97a1e` (hover kept, no MUI blue) |
+| Footer links (model id → HF, Transformers.js → github.com/huggingface/transformers.js) | Material cyan: dark `#4dd0e1` / light `#0097a7` |
+| Error/warning semantics | unchanged (`color="error"` red, success green) |
+
+`footerBuiltWith` i18n key was split into `footerBuiltWithPrefix` + `footerBuiltWithSuffix` so the **Transformers.js** proper noun can render as a (non-translated) link in all 4 locales.
+
 ## History drawer (TODO #27, owner spec 2026-09-28)
 
 **Implemented 2026-09-29** — full design in design/history.md (decisions A–F, store, pitfalls).
@@ -105,6 +119,7 @@ Order, left → right: **UI language dropdown → theme toggle → GitHub icon �
 - **Model row — now in Settings (since #6):** `/` used to carry a model row above the panes while Settings didn't exist; it moved into the Inference tab verbatim (picker + size + downloaded chip + Download/Cancel with streamed progress — same `prefetchModel` pipeline as `/dev`). **Deviation from the original spec:** there is NO separate "Manage models" sub-dialog — the model row IS the management UI (one row, inline), matching what the main page already had; Clear cache is per-model (`clearWebGpuModelCache(modelId)` deletes only that model's HF cache entries, not the whole cache) with a clearing state and a cache re-check afterwards.
 - **llama-server Test connection:** fetches `GET {baseUrl}/models` directly from the browser (client-side, same origin rules as inference); success lists the detected models, failure shows the reason incl. the `--api --host 0.0.0.0` hint for LAN testing (design/inference-providers.md).
 - **MUI v9 Select: never pass a Fragment as child.** `React.Children`-based value matching skips Fragment nodes (`SelectInput.mjs` logs "doesn't accept a Fragment as a child" in dev, and in production the value silently never matches) → the dropdown renders empty and selecting an item never updates the display. Language options must be a plain `map()` array.
+- **MUI v9 `sx` color specificity (2026-10-01):** a bare `sx={{ color, backgroundColor, backgroundImage }}` on a `Button`/`Link` is LOSEable — MUI's `.MuiButton-contained.MuiButton-containedPrimary` (two-class) selector outranks the generated single-class `.css-xxx` rule when it appears later in the stylesheet, so the accent silently stays MUI blue (caught via screenshot: gradient button rendered blue). Fix: nest under the variant class — `sx={{ "&.MuiButton-contained": { ... } }}` (same for `&.MuiLink-root`) — the composite selector ties/outranks and the override sticks. Verified with headless screenshots (dark + light).
 - **Hydration-safe client state (2026-09-22):** anything read from localStorage/window at render time is a hydration-mismatch source (SSR renders defaults, client renders stored values → "Hydration failed" dev overlay + client-side tree regeneration). `AppSettingsProvider` therefore initializes with `defaultSettings()` for BOTH server and first client render (identical paint), loads stored settings in a post-mount effect, and only persists once `hydrated` — a naive post-mount load + unconditional save-on-mount is NOT StrictMode-safe: dev's double effect mount lets the initial save overwrite stored settings between the two load invocations, silently resetting them to defaults (caught with a `Storage.prototype.setItem` trace 2026-09-22). The WebGPU error alert is additionally gated on `!gpu.checking` so the SSR HTML never contains the error before the check has run (webgpu-knowledge.md §3 — an unhydrated SSR shell showing that alert fakes "browser has no WebGPU"). `useThemeMode` already reads post-mount, but its mount-time WRITE still resets a stored light theme to dark on every reload under dev StrictMode — TODO #21, same fix pattern.
 
 ## Out of scope (v1)

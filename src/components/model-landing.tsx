@@ -86,6 +86,8 @@ export function ModelLanding({
     mode === "dark"
       ? "linear-gradient(90deg, #ff6b57, #ffd9a0, #7ed9a2)"
       : "linear-gradient(90deg, #d64530, #b97a1e, #1f8a55)";
+  const midColor = mode === "dark" ? "#ffd9a0" : "#b97a1e";
+  const cyan = mode === "dark" ? "#4dd0e1" : "#0097a7";
 
   const rows = useMemo(() => {
     let cum = 0;
@@ -244,7 +246,22 @@ export function ModelLanding({
                 size="large"
                 disabled={checking || !gpuAvailable || gpu.checking}
                 onClick={isCached ? startLoad : start}
-                sx={{ px: 6, py: 1.5, textTransform: "none", fontWeight: 600 }}
+                sx={{
+                  px: 6,
+                  py: 1.5,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  "&.MuiButton-contained": {
+                    backgroundColor: "transparent",
+                    backgroundImage: titleGradient,
+                    color: "#fff",
+                    "&:hover": { backgroundColor: "transparent", filter: "brightness(1.08)" },
+                    "&.Mui-disabled": {
+                      backgroundImage: "none",
+                      backgroundColor: "rgba(127, 127, 127, 0.12)",
+                    },
+                  },
+                }}
               >
                 {checking
                   ? t("landing.checking")
@@ -256,14 +273,14 @@ export function ModelLanding({
                 <Button
                   size="small"
                   onClick={onUseLlamaServer}
-                  sx={{ textTransform: "none" }}
+                  sx={{ textTransform: "none", color: midColor, "&:hover": { color: midColor } }}
                 >
                   {t("landing.useLlamaServer")}
                 </Button>
                 <Button
                   size="small"
                   onClick={() => setPickerOpen((o) => !o)}
-                  sx={{ textTransform: "none" }}
+                  sx={{ textTransform: "none", color: midColor, "&:hover": { color: midColor } }}
                 >
                   {t("landing.chooseModel")}
                 </Button>
@@ -409,12 +426,28 @@ export function ModelLanding({
             href={`https://huggingface.co/${model.id}`}
             underline="hover"
             target="_blank"
-            sx={{ fontSize: "inherit", fontFamily: "monospace" }}
+            sx={{
+              fontSize: "inherit",
+              fontFamily: "monospace",
+              "&.MuiLink-root": { color: cyan, "&:hover": { color: cyan } },
+            }}
           >
             {model.id}
           </Link>
           {" · "}
-          {t("landing.footerBuiltWith")}
+          {t("landing.footerBuiltWithPrefix")}
+          <Link
+            href="https://github.com/huggingface/transformers.js"
+            underline="hover"
+            target="_blank"
+            sx={{
+              fontSize: "inherit",
+              "&.MuiLink-root": { color: cyan, "&:hover": { color: cyan } },
+            }}
+          >
+            Transformers.js
+          </Link>
+          {t("landing.footerBuiltWithSuffix")}
         </Typography>
       </Box>
     </Box>
