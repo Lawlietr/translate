@@ -47,6 +47,7 @@ Weights: <HF repo link> · Built with Transformers.js   ← footer links (i18n)
 
 - Gradient: coral → sand → green in dark mode; an analogous readable variant in light mode. `bg-clip-text text-transparent bg-gradient-to-r`.
 - Title = app name `Translate` (we have no model-brand hero like "MiniCPM5-2B"; the model name lives in the MODEL card).
+- **Ambient radial glow + card surface language (2026-10-01)**: two off-center radial-gradient glows on the landing root (title-gradient endpoints, low alpha, `ch`-sized — see design/ui-ux.md §Landing visual language for exact values); the 3 info cards use surface lift (dark `rgba(255,255,255,0.04)` / light white + faint shadow), 14 px radius, monospace values, and an accent-green Privacy value. No hover effects (cards are non-interactive).
 
 ### Secondary buttons (owner decision 2026-09-30)
 

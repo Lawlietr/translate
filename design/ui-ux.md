@@ -102,6 +102,14 @@ Single source of truth for the app accent, derived from the landing title gradie
 
 `footerBuiltWith` i18n key was split into `footerBuiltWithPrefix` + `footerBuiltWithSuffix` so the **Transformers.js** proper noun can render as a (non-translated) link in all 4 locales.
 
+### Landing visual language (owner decision 2026-10-01, `model-landing.tsx`)
+
+Modeled on `Mako987/MiniCPM5-2B-WebGPU-Chat` (same reference as the landing layout):
+
+- **Ambient radial glow** on the landing root `Box` (static, no animation): two overlapping radial gradients in `sx.background` — top-center `at 50% -10%` and bottom-right `at 80% 110%`, both centers pushed OFF-SCREEN so only the glow tails are visible; sizes in `ch` (`70ch 50ch` / `60ch 40ch`) so they scale with type. Colors = title-gradient endpoints at low alpha: dark `rgba(255,107,87,0.16)` + `rgba(126,217,162,0.12)`; light uses the darker gradient stops (`#d64530`/`#1f8a55`) at `0.10` alpha (light backgrounds need darker, more subtle glows to avoid washing out contrast).
+- **Info cards (Model/Size/Privacy)**: no shadow-based elevation in dark — surface lift via `rgba(255,255,255,0.04)` bg + 1px `divider` border (same surface-elevation approach as the reference's `#16191c`-on-`#0f1113`); light theme uses `rgba(255,255,255,0.7)` + faint shadow `0 1px 3px rgba(0,0,0,0.08)` (white has no "one step lighter"). `borderRadius` 14 px (reference's `--radius` token). Card VALUES in `monospace` (matches the download progress list). The **Privacy card value** ("100% local") is the only accent-colored card text: dark `#7ed9a2` / light `#1f8a55` (title-gradient green endpoint).
+- Deliberately NOT done: hover-lift on the cards (they are non-interactive), per-card accent hairlines (over-decorated next to the reference's restraint).
+
 ## History drawer (TODO #27, owner spec 2026-09-28)
 
 **Implemented 2026-09-29** — full design in design/history.md (decisions A–F, store, pitfalls).

@@ -36,16 +36,36 @@ interface ModelLandingProps {
   onUseLlamaServer: () => void;
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
+function InfoCard({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  const { mode } = useThemeMode();
   return (
-    <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, px: 1.5, py: 2 }}>
+    <Box
+      sx={{
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: "14px",
+        px: 1.5,
+        py: 2,
+        bgcolor: mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(255, 255, 255, 0.7)",
+        boxShadow: mode === "light" ? "0 1px 3px rgba(0, 0, 0, 0.08)" : "none",
+      }}
+    >
       <Typography
         variant="caption"
         sx={{ letterSpacing: "0.15em", textTransform: "uppercase", color: "text.secondary" }}
       >
         {label}
       </Typography>
-      <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 600, overflowWrap: "anywhere" }}>
+      <Typography
+        variant="body2"
+        sx={{
+          mt: 0.5,
+          fontWeight: 600,
+          overflowWrap: "anywhere",
+          fontFamily: "monospace",
+          color: accent ? (mode === "dark" ? "#7ed9a2" : "#1f8a55") : "text.primary",
+        }}
+      >
         {value}
       </Typography>
     </Box>
@@ -202,7 +222,21 @@ export function ModelLanding({
       : "—";
 
   return (
-    <Box className="h-screen flex flex-col items-center justify-center overflow-y-auto px-4 py-8">
+    <Box
+      className="h-screen flex flex-col items-center justify-center overflow-y-auto px-4 py-8"
+      sx={{
+        background:
+          mode === "dark"
+            ? [
+                "radial-gradient(70ch 50ch at 50% -10%, rgba(255, 107, 87, 0.16), transparent 70%)",
+                "radial-gradient(60ch 40ch at 80% 110%, rgba(126, 217, 162, 0.12), transparent 70%)",
+              ].join(", ")
+            : [
+                "radial-gradient(70ch 50ch at 50% -10%, rgba(214, 69, 48, 0.10), transparent 70%)",
+                "radial-gradient(60ch 40ch at 80% 110%, rgba(31, 138, 85, 0.10), transparent 70%)",
+              ].join(", "),
+      }}
+    >
       <Box className="w-full max-w-xl flex flex-col items-center gap-5 text-center">
         <Typography
           variant="body2"
@@ -230,7 +264,7 @@ export function ModelLanding({
         <Box className="grid grid-cols-3 gap-3 w-full mt-2">
           <InfoCard label={t("landing.cardModel")} value={model.name} />
           <InfoCard label={t("landing.cardSize")} value={formatBytes(model.sizeBytes)} />
-          <InfoCard label={t("landing.cardPrivacy")} value={t("landing.privacyValue")} />
+          <InfoCard label={t("landing.cardPrivacy")} value={t("landing.privacyValue")} accent />
         </Box>
 
         <Box className="w-full mt-2 flex flex-col items-center gap-4">
