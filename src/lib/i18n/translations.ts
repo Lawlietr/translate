@@ -149,6 +149,8 @@ export interface Messages {
   "landing.cardPrivacy": string;
   "landing.privacyValue": string;
   "landing.download": string;
+  "landing.load": string;
+  "landing.ready": string;
   "landing.downloading": string;
   "landing.done": string;
   "landing.warming": string;
@@ -337,6 +339,8 @@ export const translations: Record<Language, Messages> = {
     "landing.cardPrivacy": "Privacy",
     "landing.privacyValue": "100% local",
     "landing.download": "Download model ({size})",
+    "landing.load": "Load model",
+    "landing.ready": "Model ready",
     "landing.downloading": "Downloading…",
     "landing.done": "done",
     "landing.warming": "Warming up…",
@@ -508,6 +512,8 @@ export const translations: Record<Language, Messages> = {
     "landing.cardPrivacy": "隱私",
     "landing.privacyValue": "100% 本機",
     "landing.download": "下載模型({size})",
+    "landing.load": "載入模型",
+    "landing.ready": "模型已就緒",
     "landing.downloading": "下載中…",
     "landing.done": "完成",
     "landing.warming": "暖機中…",
@@ -682,6 +688,8 @@ export const translations: Record<Language, Messages> = {
     "landing.cardPrivacy": "プライバシー",
     "landing.privacyValue": "100% ローカル",
     "landing.download": "モデルをダウンロード({size})",
+    "landing.load": "モデルを読み込む",
+    "landing.ready": "モデルの準備ができました",
     "landing.downloading": "ダウンロード中…",
     "landing.done": "完了",
     "landing.warming": "ウォームアップ中…",
@@ -854,6 +862,8 @@ export const translations: Record<Language, Messages> = {
     "landing.cardPrivacy": "프라이버시",
     "landing.privacyValue": "100% 로컬",
     "landing.download": "모델 다운로드({size})",
+    "landing.load": "모델 로드",
+    "landing.ready": "모델 준비 완료",
     "landing.downloading": "다운로드 중…",
     "landing.done": "완료",
     "landing.warming": "워밍업 중…",

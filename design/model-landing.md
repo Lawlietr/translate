@@ -1,29 +1,31 @@
-# First-run model landing (TODO #28)
+# Model landing (TODO #28)
 
-Status: **implemented** (2026-10-01) — render/gate/build/Playwright (29/29) verified; per-file download progress + warm-up phase pending owner's real-browser pass (Metal 3)
+Status: **implemented** (2026-10-01); **2026-10-01: converted from a full-screen gate to a permanent top block** (owner) — landing always visible in webgpu mode, translation block renders below it after in-session load. Playwright on the production export (8/8 + seeded-cache 4/4 + 7/7 download-phase file list under a spoofed WebGPU); owner's real-browser pass of the load flow still pending (Metal 3)
 
-A full-screen first-run gate: before any WebGPU translation model is fully cached, the app shows a landing page (big gradient title + one prominent download button) instead of the translation UI. Modeled on `Mako987/MiniCPM5-2B-WebGPU-Chat` (screenshots in `/tmp/translate/`), adapted to this project's two-backend design.
+In webgpu mode the app shows a landing block at the top on **every** page load — big gradient title (never collapsed), one prominent load/download button. After the user loads a model (download + warm-up, or warm-up only if already cached), the translation UI (a full `100vh` block) renders **below** the landing in document flow — the page scrolls naturally; scrolling up reveals the landing's loaded state. Refresh → back to the landing-only state (session-load is memory-only). Modeled on `Mako987/MiniCPM5-2B-WebGPU-Chat` (screenshots in `/tmp/translate/`), adapted to this project's two-backend design.
 
 ## Why
 
 Today a first-time visitor lands straight on the translation UI with no model cached. Their first "Translate" click fails with "download it first (Settings → Manage models)" — the download path is buried in Settings. The reference project's landing makes the one-time cost (a ~1.3 GB download) explicit *before* the UI, and turns the mandatory wait into a designed moment (per-file progress, warm-up). Same privacy pitch, same single-user decision.
 
-## Gate (when the landing shows)
+## Visibility (when the landing shows — 2026-10-01 owner change)
 
-New hook `src/hooks/use-model-ready.ts` → status `checking | landing | ready`:
+The full-screen gate is gone: the landing is a **permanent top block in webgpu mode** — visible on every load, the gradient title never collapses (owner wants the reference site's "perfectly flush" feel: landing on top, translation below, natural page scroll). It is only ever hidden when the backend is llama-server.
+
+`src/hooks/use-model-ready.ts` → returns `{ checking, cachedModelIds, preselectModelId, recheck }`:
 
 | Condition | Result |
 |-----------|--------|
-| `settings.backend === "llama-server"` | `ready` immediately (no local model needed) |
-| `backend === "webgpu"` AND any `WEBGPU_MODELS` model is fully cached (`cachedModelState`) | `ready` |
-| `backend === "webgpu"` AND nothing fully cached | `landing` |
-| cache check in flight (a few hundred ms) | `checking` — minimal centered spinner, not the full landing |
+| `settings.backend === "llama-server"` | landing not rendered at all (translation UI only); `cachedModelIds` stays empty |
+| `backend === "webgpu"` | landing always rendered at the top; button label is per-model — fully cached → **Load model**, not cached → **Download model (size)** |
+| cache check in flight (a few hundred ms) | `checking` — button shows “Checking…” and is disabled; the rest of the landing renders normally |
 
-- **Translation models only.** The gate iterates `WEBGPU_MODELS` (model-catalog.ts). The Kokoro TTS model (`tts:kokoro` cache key, managed in Settings → Model tab) is **excluded** — it is optional, lazy, and never blocks entry (owner decision 2026-09-30).
-- **Partial cache** → `landing`, with the model that has the most cached bytes preselected; the download resumes (already-cached files are skipped by `downloadModelFiles`).
-- Re-evaluates when settings change (e.g. user switches to llama-server from the landing → landing unmounts, main UI appears).
+- `cachedModelIds` = per-model `Set<string>` of fully-cached `WEBGPU_MODELS` (each via `cachedModelState`) — not a single gate flag: the landing needs per-model state to label the button of the *selected* model.
+- **Translation models only.** The check iterates `WEBGPU_MODELS` (model-catalog.ts). The Kokoro TTS model (`tts:kokoro` cache key, managed in Settings → Model tab) is **excluded** — it is optional, lazy, and never blocks entry (owner decision 2026-09-30).
+- **Partial cache** → that model is *not cached* → “Download model”; preselect = the model with the most cached bytes; the download resumes (already-cached files are skipped by `downloadModelFiles`).
+- `recheck()` re-runs the cache check — `translation-app.tsx` calls it when Settings closes (e.g. after the user downloaded/cleared a model in Manage models) so the button label updates.
 
-`translation-app.tsx` wraps the existing `AppShell` (header/footer/SettingsDialog) with the gate: `landing` renders `<ModelLanding />` full-screen **instead of** the shell; `ready` renders the shell exactly as today.
+`translation-app.tsx`: in webgpu mode it renders `<ModelLanding />` **always**, then renders the translation block (the former `AppShell` layout: header + TranslationPage + footer, locked to `100vh`) only when `sessionLoaded && cachedModelIds.size > 0`. `sessionLoaded` is in-memory state set by `onLoaded` after warm-up succeeds — **lost on refresh**. When the block appears, the app `scrollIntoView`s down to it; scrolling up reveals the landing's loaded state (intentional — “not discoverable unless you scroll up”). The landing is keyed on `cached/none` so a recheck that flips cache state remounts it fresh.
 
 ## Landing layout (mirrors the reference, our branding)
 
@@ -57,10 +59,10 @@ Weights: <HF repo link> · Built with Transformers.js   ← footer links (i18n)
 
 ## Phases (single component, state machine)
 
-`src/components/model-landing.tsx` — phases `idle → downloading → warming → ready`, plus `error` reachable from `downloading`/`warming`.
+`src/components/model-landing.tsx` — phases `idle → downloading → warming → loaded`, plus `error` reachable from `downloading`/`warming`. (The former `ready` phase is `loaded`: the landing no longer unmounts — it stays on top with a success alert.)
 
 ### 1. idle
-Layout above. Primary button starts the download.
+Layout above. Primary button label: `Checking…` (disabled, cache check in flight) / **`Load model`** (selected model fully cached) / **`Download model (size)`** (not cached). Cached → `startLoad()` (skips the download entirely, warms directly — `downloadModelFiles` is never called); not cached → `start()` (download → warm-up).
 
 ### 2. downloading
 - Primary button → disabled `Downloading…` (label i18n).
@@ -78,16 +80,16 @@ After the last file lands, the landing does NOT exit — it warms up in place:
 - VRAM note: the pipeline stays resident after `ready` — intended (that's the point: first translation is instant). Co-residency with the later Kokoro TTS load was verified in #23 (no OOM).
 - **error** phase here too (shader-compile/load failure): message + `Retry` (files are cached — retry re-runs only the load).
 
-### 4. ready
-`onReady()` → the gate flips to `ready` → main UI. No persistence key needed — "ready" is re-derived from the cache on every load (a few hundred ms).
+### 4. loaded
+`onLoaded()` → the translation block renders **below** the landing (the landing itself stays, button back to idle). A success alert (`landing.ready`) shows on the landing. No persistence key — cached state is re-derived from the cache on every load (a few hundred ms); the session-load flag is memory-only (refresh → landing-only again).
 
 ## Files
 
 | File | Change |
 |------|--------|
-| `src/components/model-landing.tsx` | **new** — landing (all phases) |
-| `src/hooks/use-model-ready.ts` | **new** — gate hook |
-| `src/components/translation-app.tsx` | wrap shell with the gate |
+| `src/components/model-landing.tsx` | landing (all phases; `loaded` phase; cached → Load button, `startLoad` skips download) |
+| `src/hooks/use-model-ready.ts` | per-model `cachedModelIds` + `preselectModelId` + `recheck()` (2026-10-01: no more 3-state gate) |
+| `src/components/translation-app.tsx` | landing always on top; translation block below after in-session load; scroll-down on appear; `recheck()` on Settings close |
 | `src/lib/providers/webgpu.ts` | export `warmUpWebGpuModel` (1-line wrapper) |
 | `src/lib/i18n/translations.ts` | new keys × 4 locales (en/zh-TW/ja/ko) |
 | `AGENTS.md` | rule 2 amended (see below) |
@@ -97,27 +99,30 @@ After the last file lands, the landing does NOT exit — it warms up in place:
 
 "The only download entry point is the Settings → Manage models dialog" becomes:
 
-> **Never download a model implicitly.** Every download is user-initiated, via exactly two entry points: (a) the first-run **model landing** (the primary path — full-screen gate shown when no WebGPU translation model is fully cached), and (b) Settings → **Manage models** (manage/switch/delete/resume). Both share the same core (`model-cache.ts`, streaming + cancellable + partial-cache-aware). The TTS model is excluded from the landing gate (optional, managed in Settings). The inference path gates on a verified-complete cache and throws a clear "download it first" error when incomplete; `from_pretrained` (which silently fetches missing files from HF) only ever runs on a complete cache.
+> **Never download a model implicitly.** Every download is user-initiated, via exactly two entry points: (a) the **model landing** — a **permanent top block in webgpu mode** (always visible, the gradient title never collapses; button reads *Load model* when the selected model is fully cached / *Download model* otherwise; the translation block renders below it only after in-session load, memory-only, refresh resets; the TTS model is excluded, it's optional and managed in Settings), and (b) Settings → **Manage models** (manage/switch/delete/resume). Both share the same core (`model-cache.ts`, streaming + cancellable + partial-cache-aware). The inference path gates on a verified-complete cache and throws a clear "download it first" error when incomplete; `from_pretrained` (which silently fetches missing files from HF) only ever runs on a complete cache.
 
 ## Edge cases
 
-1. **Refresh mid-download** → landing reappears, preselects the partially-cached model, resume (cached files skipped).
+1. **Refresh mid-download** → landing reappears (it always does), preselects the partially-cached model, “Download model”, resume (cached files skipped).
 2. **WebGPU unsupported / non-secure context** → download button disabled + message; llama-server path highlighted.
 3. **llama-server configured** → no landing, ever (until backend switched back to webgpu with no cache).
 4. **Download fails (network)** → error phase, Retry, partial cache preserved.
 5. **Warm-up fails** → error phase, Retry (load only).
 6. **User picks the 4B model on the landing** → button/size/cards update; the 4B warm-up can take much longer — the indeterminate phase must not look frozen (status line from `loadPipeline`'s `onStatus`).
-7. **Second visit, model cached** → landing never appears (gate = `ready` after the cache check).
-8. **StrictMode double-effect** — the gate's cache check is idempotent; the download is user-initiated (button click), not effect-driven, so double-mount can't start two downloads.
-9. **Dev vs production DOM** — verify with Playwright on the `build:export` output (dev ghost nodes), per rule 5; functional WebGPU check in the owner's real browser.
+7. **Second visit, model cached** → landing appears with **Load model** (warm-up only, no download); the translation block appears after the click.
+8. **Refresh after a successful load** → landing-only again (session-load is memory-only) — intentional; the owner re-clicks Load (warm pipeline still resident in the module-scope `pipelines` Map, so the second warm-up is fast).
+9. **StrictMode double-effect** — the cache check is idempotent; the download/load is user-initiated (button click), not effect-driven, so double-mount can't start two downloads.
+10. **Dev vs production DOM** — verify with Playwright on the `build:export` output (dev ghost nodes), per rule 5; functional WebGPU check in the owner's real browser.
+11. **Cached model + user expects the file list** — the per-file list only renders in the `downloading` phase; `Load model` goes straight to `warming` (one indeterminate bar + status line). Owner confusion 2026-10-01: “only one progress bar” = the warming phase of an already-cached model, not a regression — the download-phase file list is byte-identical to the pre-change version and was re-verified 7/7 (headless, spoofed WebGPU).
 
 ## DoD
 
 - [x] First run (no cache, webgpu backend): landing shows; tagline/title/cards/both secondary buttons render in all 4 locales + both themes (Playwright A1–A9, D, E)
-- [ ] Download: per-file rows track correctly (incl. instant-skip of cached files), speed + ETA sane, cancel works, resume after refresh works — **pending owner's real browser** (1.3 GB download not feasible headless)
-- [ ] Warm-up: runs in place after download, main UI appears only after load succeeds; first translation reuses the warm pipeline (no second load) — **pending owner's real browser**
-- [x] Gate: llama-server backend → no landing (G1); cached model → no landing (F1–F3); TTS model state never affects the gate
+- [ ] Download: per-file rows track correctly (incl. instant-skip of cached files), speed + ETA sane, cancel works, resume after refresh works — headless 7/7 file list + cancel verified under a spoofed WebGPU (2026-10-01); full-speed/ETA pass **pending owner's real browser** (1.3 GB download not feasible headless)
+- [ ] Warm-up: runs in place after download, translation block appears below only after load succeeds; first translation reuses the warm pipeline (no second load) — **pending owner's real browser**
+- [x] Landing visibility: webgpu → landing always on top; llama-server → no landing; TTS model state never affects it
+- [x] Permanent block (2026-10-01): Playwright on the production export — 8/8 (landing renders on refresh; translation block hidden pre-load; WebGPU-unsupported state correct) + seeded-cache 4/4 (cached model → “Load model” label); per-file download list re-verified 7/7 (spoofed `navigator.gpu` init-script, real HF file list, partial download, cancel)
 - [x] WebGPU-unsupported + non-secure-context states render the disabled-download message (A8)
 - [x] `build:export` clean; wasm check unchanged (no new runtime deps)
 - [x] Playwright regression on the production export (landing visible with empty cache; hidden with seeded cache) — 29/29
-- [ ] Owner's real browser: full idle → download → warm → translate pass (Metal 3)
+- [ ] Owner's real browser: full idle → load (cached + uncached) → block-below → translate pass (Metal 3)

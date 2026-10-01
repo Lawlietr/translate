@@ -26,11 +26,13 @@ import {
 } from "../lib/model-catalog";
 import { warmUpWebGpuModel } from "../lib/providers/webgpu";
 
-type Phase = "idle" | "downloading" | "warming" | "error";
+type Phase = "idle" | "downloading" | "warming" | "loaded" | "error";
 
 interface ModelLandingProps {
+  checking: boolean;
+  cachedModelIds: Set<string>;
   preselectModelId: string;
-  onReady: () => void;
+  onLoaded: () => void;
   onUseLlamaServer: () => void;
 }
 
@@ -55,16 +57,16 @@ function isAbort(e: unknown): boolean {
 }
 
 export function ModelLanding({
+  checking,
+  cachedModelIds,
   preselectModelId,
-  onReady,
+  onLoaded,
   onUseLlamaServer,
 }: ModelLandingProps) {
   const { t } = useI18n();
   const gpu = useWebGpu();
   const { mode } = useThemeMode();
-  const [modelId, setModelId] = useState(() =>
-    getModelInfo(preselectModelId) ? preselectModelId : DEFAULT_WEBGPU_MODEL
-  );
+  const [userModelId, setUserModelId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [files, setFiles] = useState<ModelFile[]>([]);
@@ -76,8 +78,14 @@ export function ModelLanding({
   const [errorFrom, setErrorFrom] = useState<"downloading" | "warming">("downloading");
   const abortRef = useRef<AbortController | null>(null);
 
+  const modelId = userModelId ?? (getModelInfo(preselectModelId) ? preselectModelId : DEFAULT_WEBGPU_MODEL);
   const model = getModelInfo(modelId);
   const gpuAvailable = gpu.supported && gpu.secureContext;
+  const isCached = !checking && cachedModelIds.has(modelId);
+  const titleGradient =
+    mode === "dark"
+      ? "linear-gradient(90deg, #ff6b57, #ffd9a0, #7ed9a2)"
+      : "linear-gradient(90deg, #d64530, #b97a1e, #1f8a55)";
 
   const rows = useMemo(() => {
     let cum = 0;
@@ -108,8 +116,24 @@ export function ModelLanding({
     setPhase("warming");
     await warmUpWebGpuModel(modelId, (s) => setStatusLine(s));
     if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-    onReady();
-  }, [modelId, onReady]);
+    setPhase("loaded");
+    onLoaded();
+  }, [modelId, onLoaded]);
+
+  const startLoad = useCallback(async () => {
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setError("");
+    setStatusLine("");
+    try {
+      await startWarm(controller.signal);
+    } catch (e) {
+      if (isAbort(e)) return;
+      setError(e instanceof Error ? e.message : String(e));
+      setErrorFrom("warming");
+      setPhase("error");
+    }
+  }, [startWarm]);
 
   const start = useCallback(async () => {
     const controller = new AbortController();
@@ -159,22 +183,12 @@ export function ModelLanding({
   }, [modelId, startWarm]);
 
   const retry = useCallback(async () => {
-    const controller = new AbortController();
-    abortRef.current = controller;
-    setError("");
     if (errorFrom === "warming") {
-      try {
-        await startWarm();
-      } catch (e) {
-        if (isAbort(e)) return;
-        setError(e instanceof Error ? e.message : String(e));
-        setErrorFrom("warming");
-        setPhase("error");
-      }
+      await startLoad();
     } else {
       await start();
     }
-  }, [errorFrom, start, startWarm]);
+  }, [errorFrom, start, startLoad]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -199,10 +213,7 @@ export function ModelLanding({
             fontSize: { xs: "3.5rem", sm: "5rem" },
             fontWeight: 800,
             lineHeight: 1.05,
-            backgroundImage:
-              mode === "dark"
-                ? "linear-gradient(90deg, #ff6b57, #ffd9a0, #7ed9a2)"
-                : "linear-gradient(90deg, #d64530, #b97a1e, #1f8a55)",
+            backgroundImage: titleGradient,
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
             color: "transparent",
@@ -231,11 +242,15 @@ export function ModelLanding({
               <Button
                 variant="contained"
                 size="large"
-                disabled={!gpuAvailable || gpu.checking}
-                onClick={start}
+                disabled={checking || !gpuAvailable || gpu.checking}
+                onClick={isCached ? startLoad : start}
                 sx={{ px: 6, py: 1.5, textTransform: "none", fontWeight: 600 }}
               >
-                {t("landing.download", { size: formatBytes(model.sizeBytes) })}
+                {checking
+                  ? t("landing.checking")
+                  : isCached
+                    ? t("landing.load")
+                    : t("landing.download", { size: formatBytes(model.sizeBytes) })}
               </Button>
               <Box className="flex items-center gap-4">
                 <Button
@@ -263,7 +278,7 @@ export function ModelLanding({
                       key={m.id}
                       fullWidth
                       onClick={() => {
-                        setModelId(m.id);
+                        setUserModelId(m.id);
                         setPickerOpen(false);
                       }}
                       sx={{
@@ -324,11 +339,26 @@ export function ModelLanding({
                             : ""}
                       </Typography>
                     </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={Math.round(r.pct * 100)}
-                      sx={{ height: 3, borderRadius: 2, mt: 0.25, opacity: r.state === "pending" ? 0.25 : 1 }}
-                    />
+                    <Box
+                      sx={{
+                        height: 3,
+                        borderRadius: 2,
+                        mt: 0.25,
+                        bgcolor: "divider",
+                        opacity: r.state === "pending" ? 0.25 : 1,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: `${Math.round(r.pct * 100)}%`,
+                          height: "100%",
+                          borderRadius: 2,
+                          backgroundImage: titleGradient,
+                          transition: "width 0.2s linear",
+                        }}
+                      />
+                    </Box>
                   </Box>
                 ))}
                 <Button size="small" onClick={cancel} sx={{ textTransform: "none", alignSelf: "center" }}>
@@ -353,6 +383,12 @@ export function ModelLanding({
               )}
               <LinearProgress variant="indeterminate" sx={{ width: "100%", height: 4, borderRadius: 2 }} />
             </Box>
+          )}
+
+          {phase === "loaded" && (
+            <Alert severity="success" sx={{ width: "100%" }}>
+              {t("landing.ready")}
+            </Alert>
           )}
 
           {phase === "error" && (
