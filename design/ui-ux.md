@@ -110,6 +110,22 @@ Modeled on `Mako987/MiniCPM5-2B-WebGPU-Chat` (same reference as the landing layo
 - **Info cards (Model/Size/Privacy)**: no shadow-based elevation in dark — surface lift via `rgba(255,255,255,0.04)` bg + 1px `divider` border (same surface-elevation approach as the reference's `#16191c`-on-`#0f1113`); light theme uses `rgba(255,255,255,0.7)` + faint shadow `0 1px 3px rgba(0,0,0,0.08)` (white has no "one step lighter"). `borderRadius` 14 px (reference's `--radius` token). Card VALUES in `monospace` (matches the download progress list). The **Privacy card value** ("100% local") is the only accent-colored card text: dark `#7ed9a2` / light `#1f8a55` (title-gradient green endpoint).
 - Deliberately NOT done: hover-lift on the cards (they are non-interactive), per-card accent hairlines (over-decorated next to the reference's restraint).
 
+### Floating glyphs (drifting script background) — planned (owner decision 2026-10-02)
+
+Inspired by `index-translate.bilibili.com` (bilibili's Index-Translate model page) — a “floating glyphs / ambient typography” background: script characters drifting slowly behind the content. **Spec only — not implemented.**
+
+- **Scope (owner decision):** the **landing block only** — NOT the translation workspace. The input/output columns are for focused reading; even near-invisible background motion would compete with long-translation readability.
+- **The existing static glow stays UNCHANGED** — only the glyphs layer is added (minimal change, keeps the current visual language). The reference's animated aurora blobs are out of scope for v1.
+- **Placement:** `absolute` inside the landing root (NOT `position: fixed` — the reference's fixed layer spans its whole page, but our landing is a top block in document flow ABOVE the translation block; fixed would make the glyphs show through behind the workspace). `inset: 0` + `overflow: hidden` + `pointer-events: none`, z-index below the landing content.
+- **Glyph set (our differentiator vs the reference):** glyphs come **only from the scripts of the 8 languages the app actually translates** (en/zh-TW/zh-CN/ja/ko/fr/de/es) — the reference uses a generic world set (Arabic/Cyrillic/Devanagari) our models don't translate. ~8–12 spans; candidate set `ß é ñ 文 译 あ 한` plus a few more Latin (final list is an implementation design choice; deliberate option: both 譯 and 译 — the traditional/simplified pair the app translates between).
+- **Mechanics (port of the reference's proven pattern):** each span positioned with **deterministic** modular arithmetic (e.g. `left = 5 + (i×83) % 90 %`, `top = 8 + (i×137) % 82 %` — **no `Math.random()`**, so SSR HTML matches the client: no hydration mismatch, no pop-in). Font sizes 30–80 px, per-glyph duration 11–18 s, **negative** `animation-delay` (i × 1.7 s) so every glyph is mid-motion on load.
+- **Animation:** one `@keyframes` — `translateY(-26px) rotate(3deg)`, `ease-in-out infinite alternate`. The “some glyphs look static, some drift” appearance is NOT two behaviors: `alternate` + ease-in-out rests each glyph at its endpoints, and with staggered delays/durations some glyphs are always at rest while others move mid-cycle.
+- **Color:** cycle the three title-gradient endpoints per glyph (coral → sand → green) at low alpha — dark ≈ `0.07–0.09`, light ≈ `0.10` with the darker stops (same “darker, more subtle” rule as the glow above). Exact values tuned via screenshots (dark + light).
+- **`prefers-reduced-motion`:** media query kills the animation — glyphs stay at their static positions. The reference does NOT do this; we do.
+- **Performance:** transform-only animation → compositor-only (no layout/paint), ~12 spans — negligible, zero impact on WebGPU inference. No new dependencies. No i18n keys (no text).
+- **Verification:** Playwright on the production export — glyphs layer renders the expected span count in both themes; clicks land on content through glyph positions (pointer-events none); `prefers-reduced-motion` emulation → static.
+- **Files (expected, at implementation time):** `model-landing.tsx` (or a small dedicated `landing-glyphs.tsx`) + the keyframes in the landing's CSS — decided at implementation.
+
 ## History drawer (TODO #27, owner spec 2026-09-28)
 
 **Implemented 2026-09-29** — full design in design/history.md (decisions A–F, store, pitfalls).
