@@ -19,3 +19,24 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+.landing-glyph {
+  position: absolute;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+  will-change: transform;
+  animation: glyph-floaty 14s ease-in-out infinite alternate;
+}
+
+@keyframes glyph-floaty {
+  to {
+    transform: translateY(-26px) rotate(3deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-glyph {
+    animation: none;
+  }
+}

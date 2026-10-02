@@ -12,6 +12,7 @@ import {
 import { useI18n } from "../hooks/useI18n";
 import { useWebGpu } from "../hooks/use-webgpu";
 import { useThemeMode } from "../hooks/use-theme";
+import { LandingGlyphs } from "./landing-glyphs";
 import {
   downloadModelFiles,
   formatBytes,
@@ -223,7 +224,7 @@ export function ModelLanding({
 
   return (
     <Box
-      className="h-screen flex flex-col items-center justify-center overflow-y-auto px-4 py-8"
+      className="relative h-screen flex flex-col items-center justify-center overflow-y-auto px-4 py-8"
       sx={{
         background:
           mode === "dark"
@@ -237,7 +238,8 @@ export function ModelLanding({
               ].join(", "),
       }}
     >
-      <Box className="w-full max-w-xl flex flex-col items-center gap-5 text-center">
+      <LandingGlyphs />
+      <Box className="relative z-10 w-full max-w-xl flex flex-col items-center gap-5 text-center">
         <Typography
           variant="body2"
           sx={{ letterSpacing: "0.25em", textTransform: "uppercase", color: "text.secondary" }}
