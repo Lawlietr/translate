@@ -72,7 +72,7 @@ WebGPU OOM is **device loss — fatal for the whole page's GPU context, not a ca
 
 Settings location: Model tab, a new "Memory mode" control (default `resident`). UI shows honest phase labels in swap mode: *Loading vision model → Recognizing (3/10) → Loading translation model → Translating*.
 
-**V1 ships resident-only (2026-10-02 implementation):** the pipeline cache (`Map` in `providers/vision.ts`) keeps the loaded VLM session for the session — same memory-only, refresh-resets behavior as the translation model. Swap is deferred until the A/B's VRAM co-residency + reload-cycle numbers decide whether it's needed (§below); if resident works on the owner's machine it may never ship.
+**V1 ships resident-only (2026-10-02 implementation):** the pipeline cache (`Map` in `providers/vision.ts`) keeps the loaded VLM session for the session — same memory-only, refresh-resets behavior as the translation model. **Co-residency validated 2026-10-02 on the owner's M1 16 GB (both models resident, normal operation — §A/B results).** Swap is deferred (optional P3 for low-VRAM dGPU machines); the reload-cycle measurement only matters if it ships.
 
 ## Integration points (port map — as implemented 2026-10-02)
 
@@ -97,6 +97,12 @@ Unchanged: wasm footprint (4.2.0 stays pinned → no new wasm → CF 25 MiB cap 
 3. **Unload → reload cycle time** — full dispose + `from_pretrained` (from complete cache) of Hy-MT2: H2D + shader recompilation wall time. Sets the real cost number for swap mode.
 
 **Branches:** ① poor CJK → route B (PP-OCR ONNX, ~10–20 MB, trivially co-resident) becomes the plan. ② resident OOMs → swap is V1-required. ③ reload cycle in minutes → swap UX gets batch-only + strong warning, or route B again.
+
+### A/B results (2026-10-02 — owner's MacBook Pro M1 16 GB, real browser)
+
+- **② VRAM co-residency: ✅ PASS.** Hy-MT2-1.8B (q4f16) + LFM2.5-VL-450M both resident in one session — image recognize + translate working normally, no device loss. **Resident mode is the validated default; swap is NOT V1-required** (stays optional P3 for low-VRAM dGPU machines — M1 16 GB unified memory is not the worst case).
+- **① CJK quality: PARTIAL — promising.** 11-char zh-TW clean screenshot: 450M misread **1 of 11** characters; the translation model **self-repaired from context** → output English was correct. Behavior to keep in mind: the **source_text box shows the misread** (by design — it exposes recognition errors), the translation box is robust to small OCR errors. Don't copy source_text as ground-truth OCR. Still untested: blurry/low-light photos, dense documents, ja/ko, mixed scripts; optional 3B comparison on the same 11-char image (11/11 vs 10/11 decides whether 3.7 GiB buys anything).
+- **③ Reload cycle:** moot until/if swap ships for low-VRAM machines.
 
 ## Out of scope (deliberately dropped, owner 2026-10-02)
 
