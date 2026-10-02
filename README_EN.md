@@ -15,6 +15,8 @@ On first use, download a model from Settings → Inference (~1.38 GB or 3.11 GB)
 ## Features
 
 - **Local WebGPU inference** — two selectable models, fully offline once downloaded
+- **Image translation** — upload an image (JPG/PNG/WebP); a vision model (VLM) reads and translates the text in one inference; the recognition and the translation land in the input/output boxes (history and read-aloud come free); the vision model is optional (downloaded in Settings), no camera/video
+- **Text-to-speech (TTS)** — on-demand read-aloud via speaker icons (never automatic), with local Kokoro-82M (ONNX, WebGPU) or the device's built-in voices; English prefers Kokoro, other languages use device voices; audio never leaves the device
 - **Multilingual** — UI: Traditional Chinese / English / Japanese / Korean; translation: EN, zh-TW, zh-CN, JA, KO, FR, DE, ES
 - **Translation history** — local localStorage only, left drawer with 100 entries, single/multi/clear-all deletion, click-to-restore, recording can be disabled in Settings
 - **Custom llama-server** — point an OpenAI-compatible endpoint in Settings to translate via your own server (optional)
@@ -25,10 +27,13 @@ On first use, download a model from Settings → Inference (~1.38 GB or 3.11 GB)
 
 | Model | Size | Notes |
 |-------|------|-------|
-| Hy-MT2 1.8B (Q4F16) | ~1.38 GB | Default, smooth even on modest GPUs |
-| TranslateGemma 4B (Q4) | ~3.11 GB | Stronger, better on newer GPUs |
+| Hy-MT2 1.8B (Q4F16) | ~1.38 GB | Default translation model, smooth even on modest GPUs |
+| TranslateGemma 4B (Q4) | ~3.11 GB | Stronger translation model, better on newer GPUs |
+| LFM2.5-VL-450M | ~0.77 GB | Optional: vision model for image translation (default) |
+| LFM2.5-VL-3B | ~3.72 GB | Optional: higher-tier vision model for image translation |
+| Kokoro-82M (fp32) | ~0.33 GB | Optional: TTS read-aloud model |
 
-Models are downloaded **only from Settings (Inference tab)** (Hugging Face, user-initiated); downloads show progress and can be cancelled at any time. Files are stored in the browser's Cache API — no re-download after reopening a tab.
+Translation models can be downloaded from the **model block at the top of the home screen** (first use) or **Settings → Model tab** (Hugging Face, always user-initiated); the vision and TTS models are optional and managed in Settings only. Downloads show progress and can be cancelled at any time. Files are stored in the browser's Cache API — no re-download after reopening a tab.
 
 ## Docker Deployment
 

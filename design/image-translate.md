@@ -1,6 +1,6 @@
 # Image translation — upload an image → VLM reads + translates
 
-**Status: IMPLEMENTED on DEV (2026-10-02). Owner A/B pending — deploy gated on it** (§A/B plan is the next step). Container verification covered build + Settings UI on the production export (Playwright); the vision inference path itself is owner-browser-only (SwiftShader too slow, rule 5).
+**Status: IMPLEMENTED + DEPLOYED (2026-10-02, all 4 targets).** Owner A/B: ② VRAM co-residency PASS (M1 16 GB), ① zh-TW 10/11 + translation self-repair (promising; remaining samples non-blocking) — §A/B results. Container verification covered build + Settings UI on the production export (Playwright); the vision inference path itself is owner-browser-only (SwiftShader too slow, rule 5).
 
 **Scope (owner 2026-10-02, reduced from the camera proposal):** image UPLOAD only (file picker + drag-drop). **No camera, no `getUserMedia`, no live AR overlay, no video files** — all of those were explicitly dropped. Reference: Google Translate's photo/Lens *photo mode* only.
 
@@ -103,6 +103,10 @@ Unchanged: wasm footprint (4.2.0 stays pinned → no new wasm → CF 25 MiB cap 
 - **② VRAM co-residency: ✅ PASS.** Hy-MT2-1.8B (q4f16) + LFM2.5-VL-450M both resident in one session — image recognize + translate working normally, no device loss. **Resident mode is the validated default; swap is NOT V1-required** (stays optional P3 for low-VRAM dGPU machines — M1 16 GB unified memory is not the worst case).
 - **① CJK quality: PARTIAL — promising.** 11-char zh-TW clean screenshot: 450M misread **1 of 11** characters; the translation model **self-repaired from context** → output English was correct. Behavior to keep in mind: the **source_text box shows the misread** (by design — it exposes recognition errors), the translation box is robust to small OCR errors. Don't copy source_text as ground-truth OCR. Still untested: blurry/low-light photos, dense documents, ja/ko, mixed scripts; optional 3B comparison on the same 11-char image (11/11 vs 10/11 decides whether 3.7 GiB buys anything).
 - **③ Reload cycle:** moot until/if swap ships for low-VRAM machines.
+
+**Decision (2026-10-02):** ② PASSED → resident (dual-resident) is the working default; swap (V2) stays **P3**, needed only if a low-VRAM dedicated-GPU device fails co-residency. ① remaining samples (fuzzy/angled photo, ja or ko, optional 3B comparison) — non-blocking for deploy.
+
+**Deployed 2026-10-02 (owner release)** — all 4 targets: CF PROD (`translate.avpclub.eu.org`, new vision chunk verified live), HF Space (new chunk 200 + updated Space README), GH Pages + Docker image (via `main` push → GHA, amd64+arm64 → GHCR + Codeberg + GitHub Release).
 
 ## Out of scope (deliberately dropped, owner 2026-10-02)
 
