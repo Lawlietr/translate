@@ -4,7 +4,9 @@
 
 ### P0
 
-_(none — #23 TTS done 2026-09-30, see Completed)_
+| # | Task |
+|---|------|
+| 30 | **Image translation — upload image → VLM reads + translates** (owner scope 2026-10-02; NO camera / live AR / video): port **LFM2.5-VL-450M** (808,759,577 B) + **LFM2.5-VL-3B** (3,999,475,483 B) ONNX from `what-do-you-see` (same 4.2.0 vision stack; sizes re-verified live from HF 2026-10-02); two-part result `{source_text, translation}` → output box (history + TTS free); memory mode resident (default) / swap (batched) — WebGPU OOM = fatal device loss, explicit switch; optional models, Settings → Manage models; **gated on owner A/B: CJK quality, VRAM co-residency, reload cycle** — design/image-translate.md |
 
 ### P2
 
