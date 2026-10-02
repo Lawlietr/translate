@@ -9,7 +9,7 @@ export interface ModelInfo {
 }
 
 export interface WebGpuModelInfo extends ModelInfo {
-  dtype: DataType;
+  dtype: DataType | Record<string, DataType>;
   filePatterns: string[];
   hidden?: boolean;
 }
@@ -31,6 +31,45 @@ const TRANSLATEGEMMA_FILE_PATTERNS = [
   "^tokenizer_config\\.json$",
   "^chat_template\\.jinja$",
 ];
+
+const LFM2_5_VL_DTYPES: Record<string, DataType> = {
+  vision_encoder: "fp16",
+  embed_tokens: "fp16",
+  decoder_model_merged: "q4",
+};
+
+const LFM2_5_VL_FILE_PATTERNS = [
+  "^onnx/embed_tokens_fp16\\.onnx(_data(_\\d+)?)?$",
+  "^onnx/vision_encoder_fp16\\.onnx(_data(_\\d+)?)?$",
+  "^onnx/decoder_model_merged_q4\\.onnx(_data(_\\d+)?)?$",
+  "\\.json$",
+  "\\.jinja$",
+];
+
+export const VISION_MODELS: WebGpuModelInfo[] = [
+  {
+    id: "LiquidAI/LFM2.5-VL-450M-ONNX",
+    name: "LFM2.5-VL-450M (fp16 encoder + Q4 decoder)",
+    format: "ONNX",
+    sizeBytes: 808_759_577,
+    source: "huggingface.co (Hugging Face CDN)",
+    dtype: LFM2_5_VL_DTYPES,
+    filePatterns: LFM2_5_VL_FILE_PATTERNS,
+  },
+  {
+    id: "LiquidAI/LFM2.5-VL-3B-ONNX",
+    name: "LFM2.5-VL-3B (fp16 encoder + Q4 decoder)",
+    format: "ONNX",
+    sizeBytes: 3_999_475_483,
+    source: "huggingface.co (Hugging Face CDN)",
+    dtype: LFM2_5_VL_DTYPES,
+    filePatterns: LFM2_5_VL_FILE_PATTERNS,
+  },
+];
+
+export const VISIBLE_VISION_MODELS = VISION_MODELS.filter((m) => !m.hidden);
+
+export const DEFAULT_VISION_MODEL = "LiquidAI/LFM2.5-VL-450M-ONNX";
 
 export const WEBGPU_MODELS: WebGpuModelInfo[] = [
   {
@@ -58,5 +97,5 @@ export const VISIBLE_WEBGPU_MODELS = WEBGPU_MODELS.filter((m) => !m.hidden);
 export const DEFAULT_WEBGPU_MODEL = "LunarOilRig/Hy-MT2-1.8B-ONNX-q4f16-mirror";
 
 export function getModelInfo(modelId: string): WebGpuModelInfo | undefined {
-  return WEBGPU_MODELS.find((m) => m.id === modelId);
+  return WEBGPU_MODELS.find((m) => m.id === modelId) ?? VISION_MODELS.find((m) => m.id === modelId);
 }

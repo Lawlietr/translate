@@ -14,8 +14,10 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import HistoryIcon from "@mui/icons-material/History";
+import ImageIcon from "@mui/icons-material/Image";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { CopyButton } from "./copy-button";
 import { HistoryPanel } from "./history-panel";
@@ -37,7 +39,9 @@ import { useWorkspace } from "../hooks/use-workspace";
 import { getModelInfo, VISIBLE_WEBGPU_MODELS } from "../lib/model-catalog";
 import { cachedModelState, formatDuration, type CacheStatus } from "../lib/model-cache";
 import { getProviderOrThrow } from "../lib/providers/registry";
+import { translateImage } from "../lib/providers/vision";
 import type { ProviderConfig } from "../lib/providers/types";
+import { IMAGE_ACCEPT } from "../lib/image-compress";
 import { ActivityLogPanel } from "./activity-log-panel";
 
 type Phase = "idle" | "translating";
@@ -53,6 +57,7 @@ function errorHint(
   t: (key: keyof Messages, vars?: Record<string, string | number>) => string
 ): string | null {
   const msg = message.toLowerCase();
+  if (msg.includes("vision model")) return t("hint.visionNotDownloaded");
   if (msg.includes("no usable webgpu device")) return t("hint.noDevice");
   if (msg.includes("secure context") || msg.includes("only available in a secure"))
     return t("hint.secureContext");
@@ -87,11 +92,17 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   const [elapsed, setElapsed] = useState(0);
   const [lastDuration, setLastDuration] = useState(0);
   const [cache, setCache] = useState<CacheStatus | null>(null);
+  const [visionCache, setVisionCache] = useState<CacheStatus | null>(null);
+  const [image, setImage] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageBusy, setImageBusy] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const acRef = useRef<AbortController | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   const translating = phase === "translating";
+  const busy = translating || imageBusy;
 
   useEffect(() => {
     if (!webgpuBackend) return;
@@ -105,10 +116,26 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
   }, [modelId, settingsOpen, webgpuBackend]);
 
   useEffect(() => {
-    if (!translating || startedAt == null) return;
+    if (!webgpuBackend) return;
+    let active = true;
+    void cachedModelState(settings.visionModelId).then((s) => {
+      if (active) setVisionCache(s);
+    });
+    return () => {
+      active = false;
+    };
+  }, [settings.visionModelId, settingsOpen, webgpuBackend]);
+
+  useEffect(() => {
+    if (!busy || startedAt == null) return;
     const timer = setInterval(() => setElapsed((Date.now() - startedAt) / 1000), 500);
     return () => clearInterval(timer);
-  }, [translating, startedAt]);
+  }, [busy, startedAt]);
+
+  useEffect(() => {
+    if (!imageUrl) return;
+    return () => URL.revokeObjectURL(imageUrl);
+  }, [imageUrl]);
 
   useEffect(() => () => acRef.current?.abort(), []);
 
@@ -133,6 +160,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
 
   const startTranslate = () => {
     if (!text.trim()) return;
+    if (imageBusy) return;
     if (webgpuBackend && cache !== null && !cache.cached) {
       setError(t("page.noModelLong"));
       return;
@@ -184,7 +212,89 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
         setStatus("");
         setPhase("idle");
         setStartedAt(null);
+        acRef.current = null;
       });
+  };
+
+  const startImage = (file: File) => {
+    if (acRef.current) return;
+    if (webgpuBackend && visionCache !== null && !visionCache.cached) {
+      setError(t("vision.modelMissing"));
+      return;
+    }
+    setImage(file);
+    setImageUrl(URL.createObjectURL(file));
+    setError(null);
+    setStatus("");
+    const started = Date.now();
+    setStartedAt(started);
+    setElapsed(0);
+    setLastDuration(0);
+    setImageBusy(true);
+    const ac = new AbortController();
+    acRef.current = ac;
+    translateImage(
+      file,
+      {
+        visionModelId: settings.visionModelId,
+        targetLang: settings.defaultTargetLang,
+        onStatus: setStatus,
+      },
+      ac.signal
+    )
+      .then((result) => {
+        workspace.set({ text: result.sourceText, output: result.translation });
+        if (result.sourceText.length <= HISTORY_MAX_INPUT_CHARS) {
+          setHistory(
+            addHistory(
+              {
+                sourceText: result.sourceText,
+                targetText: result.translation,
+                sourceLang: settings.defaultSourceLang,
+                targetLang: settings.defaultTargetLang,
+              },
+              { disabled: settings.historyDisabled }
+            )
+          );
+        }
+      })
+      .catch((e: unknown) => {
+        if (e instanceof DOMException && e.name === "AbortError") {
+          setError(t("page.cancelled"));
+        } else if (e instanceof Error && e.message === "vision-parse-failed") {
+          setError(t("vision.parseFailed"));
+        } else if (
+          e instanceof Error &&
+          (e.message.includes("Failed to load image") ||
+            e.message.toLowerCase().includes("canvas"))
+        ) {
+          setError(t("vision.readFailed"));
+        } else {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+      })
+      .finally(() => {
+        setLastDuration((Date.now() - started) / 1000);
+        setStatus("");
+        setStartedAt(null);
+        setImageBusy(false);
+        acRef.current = null;
+      });
+  };
+
+  const removeImage = () => {
+    if (imageBusy) {
+      acRef.current?.abort();
+      return;
+    }
+    setImage(null);
+    setImageUrl(null);
+  };
+
+  const onImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) startImage(file);
   };
 
   const cancel = () => acRef.current?.abort();
@@ -293,6 +403,30 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
                   }
                 />
               )}
+              {webgpuBackend && (
+                <>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept={IMAGE_ACCEPT}
+                    onChange={onImageFileChange}
+                    aria-label={t("vision.chooseImage")}
+                    style={{ display: "none" }}
+                  />
+                  <Tooltip title={t("vision.button")}>
+                    <IconButton
+                      size="small"
+                      onClick={() => fileRef.current?.click()}
+                      disabled={
+                        busy || gpu.checking || !gpu.secureContext || !gpu.supported
+                      }
+                      aria-label={t("vision.button")}
+                    >
+                      <ImageIcon />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
               <CopyButton value={text} label={t("page.copySource")} />
               <Tooltip title={t("page.clearAria")}>
                 <IconButton size="small" onClick={clear} aria-label={t("page.clearAria")}>
@@ -378,8 +512,44 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
         </Box>
       </Box>
 
+      {image && (
+        <Box
+          className="flex items-center gap-3 border rounded-md px-3 py-2"
+          sx={{ borderColor: "divider" }}
+        >
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt=""
+              className="h-14 w-14 object-cover rounded-sm"
+            />
+          )}
+          <Box className="flex-1 min-w-0">
+            <Typography variant="body2" noWrap>
+              {image.name}
+            </Typography>
+            {imageBusy && status && (
+              <Typography variant="caption" sx={{ opacity: 0.7 }} noWrap>
+                {status}
+              </Typography>
+            )}
+          </Box>
+          <Tooltip title={t("vision.removeImage")}>
+            <span>
+              <IconButton
+                size="small"
+                onClick={removeImage}
+                aria-label={t("vision.removeImage")}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
+      )}
+
       <Box className="flex flex-wrap items-center gap-2">
-        {translating ? (
+        {busy ? (
           <Button
             variant="outlined"
             color="error"
@@ -395,6 +565,7 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
             disabled={
               !text.trim() ||
               !modelReady ||
+              imageBusy ||
               (webgpuBackend && (gpu.checking || !gpu.secureContext || !gpu.supported))
             }
             sx={{ fontSize: "1.25rem", px: 4, py: 1.25 }}
@@ -407,9 +578,9 @@ export function TranslationPage({ onOpenSettings, settingsOpen }: TranslationPag
             {status}
           </Typography>
         )}
-        {(translating || lastDuration > 0) && (
+        {(busy || lastDuration > 0) && (
           <Typography variant="caption" sx={{ opacity: 0.6 }}>
-            {formatDuration(translating ? elapsed : lastDuration, 1)}
+            {formatDuration(busy ? elapsed : lastDuration, 1)}
           </Typography>
         )}
       </Box>

@@ -22,7 +22,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { VISIBLE_WEBGPU_MODELS, getModelInfo } from "../lib/model-catalog";
+import {
+  VISIBLE_VISION_MODELS,
+  VISIBLE_WEBGPU_MODELS,
+  getModelInfo,
+} from "../lib/model-catalog";
 import {
   cachedModelState,
   clearWebGpuModelCache,
@@ -435,7 +439,167 @@ function ModelTab() {
 
       <Divider />
 
+      {settings.backend === "webgpu" && <VisionSettings />}
+
+      {settings.backend === "webgpu" && <Divider />}
+
       <TtsSettings />
+    </Box>
+  );
+}
+
+function VisionSettings() {
+  const { settings, update } = useAppSettings();
+  const { t } = useI18n();
+  const visionId = settings.visionModelId;
+  const model = getModelInfo(visionId) ?? VISIBLE_VISION_MODELS[0];
+  const [cache, setCache] = useState<CacheStatus>({ cached: false, bytes: 0 });
+  const [phase, setPhase] = useState<"idle" | "downloading">("idle");
+  const [progress, setProgress] = useState<DownloadProgress | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [modelError, setModelError] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const downloadAc = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void cachedModelState(visionId).then((s) => {
+      if (active) setCache(s);
+    });
+    return () => {
+      active = false;
+    };
+  }, [visionId]);
+
+  useEffect(() => {
+    return () => downloadAc.current?.abort();
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "downloading" || startedAt == null) return;
+    const timer = setInterval(() => setElapsed((Date.now() - startedAt) / 1000), 500);
+    return () => clearInterval(timer);
+  }, [phase, startedAt]);
+
+  const startDownload = () => {
+    setModelError(null);
+    setProgress(null);
+    setElapsed(0);
+    setStartedAt(Date.now());
+    setPhase("downloading");
+    const ac = new AbortController();
+    downloadAc.current = ac;
+    prefetchModel(visionId, {
+      onProgress: (p) => setProgress(p),
+      signal: ac.signal,
+    })
+      .then(() => {
+        setPhase("idle");
+        setStartedAt(null);
+        setProgress(null);
+        void cachedModelState(visionId).then(setCache);
+      })
+      .catch((e: unknown) => {
+        setPhase("idle");
+        setStartedAt(null);
+        setProgress(null);
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        setModelError(e instanceof Error ? e.message : String(e));
+      });
+  };
+
+  const cancelDownload = () => downloadAc.current?.abort();
+
+  const clearCache = () => {
+    setClearing(true);
+    setModelError(null);
+    clearWebGpuModelCache(visionId)
+      .then(() => cachedModelState(visionId).then(setCache))
+      .catch((e: unknown) =>
+        setModelError(e instanceof Error ? e.message : String(e))
+      )
+      .finally(() => setClearing(false));
+  };
+
+  return (
+    <Box className="flex flex-col gap-2">
+      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+        {t("settings.visionTitle")}
+      </Typography>
+      <Typography variant="caption" sx={{ opacity: 0.6 }}>
+        {t("settings.visionHelper")}
+      </Typography>
+      <Box className="flex flex-wrap items-center gap-2">
+        <Select
+          size="small"
+          value={visionId}
+          onChange={(e) => update({ visionModelId: e.target.value })}
+          sx={{ minWidth: 240 }}
+          disabled={phase === "downloading"}
+          aria-label={t("settings.visionModel")}
+        >
+          {VISIBLE_VISION_MODELS.map((m) => (
+            <MenuItem key={m.id} value={m.id}>
+              {m.name}
+            </MenuItem>
+          ))}
+        </Select>
+        <Typography variant="body1" sx={{ opacity: 0.7 }}>
+          {formatBytes(model.sizeBytes)}
+        </Typography>
+      </Box>
+      {cache.cached ? (
+        <Chip
+          label={t("settings.downloadedChip", { bytes: formatBytes(cache.bytes) })}
+          color="success"
+          size="small"
+        />
+      ) : (
+        <Chip label={t("settings.notDownloadedChip")} size="small" />
+      )}
+      {phase === "downloading" && progress && (
+        <Box className="flex flex-col gap-1">
+          <LinearProgress variant="determinate" value={progress.percent * 100} />
+          <Typography variant="caption" sx={{ opacity: 0.8 }}>
+            {formatBytes(progress.loaded)} / {formatBytes(progress.total)} ·{" "}
+            {formatBytes(progress.speedBps)}/s · {formatDuration(elapsed)}
+          </Typography>
+        </Box>
+      )}
+      <Box className="flex flex-wrap items-center gap-2">
+        {phase === "downloading" ? (
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={cancelDownload}
+            size="small"
+          >
+            {t("settings.cancelDownload")}
+          </Button>
+        ) : (
+          <Button
+            variant="outlined"
+            onClick={startDownload}
+            size="small"
+            disabled={cache.cached}
+          >
+            {cache.cached ? t("settings.downloaded") : t("settings.downloadModel")}
+          </Button>
+        )}
+        {cache.cached && (
+          <Button
+            variant="text"
+            color="warning"
+            onClick={clearCache}
+            size="small"
+            disabled={clearing}
+          >
+            {clearing ? t("settings.clearing") : t("settings.clearCached")}
+          </Button>
+        )}
+      </Box>
+      {modelError && <Alert severity="error">{modelError}</Alert>}
     </Box>
   );
 }

@@ -1,7 +1,6 @@
 # Image translation — upload an image → VLM reads + translates
 
-**Status: PLANNED (owner scope decision 2026-10-02). NOT implemented.**
-Implementation is gated on the owner's A/B validation in the real browser (§A/B plan) + explicit go-ahead.
+**Status: IMPLEMENTED on DEV (2026-10-02). Owner A/B pending — deploy gated on it** (§A/B plan is the next step). Container verification covered build + Settings UI on the production export (Playwright); the vision inference path itself is owner-browser-only (SwiftShader too slow, rule 5).
 
 **Scope (owner 2026-10-02, reduced from the camera proposal):** image UPLOAD only (file picker + drag-drop). **No camera, no `getUserMedia`, no live AR overlay, no video files** — all of those were explicitly dropped. Reference: Google Translate's photo/Lens *photo mode* only.
 
@@ -54,11 +53,11 @@ Template vars `keep_past_thinking` / `preserve_thinking` / `continue_final_messa
 
 ## Pipeline
 
-1. Upload (picker / drag-drop): `image/jpeg|png|webp`
-2. `browser-image-compression` (new npm dep, MIT, canvas-based, **no wasm**): max 3000 px, 0.5 MB, `preserveExif: false` (EXIF = GPS — privacy rule 10) — sibling's `compress.ts` defaults verbatim
-3. `RawImage.from_blob` → processor → generate (single forward, non-autoregressive vision encoder + autoregressive decoder)
-4. Decode → parse `{source_text, translation}`
-5. `translation` goes into the **existing output box** → translation history and TTS read-aloud come for free (it's just text)
+1. Upload (picker): `image/jpeg|png|webp` — **V1 = picker only** (drag-drop deferred, minor)
+2. `browser-image-compression` (npm dep, MIT, canvas-based, **no wasm**): max 3000 px, 0.5 MB, `preserveExif: false` (EXIF = GPS — privacy rule 10). **Difference from the sibling:** translate ALWAYS runs the file through the compressor (the sibling skipped small files) — EXIF must be stripped from every image, not only the big ones
+3. `RawImage.fromCanvas` (draw the compressed blob onto a canvas — the sibling's exact `loadImage` path; NOT `from_blob`) → processor → generate (single forward, non-autoregressive vision encoder + autoregressive decoder)
+4. Decode → parse `{source_text, translation}` (resilient JSON extractor: fenced block → first `{...}` span → whole output; fallback keys `text`/`translated`; unparseable → `vision-parse-failed` error, not a garbage result)
+5. `source_text` → **input box**, `translation` → **output box** (via the existing workspace context) → translation history (respecting `historyDisabled` + the char cap) and TTS read-aloud come for free (it's just text)
 
 ## Memory modes (OOM strategy)
 
@@ -73,24 +72,25 @@ WebGPU OOM is **device loss — fatal for the whole page's GPU context, not a ca
 
 Settings location: Model tab, a new "Memory mode" control (default `resident`). UI shows honest phase labels in swap mode: *Loading vision model → Recognizing (3/10) → Loading translation model → Translating*.
 
-**Whether swap is even needed is an A/B outcome** (§below). If resident works on the owner's machine, V1 ships resident-only and swap is P2.
+**V1 ships resident-only (2026-10-02 implementation):** the pipeline cache (`Map` in `providers/vision.ts`) keeps the loaded VLM session for the session — same memory-only, refresh-resets behavior as the translation model. Swap is deferred until the A/B's VRAM co-residency + reload-cycle numbers decide whether it's needed (§below); if resident works on the owner's machine it may never ship.
 
-## Integration points (port map)
+## Integration points (port map — as implemented 2026-10-02)
 
-| New in translate | Modeled on (sibling) |
-|------------------|----------------------|
-| `src/lib/model-catalog.ts` — 2 vision entries (dtype map + `filePatterns` copied — same file sets) | `model-catalog.ts` `LFM2_5_VL_*` consts |
-| `src/lib/providers/vision.ts` — `loadPipeline` (cache-gated `from_pretrained`, pipeline cache Map), `analyzeImage` (messages → template → processor → generate → decode) | `providers/webgpu.ts` |
-| prompt profile module (per-model, English, two-part JSON) | `providers/system-prompt.ts` pattern |
-| image compress helper | `compress.ts` |
-| upload panel + preview + two-part result component | `PhotoUpload.tsx` patterns |
-| Settings → Manage models: vision models list | existing TTS model management |
+| File | What it is |
+|------|------------|
+| `src/lib/model-catalog.ts` | 2 entries in `VISION_MODELS` (dtype map + `filePatterns` copied from the sibling — same file sets) + `VISIBLE_VISION_MODELS` |
+| `src/lib/providers/vision.ts` | `loadPipeline` (cache-gated `from_pretrained` with per-file progress callback, session cache `Map`, failure → evict), `translateImage` (compress → `RawImage.fromCanvas` → template → processor → generate with `max_new_tokens: 2048` → slice → decode → resilient JSON parse → `toTraditionalChinese` on both parts), `abortable` wrapper, `isKnownVisionModel` gate. Modeled on the sibling's `providers/webgpu.ts` + translate's own `providers/webgpu.ts` conventions |
+| `src/lib/image-compress.ts` | `compressImageForVision` (always compresses — EXIF strip) + `IMAGE_ACCEPT`. Modeled on the sibling's `compress.ts` |
+| `src/components/settings-dialog.tsx` | `VisionSettings` block in the Model tab (webgpu backend only), between the main model block and TTS — model Select (2 models + size) + cached chip + download/cancel/clear, same mechanics as the main model block |
+| `src/components/translation-page.tsx` | Image button in the input toolbar (webgpu + GPU-ready, hidden otherwise), hidden file input, image strip (thumbnail + name + live status + remove), `startImage` (vision-model-missing pre-check → `translateImage` → workspace.set + history), shared busy/cancel/duration with text translation, `vision-parse-failed` / read-failed i18n errors |
+| `src/lib/settings-manager.ts` | `visionModelId` (default 450M) in `AppSettings` |
+| `src/lib/i18n/translations.ts` | 11 keys × 4 locales (`vision.*`, `settings.vision*`, `hint.visionNotDownloaded`) |
 
 Unchanged: wasm footprint (4.2.0 stays pinned → no new wasm → CF 25 MiB cap untouched), privacy rule 10 (the image never leaves the browser), static-export-only builds.
 
 ## A/B plan (owner's real browser — SwiftShader on 12 is too slow, rule 5)
 
-Three measurements decide the remaining design branches. The sibling project can run ① immediately with zero code changes (both models already catalogued there):
+**This is the gate before deploy.** Three measurements decide the remaining design branches. ① can be run in the sibling project immediately with zero code changes (both models already catalogued there) as a fast first read; ②③ need translate itself:
 
 1. **CJK recognition quality** — the make-or-break. Photos/screenshots of text in zh-TW/zh-CN, ja, ko, en (signs, menus, documents): does 450M *read* the text accurately, and translate it correctly? 3B as comparison.
 2. **VRAM co-residency** — DevTools GPU memory panel: (a) Hy-MT2 alone, (b) Hy-MT2 + 450M both resident, (c) after `dispose()` of the VLM. (c) < (b) confirms unload actually frees memory (swap is viable); (b) fitting without device loss confirms resident mode.

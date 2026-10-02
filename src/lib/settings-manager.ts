@@ -1,5 +1,10 @@
 import { normalizeLanguage as normalizeUILanguage, type Language } from "./i18n/translations";
-import { DEFAULT_WEBGPU_MODEL, WEBGPU_MODELS } from "./model-catalog";
+import {
+  DEFAULT_VISION_MODEL,
+  DEFAULT_WEBGPU_MODEL,
+  VISION_MODELS,
+  WEBGPU_MODELS,
+} from "./model-catalog";
 import { normalizeModelPreset, type ModelPreset } from "./prompt-profiles";
 import { KOKORO_DTYPES, type KokoroDtype } from "./tts/kokoro";
 
@@ -18,6 +23,7 @@ export interface LlamaServerConfig {
 export interface AppSettings {
   backend: Backend;
   webgpuModelId: string;
+  visionModelId: string;
   llamaServerConfig: LlamaServerConfig;
   webgpuSystemPrompt: string;
   language: UILanguage;
@@ -38,6 +44,7 @@ export function defaultSettings(): AppSettings {
   return {
     backend: "webgpu",
     webgpuModelId: DEFAULT_WEBGPU_MODEL,
+    visionModelId: DEFAULT_VISION_MODEL,
     llamaServerConfig: {
       baseUrl: "http://localhost:8080",
       model: "",
@@ -69,6 +76,12 @@ function normalizeLanguage(value: unknown): UILanguage {
 
 function normalizeModelId(value: unknown): string {
   return WEBGPU_MODELS.some((m) => m.id === value) ? (value as string) : DEFAULT_WEBGPU_MODEL;
+}
+
+function normalizeVisionModelId(value: unknown): string {
+  return VISION_MODELS.some((m) => m.id === value)
+    ? (value as string)
+    : DEFAULT_VISION_MODEL;
 }
 
 function normalizeTtsEngine(value: unknown): "web-speech" | "kokoro" {
@@ -116,6 +129,7 @@ export function loadSettings(): AppSettings {
       ...parsed,
       backend: normalizeBackend(parsed.backend),
       webgpuModelId: normalizeModelId(parsed.webgpuModelId),
+      visionModelId: normalizeVisionModelId(parsed.visionModelId),
       webgpuSystemPrompt:
         typeof parsed.webgpuSystemPrompt === "string"
           ? parsed.webgpuSystemPrompt

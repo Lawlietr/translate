@@ -58,6 +58,17 @@ export interface Messages {
   "hint.notDownloaded": string;
   "hint.outOfMemory": string;
   "hint.llamaUnreachable": string;
+  "hint.visionNotDownloaded": string;
+
+  "vision.button": string;
+  "vision.chooseImage": string;
+  "vision.modelMissing": string;
+  "vision.parseFailed": string;
+  "vision.readFailed": string;
+  "vision.removeImage": string;
+  "settings.visionTitle": string;
+  "settings.visionHelper": string;
+  "settings.visionModel": string;
 
   "settings.title": string;
   "settings.closeAria": string;
@@ -237,6 +248,22 @@ export const translations: Record<Language, Messages> = {
       "The GPU ran out of memory for this model — open Settings (Inference tab), switch to the smaller model, or close GPU-heavy tabs and retry.",
     "hint.llamaUnreachable":
       "Could not reach llama-server — open Settings (Inference tab) and use Test connection to check the server, URL, and CORS.",
+    "hint.visionNotDownloaded":
+      "The vision model is not downloaded yet — Settings → Model tab → Image translation.",
+
+    "vision.button": "Translate image",
+    "vision.chooseImage": "Choose an image (JPG, PNG or WebP)",
+    "vision.modelMissing":
+      "Image translation needs a vision model first — open Settings → Model tab → Image translation and download one.",
+    "vision.parseFailed":
+      "The vision model did not return a valid result — please try again or use a clearer image.",
+    "vision.readFailed":
+      "Could not read that image file — please use a JPG, PNG or WebP image.",
+    "vision.removeImage": "Remove image",
+    "settings.visionTitle": "Image translation",
+    "settings.visionHelper":
+      "Optional vision model that reads and translates text in images (WebGPU). Downloaded from Hugging Face like the other models.",
+    "settings.visionModel": "Vision model",
 
     "settings.title": "Settings",
     "settings.closeAria": "Close settings",
@@ -421,6 +448,22 @@ export const translations: Record<Language, Messages> = {
       "GPU 記憶體不足以執行此模型——請開啟設定（推理分頁）換較小的模型，或關閉耗用 GPU 的分頁後重試。",
     "hint.llamaUnreachable":
       "無法連線到 llama-server——請開啟設定（推理分頁）用「測試連線」檢查伺服器、URL 與 CORS。",
+    "hint.visionNotDownloaded":
+      "視覺模型尚未下載——設定 → 模型分頁 → 圖片翻譯。",
+
+    "vision.button": "翻譯圖片",
+    "vision.chooseImage": "選擇圖片（JPG、PNG 或 WebP）",
+    "vision.modelMissing":
+      "圖片翻譯需要先下載視覺模型——開啟設定 → 模型分頁 → 圖片翻譯 下載。",
+    "vision.parseFailed":
+      "視覺模型未回傳有效結果——請重試或使用更清楚的圖片。",
+    "vision.readFailed":
+      "無法讀取該圖片檔——請使用 JPG、PNG 或 WebP 圖片。",
+    "vision.removeImage": "移除圖片",
+    "settings.visionTitle": "圖片翻譯",
+    "settings.visionHelper":
+      "選用的視覺模型，辨識並翻譯圖片中的文字（WebGPU）。與其他模型一樣從 Hugging Face 下載。",
+    "settings.visionModel": "視覺模型",
 
     "settings.title": "設定",
     "settings.closeAria": "關閉設定",
@@ -595,6 +638,22 @@ export const translations: Record<Language, Messages> = {
       "このモデルに GPU メモリが不足しています — 設定（推論タブ）で小さいモデルに切替するか、GPU を多用するタブを閉じて再試行してください。",
     "hint.llamaUnreachable":
       "llama-server に接続できません — 設定（推論タブ）の「接続テスト」でサーバー、URL、CORS を確認してください。",
+    "hint.visionNotDownloaded":
+      "ビジョンモデルがまだダウンロードされていません — 設定 → モデルタブ → 画像翻訳。",
+
+    "vision.button": "画像を翻訳",
+    "vision.chooseImage": "画像を選択（JPG / PNG / WebP）",
+    "vision.modelMissing":
+      "画像翻訳にはビジョンモデルが必要です — 設定 → モデルタブ → 画像翻訳 でダウンロードしてください。",
+    "vision.parseFailed":
+      "ビジョンモデルが有効な結果を返せませんでした — もう一度試してください、またはより鮮明な画像を使用してください。",
+    "vision.readFailed":
+      "画像ファイルを読み取れませんでした — JPG / PNG / WebP を使用してください。",
+    "vision.removeImage": "画像を削除",
+    "settings.visionTitle": "画像翻訳",
+    "settings.visionHelper":
+      "画像内の文字を読み取って翻訳する任意のビジョンモデル（WebGPU）。他のモデルと同様に Hugging Face からダウンロードします。",
+    "settings.visionModel": "ビジョンモデル",
 
     "settings.title": "設定",
     "settings.closeAria": "設定を閉じる",
@@ -772,6 +831,22 @@ export const translations: Record<Language, Messages> = {
       "이 모델을 실행할 GPU 메모리가 부족합니다 — 설정(추론 탭)에서 더 작은 모델로 전환하거나, GPU를 많이 쓰는 탭을 닫고 다시 시도하세요.",
     "hint.llamaUnreachable":
       "llama-server에 연결할 수 없습니다 — 설정(추론 탭)의 '연결 테스트'로 서버, URL, CORS를 확인하세요.",
+    "hint.visionNotDownloaded":
+      "비전 모델이 아직 다운로드되지 않았습니다 — 설정 → 모델 탭 → 이미지 번역.",
+
+    "vision.button": "이미지 번역",
+    "vision.chooseImage": "이미지 선택(JPG / PNG / WebP)",
+    "vision.modelMissing":
+      "이미지 번역에는 비전 모델이 필요합니다 — 설정 → 모델 탭 → 이미지 번역에서 다운로드하세요.",
+    "vision.parseFailed":
+      "비전 모델이 유효한 결과를 반환하지 않았습니다 — 다시 시도하거나 더 선명한 이미지를 사용하세요.",
+    "vision.readFailed":
+      "이미지 파일을 읽을 수 없습니다 — JPG / PNG / WebP 이미지를 사용하세요.",
+    "vision.removeImage": "이미지 제거",
+    "settings.visionTitle": "이미지 번역",
+    "settings.visionHelper":
+      "이미지 속 텍스트를 인식하고 번역하는 선택적 비전 모델(WebGPU). 다른 모델과 마찬가지로 Hugging Face에서 다운로드합니다.",
+    "settings.visionModel": "비전 모델",
 
     "settings.title": "설정",
     "settings.closeAria": "설정 닫기",
