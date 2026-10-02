@@ -110,9 +110,11 @@ Modeled on `Mako987/MiniCPM5-2B-WebGPU-Chat` (same reference as the landing layo
 - **Info cards (Model/Size/Privacy)**: no shadow-based elevation in dark — surface lift via `rgba(255,255,255,0.04)` bg + 1px `divider` border (same surface-elevation approach as the reference's `#16191c`-on-`#0f1113`); light theme uses `rgba(255,255,255,0.7)` + faint shadow `0 1px 3px rgba(0,0,0,0.08)` (white has no "one step lighter"). `borderRadius` 14 px (reference's `--radius` token). Card VALUES in `monospace` (matches the download progress list). The **Privacy card value** ("100% local") is the only accent-colored card text: dark `#7ed9a2` / light `#1f8a55` (title-gradient green endpoint).
 - Deliberately NOT done: hover-lift on the cards (they are non-interactive), per-card accent hairlines (over-decorated next to the reference's restraint).
 
-### Floating glyphs (drifting script background) — planned (owner decision 2026-10-02)
+### Floating glyphs (drifting script background) — implemented on DEV (pending owner review, not deployed)
 
-Inspired by `index-translate.bilibili.com` (bilibili's Index-Translate model page) — a “floating glyphs / ambient typography” background: script characters drifting slowly behind the content. **Spec only — not implemented.**
+Inspired by `index-translate.bilibili.com` (bilibili's Index-Translate model page) — a “floating glyphs / ambient typography” background: script characters drifting slowly behind the content. **Implemented 2026-10-02 on DEV exactly per this spec (`src/components/landing-glyphs.tsx` + `@keyframes glyph-floaty` in globals.css) — owner visual review pending; NOT pushed to main / not deployed (Pages / HF Space) until the owner confirms.**
+
+**DEV-mode verification (2026-10-02, headless Chromium via Playwright MCP):** 10 glyphs render (`A ü ß é ç ñ 文 译 あ 한`), all animate `glyph-floaty` (11–20.2 s, staggered negative delays), container `absolute` + `pointer-events: none` + `z-index: 0`, content on `z-10`, `prefers-reduced-motion` → `animation: none` (static). **Known pre-existing dev-mode issue (NOT caused by this feature, verified by baseline stash test):** a hydration-mismatch error fires on every reload of the landing page in the MUI ThemeProvider tree — dev-only, will be re-checked against the production export before any deploy.
 
 - **Scope (owner decision):** the **landing block only** — NOT the translation workspace. The input/output columns are for focused reading; even near-invisible background motion would compete with long-translation readability.
 - **The existing static glow stays UNCHANGED** — only the glyphs layer is added (minimal change, keeps the current visual language). The reference's animated aurora blobs are out of scope for v1.
