@@ -17,6 +17,7 @@ _(none — #23 TTS done 2026-09-30, see Completed)_
 | # | Task |
 |---|------|
 | 18 | vLLM provider (reserved — **do NOT implement before WebGPU + llama-server are verified working in a real browser**): thin reuse of the llama-server client + same prompt profiles; verify vLLM browser CORS behavior first — design/inference-providers.md |
+| 29 | llama.cpp WebGPU provider (reserved — **awareness only, owner 2026-10-02; no implementation without explicit go-ahead**): llama.cpp's in-browser WebGPU backend (WASM via Emscripten + emdawnwebgpu, GGUF models) as a candidate third backend — decode +45–69 % vs Transformers.js, peak memory −29–33 %, but prefill weaker and the WASM size unverified against the CF 25 MiB cap; adoption gates (stability / wasm size / CI toolchain / GGUF verification) — design/inference-providers.md §llama.cpp WebGPU (reserved) |
 | 10a–10d | **PAUSED (owner 2026-09-26; blueprint stands)** — Windows 11 WebView2 wrapper (10a skeleton → 10b static server → 10c CI → 10d integration test) — design/local-deployment.md §Target 1, design/ci-build.md |
 
 ## Completed (most recent 6; older history lives in git log)

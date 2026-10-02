@@ -10,6 +10,7 @@ Two inference backends, selectable in Settings. Pattern ported from what-do-you-
 | `webgpu` | WebGPU (in-browser) | user's own GPU | default backend; models downloaded via the #3 pipeline, cache-gated |
 | `llama-server` | llama-server (local) | user's own llama.cpp server | OpenAI-compatible HTTP API, **client-side fetch** |
 | `vllm` | vLLM (local) | user's own vLLM server | **RESERVED — not implemented** (lowest priority, TODO #18). Same OpenAI-compatible API as llama-server → thin client reuse; same prompt-profile mechanism (vLLM applies the model's chat template server-side, so the structural constraints of §Prompts apply identically). Gated: implement only after both the WebGPU and llama-server backends are verified working in a real browser. Open question to verify before implementation: vLLM's CORS behavior for browser clients (its OpenAI server is not browser-first — may need a flag or a local proxy) |
+| `llama-cpp-webgpu` | llama.cpp WebGPU (in-browser) | user's own GPU | **RESERVED — awareness only** (owner 2026-10-02, TODO #29, architecture unchanged). llama.cpp's WebGPU backend as WASM (Emscripten + emdawnwebgpu), GGUF models — §llama.cpp WebGPU (reserved) |
 
 ### Client-side direct fetch (owner-decided deviation from what-do-you-see)
 
@@ -168,6 +169,39 @@ per AGENTS rule 2) + `systemPrompt` (custom system prompt — allowed for Hy-MT2
 template accepts an optional system message; **disabled for translategemma**, same
 template constraint as §Prompts). `testConnection` = `isWebGpuSupported()` && secure
 context && active model cache verified-complete.
+
+## llama.cpp WebGPU (reserved — candidate third backend)
+
+Owner decision 2026-10-02: **awareness only — no architecture change.** transformers.js 4.2.0 stays the default WebGPU backend. This section is a watchlist entry, handled like the vLLM reservation. Verified 2026-10-02 against llama.cpp master docs + the LlamaWeb paper.
+
+**What it is.** llama.cpp's WebGPU backend (ggml, `-DGGML_WEBGPU=ON`) is merged into llama.cpp master — the core matmul/mmv PR #17031 merged 2025-11-08. LlamaWeb (arXiv:2605.20706, UC Santa Cruz, 2026-05) is the paper for this backend: custom WGSL kernels (matmul, FlashAttention, …), measured across 16 GPUs × 8 vendors × 10 models × 4 weight formats — the largest browser-LLM cross-device dataset to date, and the only WebGPU one that includes mobile devices. Maturity: the backend's "call for maintainers" discussion (#21189) is still open — maintenance is being established, not yet stable.
+
+**Browser path = a WASM runtime, not a library drop-in.** The in-browser build compiles ggml's WebGPU backend with Emscripten ≥ 4.0.3 + `emdawnwebgpu` (Dawn's own WebGPU bindings; Emscripten does not officially support WebGPU yet). emdawnwebgpu depends on Emscripten **private** APIs (its port file reaches into linker settings) — versions must be EXACT-pinned (rule-1 discipline) and the build belongs in a new GitHub Actions CI matrix (rule 11 — never toolchains on the dev machine).
+
+**Performance vs our stack** (LlamaWeb paper + LabHub read-through, 2026-05/07):
+
+- Decode: **+45–69 % over Transformers.js** (+54 % over WebLLM) on 4 GPUs (RTX 5080 / M4 Pro / RX 7900 XT / Arc B580)
+- Prefill: only **79 % of Transformers.js** (49 % of WebLLM) — translation here is short-input / long-output, so **decode dominates perceived speed → net positive for us**
+- M3, Llama-3.2-1B, `llama-bench`: F16 WebGPU 1014 pp512 / 28.7 tg128 vs Metal 1368 / 36; Q4_0 960 / 41.8 vs Metal 1347 / 103.9
+- Gap to native backends: up to 10× on prefill, 2.5× on decode. The prefill ceiling is a **standards** problem — the subgroup-matrix (tensor-core) WebGPU feature is not in any stable browser yet; until it lands, "running an LLM in the browser is a privacy decision, not a performance decision"
+- **On WebGPU, quantization is a memory technique, not a speedup** (dequant is compute-heavy in prefill — Q4_0 prefill is slower than F16; decode wins only on bandwidth). Reference for any future dtype decisions (cf. TTS's "fp32 is the only usable dtype" finding — design/tts.md)
+
+**Memory — the real advantage.** LlamaWeb's loader keeps weights in **OPFS** and streams them into WebGPU buffers through a small fixed pool (4 × 1 MB); weights are **never materialized in the WASM heap** — the WASM heap is grow-only (a tab's once-allocated memory is not released until the tab closes). Result: **−29–33 % peak memory** vs existing browser frameworks; Safari's tight tab limits become usable for larger models. Our current transformers.js path loads weights into the WASM heap — same grow-only pressure, unoptimized. (Pattern also recorded in webgpu-knowledge.md §3.)
+
+**Why it would be attractive to us.**
+
+- A third engine behind the same `AIProvider` interface; the privacy story is identical — it is literally our llama-server backend's runtime, moved into the browser
+- **GGUF ecosystem**: any translation model with a GGUF port enters the catalog without waiting for someone to publish an ONNX mirror
+- Faster decode + lower peak memory — the main win for Safari / mobile users
+
+**Adoption gates (ALL must pass before scoping work):**
+
+1. Backend stability — #21189 converged, no kernel rewrites happening under us
+2. **WASM runtime size < 25 MiB per file** (llama.cpp + emdawnwebgpu measured against the CF Pages platform hard limit — design/deployment.md §25 MiB)
+3. GitHub Actions CI build with emsdk + emdawnwebgpu (rule 11), exact-pinned versions
+4. Model verification: GGUF counterparts of the two catalog models, sizes byte-verified via the HF tree API (rule 4), chat template re-checked — GGUFs from different uploaders may bundle different templates (rule 8)
+
+Sources: llama.cpp `docs/build.md` §WebGPU · arXiv:2605.20706 (Llamas on the Web) · reeselevine.github.io/llamas-on-the-web · labhub.hopto.org/blog/2026-07-16-llama-cpp-webgpu-browser-inference · llama.cpp discussion #21189
 
 ## Settings persistence (port of `settings-manager.ts`)
 
