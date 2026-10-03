@@ -35,6 +35,12 @@
 
 翻譯模型可從**首頁頂部的模型區塊**(首次使用)或**設定 → 模型分頁**下載(Hugging Face,一律使用者主動);視覺模型與 TTS 模型為選用,只在設定中管理。下載進度可隨時中斷;檔案存在瀏覽器 Cache API,重開分頁不需重下。
 
+## 💗 Support
+
+If you find this project useful, consider supporting its development:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D8B1283O84)
+
 ## Docker 部署
 
 映像為**多架構**(`linux/amd64` + `linux/arm64`)靜態映像(nginx + 首次啟動自動產生自簽 TLS),同時發佈在 **GitHub** 與 **Codeberg** 兩個 registry,內容完全相同:

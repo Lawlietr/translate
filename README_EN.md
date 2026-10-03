@@ -35,6 +35,12 @@ On first use, download a model from Settings → Inference (~1.38 GB or 3.11 GB)
 
 Translation models can be downloaded from the **model block at the top of the home screen** (first use) or **Settings → Model tab** (Hugging Face, always user-initiated); the vision and TTS models are optional and managed in Settings only. Downloads show progress and can be cancelled at any time. Files are stored in the browser's Cache API — no re-download after reopening a tab.
 
+## 💗 Support
+
+If you find this project useful, consider supporting its development:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D8B1283O84)
+
 ## Docker Deployment
 
 Images are **multi-arch** (`linux/amd64` + `linux/arm64`) static images (nginx + self-signed TLS generated on first boot), published with identical content to **both** the GitHub and Codeberg registries:
