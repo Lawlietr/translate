@@ -1,6 +1,21 @@
+<div align="center">
+
 # Translate
 
-[繁體中文](README.md) · [English](README_EN.md)
+</div>
+
+<p align="center">
+  <a href="https://github.com/lawlietr/translate/stargazers"><img src="https://img.shields.io/github/stars/lawlietr/translate?style=flat-square" alt="Stars"></a>
+  <a href="https://github.com/lawlietr/translate/releases"><img src="https://img.shields.io/github/v/release/lawlietr/translate?label=version&style=flat-square" alt="Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL_v3-blue?style=flat-square" alt="License"></a>
+  <a href="https://github.com/lawlietr/translate/commits/DEV"><img src="https://img.shields.io/github/commit-activity/m/lawlietr/translate?style=flat-square" alt="Commits"></a>
+  <a href="https://github.com/lawlietr/translate"><img src="https://img.shields.io/github/followers/lawlietr?style=flat-square&logo=GitHub" alt="Follow"></a>
+  <a href="https://x.com/Lawlietr"><img src="https://img.shields.io/badge/follow-%40Lawlietr-1DA1F2?style=flat-square&logo=X" alt="Follow on X"></a>
+</p>
+
+<div align="center">
+  <a href="README.md"><strong>🇹🇼 繁體中文</strong></a> · <a href="README_EN.md">🇺🇸 English</a>
+</div>
 
 A translation app that runs **entirely in your browser** — "Google Translate" on your own WebGPU: type text, a small multilingual LLM (ONNX format, via `@huggingface/transformers`) translates it **on your GPU**, and the result appears in the output box. **Your text never leaves the browser** — no server-side processing, no tracking, no external requests (except user-initiated model downloads and an optional custom llama-server connection).
 
@@ -10,7 +25,7 @@ A translation app that runs **entirely in your browser** — "Google Translate" 
 - **Hugging Face Space**: [huggingface.co/spaces/lawlietr/translate](https://huggingface.co/spaces/lawlietr/translate)
 - **GitHub Pages**: [lawlietr.github.io/translate](https://lawlietr.github.io/translate/)
 
-On first use, download a model from Settings → Inference (~1.38 GB or 3.11 GB); afterwards the app works fully offline.
+On first use, download a model from **Settings → Model tab** (~1.38 GB or 3.11 GB); afterwards the app works fully offline.
 
 ## Features
 
@@ -34,12 +49,6 @@ On first use, download a model from Settings → Inference (~1.38 GB or 3.11 GB)
 | Kokoro-82M (fp32) | ~0.33 GB | Optional: TTS read-aloud model |
 
 Translation models can be downloaded from the **model block at the top of the home screen** (first use) or **Settings → Model tab** (Hugging Face, always user-initiated); the vision and TTS models are optional and managed in Settings only. Downloads show progress and can be cancelled at any time. Files are stored in the browser's Cache API — no re-download after reopening a tab.
-
-## 💗 Support
-
-If you find this project useful, consider supporting its development:
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/mulderlee/tip)
 
 ## Docker Deployment
 
@@ -141,6 +150,12 @@ find out -name "*.wasm*" -exec du -h {} +
 - Branch model: `DEV` = daily development; `main` = release branch (pushing triggers GitHub Actions: multi-arch build → push both registries → create Release)
 - `design/` — implementation details per work unit; `TODO.md` — pending work and priorities
 - Browser automation testing: Playwright (run against the production static export — the dev server has DOM ghosts that cause false failures)
+
+## 💗 Support
+
+If you find this project useful, consider supporting its development:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/mulderlee/tip)
 
 ## License
 
