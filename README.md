@@ -10,6 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL_v3-blue?style=flat-square" alt="License"></a>
   <a href="https://github.com/lawlietr/translate/commits/DEV"><img src="https://img.shields.io/github/commit-activity/m/lawlietr/translate?style=flat-square" alt="Commits"></a>
   <a href="https://github.com/lawlietr/translate"><img src="https://img.shields.io/github/followers/lawlietr?style=flat-square&logo=GitHub" alt="Follow"></a>
+  <a href="https://x.com/Lawlietr"><img src="https://img.shields.io/badge/follow-%40Lawlietr-1DA1F2?style=flat-square&logo=X" alt="Follow on X"></a>
 </p>
 
 <div align="center">
