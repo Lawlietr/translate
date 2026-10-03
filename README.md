@@ -152,7 +152,7 @@ find out -name "*.wasm*" -exec du -h {} +
 
 ## 💗 支持這個專案
 
-如果你覺得這個專案有用，歡迎支持它的開發：
+如果您覺得這個專案有用，可以請我喝一杯咖啡：
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/mulderlee/tip)
 
