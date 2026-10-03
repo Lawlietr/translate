@@ -14,7 +14,7 @@
 </p>
 
 <div align="center">
-  <a href="README.md"><strong>🇹🇼 繁體中文</strong></a> · <a href="README_EN.md">🇺🇸 English</a>
+  <a href="README.md"><strong>🇹🇼 繁體中文</strong></a> · <a href="README_EN.md">🇺🇸 English</a> · <a href="README_KO.md">🇰🇷 한국어</a> · <a href="README_JA.md">🇯🇵 日本語</a>
 </div>
 
 完全在本機瀏覽器運作的翻譯應用程式——把「Google 翻譯」搬到你的 WebGPU 上:輸入文字,小型多語系 LLM(ONNX 格式,經 `@huggingface/transformers`)在**你的 GPU** 上直接翻譯,結果顯示在輸出框。**文字永不離開瀏覽器**——沒有伺服器端處理、沒有追蹤、沒有外部請求(模型下載與自訂 llama-server 連線除外,皆為使用者主動啟用)。

@@ -14,7 +14,7 @@
 </p>
 
 <div align="center">
-  <a href="README.md"><strong>🇹🇼 繁體中文</strong></a> · <a href="README_EN.md">🇺🇸 English</a>
+  <a href="README.md">🇹🇼 繁體中文</a> · <a href="README_EN.md"><strong>🇺🇸 English</strong></a> · <a href="README_KO.md">🇰🇷 한국어</a> · <a href="README_JA.md">🇯🇵 日本語</a>
 </div>
 
 A translation app that runs **entirely in your browser** — "Google Translate" on your own WebGPU: type text, a small multilingual LLM (ONNX format, via `@huggingface/transformers`) translates it **on your GPU**, and the result appears in the output box. **Your text never leaves the browser** — no server-side processing, no tracking, no external requests (except user-initiated model downloads and an optional custom llama-server connection).
