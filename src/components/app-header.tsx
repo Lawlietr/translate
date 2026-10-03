@@ -37,7 +37,20 @@ export function AppHeader({ themeMode, onToggleTheme, onOpenSettings }: AppHeade
   return (
     <header className="flex items-center justify-between gap-3">
       <Typography variant="h5">{t("site.title")}</Typography>
-      <Box className="flex items-center gap-1">
+      <Box className="flex items-center gap-1" sx={{ justifyContent: "center" }}>
+        <Select
+          size="small"
+          value={lang}
+          onChange={(e) => setLanguage(e.target.value as (typeof SUPPORTED_LANGUAGES)[number]["id"])}
+          sx={{ minWidth: 100 }}
+          aria-label={t("header.languageAria")}
+        >
+          {SUPPORTED_LANGUAGES.map((l) => (
+            <MenuItem key={l.id} value={l.id}>
+              {l.label}
+            </MenuItem>
+          ))}
+        </Select>
         <Select
           size="small"
           value={lang}
