@@ -12,7 +12,9 @@
   <a href="https://github.com/lawlietr/translate"><img src="https://img.shields.io/github/followers/lawlietr?style=flat-square&logo=GitHub" alt="Follow"></a>
 </p>
 
-[繁體中文](README.md) · [English](README_EN.md)
+<div align="center">
+  <a href="README.md"><strong>🇹🇼 繁體中文</strong></a> · <a href="README_EN.md">🇺🇸 English</a>
+</div>
 
 完全在本機瀏覽器運作的翻譯應用程式——把「Google 翻譯」搬到你的 WebGPU 上:輸入文字,小型多語系 LLM(ONNX 格式,經 `@huggingface/transformers`)在**你的 GPU** 上直接翻譯,結果顯示在輸出框。**文字永不離開瀏覽器**——沒有伺服器端處理、沒有追蹤、沒有外部請求(模型下載與自訂 llama-server 連線除外,皆為使用者主動啟用)。
 
