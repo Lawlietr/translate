@@ -150,9 +150,9 @@ find out -name "*.wasm*" -exec du -h {} +
 - `design/` — 每個工作單元的實作細節;`TODO.md` — 待辦與優先順序
 - 瀏覽器自動化驗證:Playwright(production static export 上跑,dev server 有 DOM 殘節會造成誤判)
 
-## 💗 Support
+## 💗 支持這個專案
 
-If you find this project useful, consider supporting its development:
+如果你覺得這個專案有用，歡迎支持它的開發：
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/mulderlee/tip)
 
