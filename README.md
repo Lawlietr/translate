@@ -1,4 +1,16 @@
+<div align="center">
+
 # Translate
+
+</div>
+
+<p align="center">
+  <a href="https://github.com/lawlietr/translate/stargazers"><img src="https://img.shields.io/github/stars/lawlietr/translate?style=flat-square" alt="Stars"></a>
+  <a href="https://github.com/lawlietr/translate/releases"><img src="https://img.shields.io/github/v/release/lawlietr/translate?label=version&style=flat-square" alt="Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL_v3-blue?style=flat-square" alt="License"></a>
+  <a href="https://github.com/lawlietr/translate/commits/DEV"><img src="https://img.shields.io/github/commit-activity/m/lawlietr/translate?style=flat-square" alt="Commits"></a>
+  <a href="https://github.com/lawlietr/translate"><img src="https://img.shields.io/github/followers/lawlietr?style=flat-square&logo=GitHub" alt="Follow"></a>
+</p>
 
 [繁體中文](README.md) · [English](README_EN.md)
 
@@ -34,12 +46,6 @@
 | Kokoro-82M (fp32) | ~0.33 GB | 選用:TTS 朗讀模型 |
 
 翻譯模型可從**首頁頂部的模型區塊**(首次使用)或**設定 → 模型分頁**下載(Hugging Face,一律使用者主動);視覺模型與 TTS 模型為選用,只在設定中管理。下載進度可隨時中斷;檔案存在瀏覽器 Cache API,重開分頁不需重下。
-
-## 💗 Support
-
-If you find this project useful, consider supporting its development:
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/mulderlee/tip)
 
 ## Docker 部署
 
@@ -141,6 +147,12 @@ find out -name "*.wasm*" -exec du -h {} +
 - 分支模型:`DEV` = 日常開發;`main` = 發布分支(push 觸發 GitHub Actions:雙架構 build → 推兩個 registry → 建 Release)
 - `design/` — 每個工作單元的實作細節;`TODO.md` — 待辦與優先順序
 - 瀏覽器自動化驗證:Playwright(production static export 上跑,dev server 有 DOM 殘節會造成誤判)
+
+## 💗 Support
+
+If you find this project useful, consider supporting its development:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/mulderlee/tip)
 
 ## 授權
 
