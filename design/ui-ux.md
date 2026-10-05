@@ -6,7 +6,7 @@ Single page, **dark mode by default (light mode toggleable)**, MUI v9 + Tailwind
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│  Translate (logo)      [UI lang ▾][◐ theme][🐙 github][⚙ Settings] │
+│  Translate (logo)      [🌐 lang][◐ theme][🐙 github][⚙ Settings] │
 ├────────────────────────────────────────────────────────────────────┤
 │ ┌────────────────────────┐   ┌────────────────────────┐  │
 │ │ Source [lang ▾][🔁swap]│   │ Target [lang ▾]        │  │
@@ -28,10 +28,11 @@ Three visual layers (owner 2026-09-28): **header** (`py-4` + `border-b` hairline
 
 ## Header right cluster (owner spec, 2026-09-21)
 
-Order, left → right: **UI language dropdown → theme toggle → GitHub icon → ⚙ Settings**.
+Order, left → right: **UI language icon (globe — click to open a language dropdown) → theme toggle → GitHub icon → ⚙ Settings**.
 
 - **Theme toggle (`◐`):** dark is the DEFAULT; icon switches dark↔light (MUI `DarkModeOutlined`/`LightModeOutlined`); choice persisted in localStorage, applied via MUI `ThemeProvider` mode + `class` on `<html>` so Tailwind dark styles follow. No first-paint flash (default dark = no FOUC concern).
 - **GitHub icon (`🐙`):** links to the repo via the single URL constant `GITHUB_REPO_URL` in `src/lib/site.ts` (owner 2026-09-28: set to `https://github.com/Lawlietr/translate`; opens in a new tab, `rel="noreferrer"`). Empty string reverts it to the disabled reserved placeholder automatically — the render branch on the constant is already in place.
+- **UI language icon (`🌐`, `src/components/app-header.tsx`):** a single MUI `LanguageOutlined` IconButton (NOT a `Select`) that opens an MUI `Menu` of the 4 UI languages (`SUPPORTED_LANGUAGES`: zh-TW / en / ja / ko). Chosen 2026-10-05 for a cleaner header: two plain text `Select`s were redundant and bulky. Options are **language name only — no flags** (flag ambiguity: `en` = 🇬🇧/🇺🇸, `zh-TW` = 🇹🇼 sensitivity). The selected item is highlighted via `MenuItem selected={l.id === lang}`. `setLanguage` (i18n) applies + persists on click, then closes the menu. New i18n key `header.languageTooltip` (4 locales). MUI v9 `Menu` does **not** accept `PaperProps` (drop it). See AGENTS.md rule on MUI v9 `Select` Fragment pitfall — this refactor removed the two `Select`s entirely.
 
 - **Mobile:** single column — input on top, output below; swap button between.
 - **Language pickers:** source + target, sensible defaults (zh-TW / en), swap button exchanges them and the text. A fixed list of major languages (en, zh-TW, zh-CN, ja, ko, fr, de, es, …) — these map to the instruction line, NOT to UI translation. (Source auto-detection is out of scope for v1; the models don't do reliable detection.)

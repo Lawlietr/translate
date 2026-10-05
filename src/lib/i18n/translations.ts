@@ -4,6 +4,7 @@ export interface Messages {
   "site.title": string;
 
   "header.languageAria": string;
+  "header.languageTooltip": string;
   "header.themeAria": string;
   "header.toLight": string;
   "header.toDark": string;
@@ -185,6 +186,7 @@ export const translations: Record<Language, Messages> = {
     "site.title": "Translate",
 
     "header.languageAria": "UI language",
+    "header.languageTooltip": "Change UI language",
     "header.themeAria": "Toggle theme",
     "header.toLight": "Switch to light mode",
     "header.toDark": "Switch to dark mode",
@@ -385,6 +387,7 @@ export const translations: Record<Language, Messages> = {
     "site.title": "Translate",
 
     "header.languageAria": "介面語言",
+    "header.languageTooltip": "切換介面語言",
     "header.themeAria": "切換主題",
     "header.toLight": "切換為明亮模式",
     "header.toDark": "切換為深色模式",
@@ -575,6 +578,7 @@ export const translations: Record<Language, Messages> = {
     "site.title": "Translate",
 
     "header.languageAria": "UI言語",
+    "header.languageTooltip": "UI言語を切替",
     "header.themeAria": "テーマ切替",
     "header.toLight": "ライトモードに切替",
     "header.toDark": "ダークモードに切替",
@@ -768,6 +772,7 @@ export const translations: Record<Language, Messages> = {
     "site.title": "Translate",
 
     "header.languageAria": "UI 언어",
+    "header.languageTooltip": "UI 언어 전환",
     "header.themeAria": "테마 전환",
     "header.toLight": "라이트 모드로 전환",
     "header.toDark": "다크 모드로 전환",

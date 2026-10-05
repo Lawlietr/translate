@@ -1,16 +1,19 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   Box,
   IconButton,
+  Menu,
   MenuItem,
-  Select,
   SvgIcon,
   Tooltip,
   Typography,
 } from "@mui/material";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
+import LanguageOutlinedIcon from "@mui/icons-material/Language";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { GITHUB_REPO_URL } from "../lib/site";
 import { useI18n } from "../hooks/useI18n";
@@ -33,37 +36,46 @@ interface AppHeaderProps {
 
 export function AppHeader({ themeMode, onToggleTheme, onOpenSettings }: AppHeaderProps) {
   const { t, lang, setLanguage } = useI18n();
+  const [languageAnchorEl, setLanguageAnchorEl] = useState<null | HTMLElement>(null);
+  const languageOpen = Boolean(languageAnchorEl);
+
+  const openLanguageMenu = (event: React.MouseEvent<HTMLElement>) =>
+    setLanguageAnchorEl(event.currentTarget);
+  const closeLanguageMenu = () => setLanguageAnchorEl(null);
 
   return (
     <header className="flex items-center justify-between gap-3">
       <Typography variant="h5">{t("site.title")}</Typography>
       <Box className="flex items-center gap-1" sx={{ justifyContent: "center" }}>
-        <Select
-          size="small"
-          value={lang}
-          onChange={(e) => setLanguage(e.target.value as (typeof SUPPORTED_LANGUAGES)[number]["id"])}
-          sx={{ minWidth: 100 }}
+        <Tooltip title={t("header.languageTooltip")}>
+          <IconButton
+            onClick={openLanguageMenu}
+            aria-label={t("header.languageAria")}
+            aria-haspopup="menu"
+            aria-expanded={languageOpen ? "true" : "false"}
+          >
+            <LanguageOutlinedIcon />
+          </IconButton>
+        </Tooltip>
+        <Menu
+          anchorEl={languageAnchorEl}
+          open={languageOpen}
+          onClose={closeLanguageMenu}
           aria-label={t("header.languageAria")}
         >
           {SUPPORTED_LANGUAGES.map((l) => (
-            <MenuItem key={l.id} value={l.id}>
+            <MenuItem
+              key={l.id}
+              selected={l.id === lang}
+              onClick={() => {
+                setLanguage(l.id);
+                closeLanguageMenu();
+              }}
+            >
               {l.label}
             </MenuItem>
           ))}
-        </Select>
-        <Select
-          size="small"
-          value={lang}
-          onChange={(e) => setLanguage(e.target.value as (typeof SUPPORTED_LANGUAGES)[number]["id"])}
-          sx={{ minWidth: 100 }}
-          aria-label={t("header.languageAria")}
-        >
-          {SUPPORTED_LANGUAGES.map((l) => (
-            <MenuItem key={l.id} value={l.id}>
-              {l.label}
-            </MenuItem>
-          ))}
-        </Select>
+        </Menu>
         <Tooltip title={themeMode === "dark" ? t("header.toLight") : t("header.toDark")}>
           <IconButton onClick={onToggleTheme} aria-label={t("header.themeAria")}>
             {themeMode === "dark" ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}

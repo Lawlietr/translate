@@ -87,7 +87,7 @@ A third backend, **vLLM, is reserved but NOT implemented** (lowest priority, TOD
 
 ### UI Guidelines
 
-- Dark theme by default; top-right header cluster: UI language dropdown → dark/light toggle (persisted) → GitHub icon → repo (`src/lib/site.ts` `GITHUB_REPO_URL`) → Settings — design/ui-ux.md
+- Dark theme by default; top-right header cluster: UI language icon (globe, clicks open a language dropdown) → dark/light toggle (persisted) → GitHub icon → repo (`src/lib/site.ts` `GITHUB_REPO_URL`) → Settings — design/ui-ux.md
 - Landing visual language: static ambient radial glows (title-gradient endpoints, low alpha, `ch`-sized, centers off-screen) + **floating-glyphs drifting script background** (10 deterministic glyphs covering the 8 supported languages, transform-only CSS drift, `pointer-events: none` behind content, `prefers-reduced-motion` → static) + info cards with surface lift (no dark shadow, 14 px radius, monospace values, accent-green Privacy value) — design/ui-ux.md §Landing visual language
 - **Settings dialog tabs: `General | Model`** (Model = the former “Inference” tab, renamed 2026-09-30; the TTS read-aloud block lives in Model). Fixed order (General left), default first-open tab = General, last-opened tab persisted (`translate:settingsTab`). Page layout is locked to `100vh` — header/footer fixed, each column (input, output, history) scrolls independently (`overflow-y-auto`)
 - Material Design components via MUI
